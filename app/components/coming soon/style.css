@@ -1,0 +1,48 @@
+.reveal-phone #phone {
+  opacity: 1 !important;
+  transition: all 0.75s ease-in-out;
+  cursor: pointer;
+}
+
+.reveal-phone .mobile-app-1 {
+  opacity: 1;
+  animation: grow 2s ease-in-out;
+  cursor: pointer;
+}
+
+.reveal-phone .mobile-app-2 {
+  opacity: 1;
+  animation: grow-2 2s ease-in-out;
+}
+
+@keyframes grow {
+  0%,
+  20% {
+    transform: scale(0);
+  }
+
+  40% {
+    transform: scale(1.5);
+  }
+
+  60%,
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes grow-2 {
+  0%,
+  50% {
+    transform: scale(0);
+  }
+
+  70% {
+    transform: scale(1.5);
+  }
+
+  90%,
+  100% {
+    transform: scale(1);
+  }
+}
