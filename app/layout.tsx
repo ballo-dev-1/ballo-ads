@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 
 export const metadata: Metadata = {
   title: "Ballo Ads",
-  description: "Ballo Ads",
+  description: "Ballo Ads - Your Digital Marketing Assistant",
 };
 
 export default function RootLayout({
@@ -14,11 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className=""
-      >
+      <body className="">
+        <Header />
         {children}
-        {/* <Footer /> */}
+        <Footer />
       </body>
     </html>
   );

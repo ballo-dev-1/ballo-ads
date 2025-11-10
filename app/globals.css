@@ -8,6 +8,12 @@
   --brand-color-3: #2273af;
   --brand-color-4: #3fdbff;
   --brand-color-5: #bdd4dc;
+  --dark-blue: #020055;
+  --dark-blue-2: #0e0e39;
+  --purple: #6b46c1;
+  --purple-light: #a855f7;
+  --cyan: #3fdbff;
+  --cyan-light: #67e8f9;
 }
 
 @theme inline {
@@ -28,4 +34,50 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Gradient utilities */
+.gradient-blue-purple {
+  background: linear-gradient(135deg, #020055 0%, #0b4d8c 50%, #6b46c1 100%);
+}
+
+.gradient-purple-pink {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+}
+
+.gradient-cyan-blue {
+  background: linear-gradient(135deg, #3fdbff 0%, #0b4d8c 100%);
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #3fdbff 0%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-purple {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 0 20px rgba(63, 219, 255, 0.3);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 30px rgba(63, 219, 255, 0.5);
+}
+
+/* Scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
