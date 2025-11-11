@@ -1,0 +1,152 @@
+/* ============================================
+   Pricing Page Styles
+   File: app/pricing/page.tsx
+   ============================================ */
+
+/* Pricing Page Container */
+.pricing-page {
+  /* Add main page container styles here */
+}
+
+.pricing-page__container {
+  /* Add page container styles here */
+}
+
+/* Pricing Header */
+.pricing-page__header {
+  /* Add header section styles here */
+}
+
+.pricing-page__title {
+  /* Add title styles here */
+}
+
+.pricing-page__description {
+  /* Add description styles here */
+}
+
+/* Pricing Plans Grid */
+.pricing-page__plans-grid {
+  /* Add plans grid container styles here */
+}
+
+/* Pricing Plan Card */
+.pricing-plan {
+  /* Add individual plan card styles here */
+}
+
+.pricing-plan__container {
+  /* Add plan container styles here */
+}
+
+.pricing-plan__header {
+  /* Add plan header styles here */
+}
+
+.pricing-plan__name {
+  /* Add plan name styles here */
+}
+
+.pricing-plan__price {
+  /* Add plan price styles here */
+}
+
+.pricing-plan__price-amount {
+  /* Add price amount styles here */
+}
+
+.pricing-plan__price-period {
+  /* Add price period styles here */
+}
+
+.pricing-plan__description {
+  /* Add plan description styles here */
+}
+
+.pricing-plan__features {
+  /* Add features list styles here */
+}
+
+.pricing-plan__feature {
+  /* Add individual feature item styles here */
+}
+
+.pricing-plan__feature-icon {
+  /* Add feature icon styles here */
+}
+
+.pricing-plan__cta {
+  /* Add plan CTA button styles here */
+}
+
+.pricing-plan__cta--primary {
+  /* Add primary CTA button styles here */
+}
+
+.pricing-plan__cta--secondary {
+  /* Add secondary CTA button styles here */
+}
+
+.pricing-plan__badge {
+  /* Add plan badge (e.g., "Popular") styles here */
+}
+
+/* Pricing Comparison Table */
+.pricing-comparison {
+  /* Add comparison table section styles here */
+}
+
+.pricing-comparison__table {
+  /* Add comparison table styles here */
+}
+
+.pricing-comparison__header {
+  /* Add table header styles here */
+}
+
+.pricing-comparison__row {
+  /* Add table row styles here */
+}
+
+.pricing-comparison__cell {
+  /* Add table cell styles here */
+}
+
+/* FAQ Section */
+.pricing-faq {
+  /* Add FAQ section styles here */
+}
+
+.pricing-faq__title {
+  /* Add FAQ title styles here */
+}
+
+.pricing-faq__list {
+  /* Add FAQ list styles here */
+}
+
+.pricing-faq__item {
+  /* Add FAQ item styles here */
+}
+
+.pricing-faq__question {
+  /* Add FAQ question styles here */
+}
+
+.pricing-faq__answer {
+  /* Add FAQ answer styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

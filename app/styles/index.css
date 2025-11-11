@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Core styles */
+@import "./variables.css";
+
+/* Utilities */
+@import "./utilities.css";
+
+/* Components */
+@import "./components/header.css";
+@import "./components/footer.css";
+@import "./components/coming-soon.css";
+
+/* Pages */
+@import "./pages/home.css";
+@import "./pages/features.css";
+@import "./pages/pricing.css";
+@import "./pages/blog.css";
+@import "./pages/blog-slug.css";
+@import "./pages/careers.css";
+@import "./pages/faq.css";
+@import "./pages/how-it-works.css";
+@import "./pages/knowledge-base.css";
+@import "./pages/live-chat.css";
+@import "./pages/privacy-policy.css";
+@import "./pages/resources.css";
+@import "./pages/subscription.css";
+@import "./pages/subscription-form.css";
+@import "./pages/whats-new.css";
+

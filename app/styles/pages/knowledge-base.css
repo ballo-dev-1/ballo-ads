@@ -1,0 +1,158 @@
+/* ============================================
+   Knowledge Base Page Styles
+   File: app/knowledge-base/page.tsx
+   ============================================ */
+
+/* Knowledge Base Page Container */
+.knowledge-base-page {
+  /* Add main page container styles here */
+}
+
+.knowledge-base-page__container {
+  /* Add page container styles here */
+}
+
+/* Knowledge Base Header */
+.knowledge-base-page__header {
+  /* Add header section styles here */
+}
+
+.knowledge-base-page__title {
+  /* Add title styles here */
+}
+
+.knowledge-base-page__description {
+  /* Add description styles here */
+}
+
+/* Search Section */
+.knowledge-base-page__search {
+  /* Add search container styles here */
+}
+
+.knowledge-base-page__search-input {
+  /* Add search input styles here */
+}
+
+.knowledge-base-page__search-icon {
+  /* Add search icon styles here */
+}
+
+/* Categories Section */
+.knowledge-base-page__categories {
+  /* Add categories section styles here */
+}
+
+.knowledge-base-page__categories-title {
+  /* Add categories title styles here */
+}
+
+.knowledge-base-page__categories-grid {
+  /* Add categories grid container styles here */
+}
+
+/* Category Card */
+.knowledge-base-category {
+  /* Add individual category card styles here */
+}
+
+.knowledge-base-category__container {
+  /* Add category container styles here */
+}
+
+.knowledge-base-category__icon {
+  /* Add category icon styles here */
+}
+
+.knowledge-base-category__title {
+  /* Add category title styles here */
+}
+
+.knowledge-base-category__description {
+  /* Add category description styles here */
+}
+
+.knowledge-base-category__article-count {
+  /* Add article count styles here */
+}
+
+.knowledge-base-category__link {
+  /* Add category link styles here */
+}
+
+/* Articles Section */
+.knowledge-base-page__articles {
+  /* Add articles section styles here */
+}
+
+.knowledge-base-page__articles-title {
+  /* Add articles section title styles here */
+}
+
+.knowledge-base-page__articles-list {
+  /* Add articles list container styles here */
+}
+
+/* Article Card */
+.knowledge-base-article {
+  /* Add individual article card styles here */
+}
+
+.knowledge-base-article__container {
+  /* Add article container styles here */
+}
+
+.knowledge-base-article__category {
+  /* Add article category badge styles here */
+}
+
+.knowledge-base-article__title {
+  /* Add article title styles here */
+}
+
+.knowledge-base-article__excerpt {
+  /* Add article excerpt styles here */
+}
+
+.knowledge-base-article__meta {
+  /* Add article meta information styles here */
+}
+
+.knowledge-base-article__date {
+  /* Add article date styles here */
+}
+
+.knowledge-base-article__read-time {
+  /* Add reading time styles here */
+}
+
+.knowledge-base-article__link {
+  /* Add article link styles here */
+}
+
+/* Popular Articles */
+.knowledge-base-page__popular {
+  /* Add popular articles section styles here */
+}
+
+.knowledge-base-page__popular-title {
+  /* Add popular articles title styles here */
+}
+
+.knowledge-base-page__popular-list {
+  /* Add popular articles list styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

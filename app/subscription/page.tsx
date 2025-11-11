@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import "./subscription.css";
 
 // Sample subscription channels data
 const subscriptionChannels = [

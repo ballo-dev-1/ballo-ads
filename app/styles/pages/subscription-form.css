@@ -1,0 +1,158 @@
+/* ============================================
+   Subscription Form Page Styles
+   File: app/subscription/form/page.tsx
+   ============================================ */
+
+/* Subscription Form Page Container */
+.subscription-form-page {
+  /* Add main page container styles here */
+}
+
+.subscription-form-page__container {
+  /* Add page container styles here */
+}
+
+/* Form Header */
+.subscription-form-page__header {
+  /* Add header section styles here */
+}
+
+.subscription-form-page__title {
+  /* Add title styles here */
+}
+
+.subscription-form-page__description {
+  /* Add description styles here */
+}
+
+.subscription-form-page__channel-info {
+  /* Add channel information styles here */
+}
+
+.subscription-form-page__channel-name {
+  /* Add channel name styles here */
+}
+
+/* Form Container */
+.subscription-form-page__form-container {
+  /* Add form container styles here */
+}
+
+.subscription-form-page__form {
+  /* Add form styles here */
+}
+
+/* Form Fields */
+.subscription-form-page__field {
+  /* Add form field container styles here */
+}
+
+.subscription-form-page__label {
+  /* Add form label styles here */
+}
+
+.subscription-form-page__input {
+  /* Add form input styles here */
+}
+
+.subscription-form-page__input--error {
+  /* Add error input state styles here */
+}
+
+.subscription-form-page__textarea {
+  /* Add form textarea styles here */
+}
+
+.subscription-form-page__error {
+  /* Add error message styles here */
+}
+
+.subscription-form-page__help-text {
+  /* Add help text styles here */
+}
+
+/* Form Checkboxes/Radio Buttons */
+.subscription-form-page__checkbox {
+  /* Add checkbox container styles here */
+}
+
+.subscription-form-page__checkbox-input {
+  /* Add checkbox input styles here */
+}
+
+.subscription-form-page__checkbox-label {
+  /* Add checkbox label styles here */
+}
+
+/* Form Actions */
+.subscription-form-page__actions {
+  /* Add form actions container styles here */
+}
+
+.subscription-form-page__submit-button {
+  /* Add submit button styles here */
+}
+
+.subscription-form-page__submit-button--loading {
+  /* Add loading state button styles here */
+}
+
+.subscription-form-page__cancel-button {
+  /* Add cancel button styles here */
+}
+
+/* Success Message */
+.subscription-form-page__success {
+  /* Add success message container styles here */
+}
+
+.subscription-form-page__success-icon {
+  /* Add success icon styles here */
+}
+
+.subscription-form-page__success-title {
+  /* Add success title styles here */
+}
+
+.subscription-form-page__success-message {
+  /* Add success message styles here */
+}
+
+.subscription-form-page__success-button {
+  /* Add success action button styles here */
+}
+
+/* KYC Information */
+.subscription-form-page__kyc-info {
+  /* Add KYC information section styles here */
+}
+
+.subscription-form-page__kyc-title {
+  /* Add KYC section title styles here */
+}
+
+.subscription-form-page__kyc-description {
+  /* Add KYC description styles here */
+}
+
+.subscription-form-page__kyc-requirements {
+  /* Add KYC requirements list styles here */
+}
+
+.subscription-form-page__kyc-requirement {
+  /* Add individual requirement item styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

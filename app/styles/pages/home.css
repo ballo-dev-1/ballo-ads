@@ -1,0 +1,237 @@
+/* ============================================
+   Home Page Styles
+   File: app/page.tsx
+   ============================================ */
+
+/* Hero Section */
+.home-hero {
+  /* Add hero section styles here */
+}
+
+/* Background Pattern */
+.home-hero__pattern {
+  /* Add pattern overlay styles here */
+}
+
+/* Large Faded Text */
+.home-hero__faded-text {
+  /* Add faded text styles here */
+}
+
+/* Hero Content */
+.home-hero__content {
+  /* Add hero content container styles here */
+}
+
+/* Hero Title */
+.home-hero__title {
+  /* Add hero title styles here */
+}
+
+/* Hero CTA Button */
+.home-hero__cta {
+  /* Add CTA button styles here */
+}
+
+/* Carousel Dots */
+.home-hero__dots {
+  /* Add carousel dots styles here */
+}
+
+/* Phone Image Container */
+.home-hero__phone-container {
+  /* Add phone image container styles here */
+}
+
+/* Powerful and Versatile Banner */
+.home-banner {
+  /* Add banner section styles here */
+}
+
+.home-banner__content {
+  /* Add banner content styles here */
+}
+
+.home-banner__title {
+  /* Add banner title styles here */
+}
+
+/* What We're About Section */
+.home-about {
+  /* Add about section styles here */
+}
+
+.home-about__container {
+  /* Add about container styles here */
+}
+
+.home-about__phone-mockup {
+  /* Add phone mockup styles here */
+}
+
+.home-about__content-card {
+  /* Add content card styles here */
+}
+
+.home-about__title {
+  /* Add about title styles here */
+}
+
+.home-about__description {
+  /* Add about description styles here */
+}
+
+/* Why Choose BalloAds Section */
+.home-why {
+  /* Add why section styles here */
+}
+
+.home-why__container {
+  /* Add why container styles here */
+}
+
+.home-why__content-card {
+  /* Add why content card styles here */
+}
+
+.home-why__title {
+  /* Add why title styles here */
+}
+
+.home-why__list {
+  /* Add why list styles here */
+}
+
+.home-why__list-item {
+  /* Add why list item styles here */
+}
+
+.home-why__cta {
+  /* Add why CTA button styles here */
+}
+
+/* Trusted By Section */
+.home-trusted {
+  /* Add trusted section styles here */
+}
+
+.home-trusted__title {
+  /* Add trusted title styles here */
+}
+
+.home-trusted__companies {
+  /* Add companies list styles here */
+}
+
+.home-trusted__company {
+  /* Add individual company styles here */
+}
+
+/* Who Can Use Section */
+.home-who {
+  /* Add who section styles here */
+}
+
+.home-who__title {
+  /* Add who title styles here */
+}
+
+.home-who__container {
+  /* Add who container styles here */
+}
+
+.home-who__list {
+  /* Add who list styles here */
+}
+
+.home-who__list-item {
+  /* Add who list item styles here */
+}
+
+.home-who__icon {
+  /* Add who icon styles here */
+}
+
+.home-who__building-image {
+  /* Add building image container styles here */
+}
+
+/* Testimonials Section */
+.home-testimonials {
+  /* Add testimonials section styles here */
+}
+
+.home-testimonials__title {
+  /* Add testimonials title styles here */
+}
+
+.home-testimonials__card {
+  /* Add testimonial card styles here */
+}
+
+.home-testimonials__quote {
+  /* Add testimonial quote styles here */
+}
+
+.home-testimonials__author {
+  /* Add testimonial author styles here */
+}
+
+.home-testimonials__author-name {
+  /* Add author name styles here */
+}
+
+.home-testimonials__author-title {
+  /* Add author title styles here */
+}
+
+/* Sign Up Form Section */
+.home-signup {
+  /* Add signup section styles here */
+}
+
+.home-signup__title {
+  /* Add signup title styles here */
+}
+
+.home-signup__container {
+  /* Add signup container styles here */
+}
+
+.home-signup__phone-mockup {
+  /* Add signup phone mockup styles here */
+}
+
+.home-signup__form-container {
+  /* Add form container styles here */
+}
+
+.home-signup__form {
+  /* Add form styles here */
+}
+
+.home-signup__form-input {
+  /* Add form input styles here */
+}
+
+.home-signup__form-textarea {
+  /* Add form textarea styles here */
+}
+
+.home-signup__form-button {
+  /* Add form submit button styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

@@ -1,0 +1,129 @@
+/* ============================================
+   FAQ Page Styles
+   File: app/faq/page.tsx
+   ============================================ */
+
+/* FAQ Page Container */
+.faq-page {
+  /* Add main page container styles here */
+}
+
+.faq-page__container {
+  /* Add page container styles here */
+}
+
+/* FAQ Header */
+.faq-page__header {
+  /* Add header section styles here */
+}
+
+.faq-page__title {
+  /* Add title styles here */
+}
+
+.faq-page__description {
+  /* Add description styles here */
+}
+
+/* FAQ Search */
+.faq-page__search {
+  /* Add search container styles here */
+}
+
+.faq-page__search-input {
+  /* Add search input styles here */
+}
+
+.faq-page__search-icon {
+  /* Add search icon styles here */
+}
+
+/* FAQ Categories */
+.faq-page__categories {
+  /* Add categories filter container styles here */
+}
+
+.faq-page__category-button {
+  /* Add category button styles here */
+}
+
+.faq-page__category-button--active {
+  /* Add active category button styles here */
+}
+
+/* FAQ List */
+.faq-page__list {
+  /* Add FAQ list container styles here */
+}
+
+/* FAQ Item */
+.faq-item {
+  /* Add individual FAQ item styles here */
+}
+
+.faq-item__container {
+  /* Add FAQ item container styles here */
+}
+
+.faq-item__question {
+  /* Add question container styles here */
+}
+
+.faq-item__question-button {
+  /* Add question button/header styles here */
+}
+
+.faq-item__question-text {
+  /* Add question text styles here */
+}
+
+.faq-item__icon {
+  /* Add expand/collapse icon styles here */
+}
+
+.faq-item__icon--open {
+  /* Add open icon state styles here */
+}
+
+.faq-item__answer {
+  /* Add answer container styles here */
+}
+
+.faq-item__answer-content {
+  /* Add answer content styles here */
+}
+
+.faq-item--open {
+  /* Add open FAQ item styles here */
+}
+
+/* FAQ Contact Section */
+.faq-page__contact {
+  /* Add contact section styles here */
+}
+
+.faq-page__contact-title {
+  /* Add contact section title styles here */
+}
+
+.faq-page__contact-description {
+  /* Add contact description styles here */
+}
+
+.faq-page__contact-button {
+  /* Add contact button styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

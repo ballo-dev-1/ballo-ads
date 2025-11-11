@@ -1,0 +1,161 @@
+/* ============================================
+   How It Works Page Styles
+   File: app/how-it-works/page.tsx
+   ============================================ */
+
+/* How It Works Page Container */
+.how-it-works-page {
+  /* Add main page container styles here */
+}
+
+.how-it-works-page__container {
+  /* Add page container styles here */
+}
+
+/* Page Header */
+.how-it-works-page__header {
+  /* Add header section styles here */
+}
+
+.how-it-works-page__title {
+  /* Add title styles here */
+}
+
+.how-it-works-page__description {
+  /* Add description styles here */
+}
+
+/* Platform Overview Section */
+.how-it-works-page__overview {
+  /* Add overview section styles here */
+}
+
+.how-it-works-page__overview-title {
+  /* Add overview section title styles here */
+}
+
+.how-it-works-page__overview-content {
+  /* Add overview content styles here */
+}
+
+.how-it-works-page__overview-image {
+  /* Add overview image styles here */
+}
+
+.how-it-works-page__overview-description {
+  /* Add overview description styles here */
+}
+
+/* Onboarding Steps Section */
+.how-it-works-page__steps {
+  /* Add steps section styles here */
+}
+
+.how-it-works-page__steps-title {
+  /* Add steps section title styles here */
+}
+
+.how-it-works-page__steps-list {
+  /* Add steps list container styles here */
+}
+
+.how-it-works-page__step {
+  /* Add individual step styles here */
+}
+
+.how-it-works-page__step-number {
+  /* Add step number styles here */
+}
+
+.how-it-works-page__step-content {
+  /* Add step content container styles here */
+}
+
+.how-it-works-page__step-title {
+  /* Add step title styles here */
+}
+
+.how-it-works-page__step-description {
+  /* Add step description styles here */
+}
+
+.how-it-works-page__step-image {
+  /* Add step image styles here */
+}
+
+/* AI Insights Section */
+.how-it-works-page__ai {
+  /* Add AI insights section styles here */
+}
+
+.how-it-works-page__ai-title {
+  /* Add AI section title styles here */
+}
+
+.how-it-works-page__ai-content {
+  /* Add AI content styles here */
+}
+
+.how-it-works-page__ai-feature {
+  /* Add individual AI feature styles here */
+}
+
+.how-it-works-page__ai-feature-icon {
+  /* Add AI feature icon styles here */
+}
+
+.how-it-works-page__ai-feature-title {
+  /* Add AI feature title styles here */
+}
+
+.how-it-works-page__ai-feature-description {
+  /* Add AI feature description styles here */
+}
+
+/* Video/Demo Section */
+.how-it-works-page__demo {
+  /* Add demo section styles here */
+}
+
+.how-it-works-page__demo-title {
+  /* Add demo section title styles here */
+}
+
+.how-it-works-page__demo-video {
+  /* Add demo video container styles here */
+}
+
+.how-it-works-page__demo-button {
+  /* Add demo play button styles here */
+}
+
+/* CTA Section */
+.how-it-works-page__cta {
+  /* Add CTA section styles here */
+}
+
+.how-it-works-page__cta-title {
+  /* Add CTA title styles here */
+}
+
+.how-it-works-page__cta-description {
+  /* Add CTA description styles here */
+}
+
+.how-it-works-page__cta-button {
+  /* Add CTA button styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

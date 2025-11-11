@@ -1,0 +1,141 @@
+/* ============================================
+   Live Chat Page Styles
+   File: app/live-chat/page.tsx
+   ============================================ */
+
+/* Live Chat Page Container */
+.live-chat-page {
+  /* Add main page container styles here */
+}
+
+.live-chat-page__container {
+  /* Add page container styles here */
+}
+
+/* Live Chat Header */
+.live-chat-page__header {
+  /* Add header section styles here */
+}
+
+.live-chat-page__title {
+  /* Add title styles here */
+}
+
+.live-chat-page__description {
+  /* Add description styles here */
+}
+
+/* Chat Widget Container */
+.live-chat-page__widget {
+  /* Add chat widget container styles here */
+}
+
+.live-chat-page__widget-container {
+  /* Add widget container styles here */
+}
+
+/* Chat Messages Area */
+.live-chat-page__messages {
+  /* Add messages container styles here */
+}
+
+.live-chat-page__message {
+  /* Add individual message styles here */
+}
+
+.live-chat-page__message--user {
+  /* Add user message styles here */
+}
+
+.live-chat-page__message--agent {
+  /* Add agent message styles here */
+}
+
+.live-chat-page__message-content {
+  /* Add message content styles here */
+}
+
+.live-chat-page__message-time {
+  /* Add message timestamp styles here */
+}
+
+.live-chat-page__message-avatar {
+  /* Add message avatar styles here */
+}
+
+/* Chat Input Area */
+.live-chat-page__input {
+  /* Add input container styles here */
+}
+
+.live-chat-page__input-field {
+  /* Add input field styles here */
+}
+
+.live-chat-page__input-button {
+  /* Add send button styles here */
+}
+
+.live-chat-page__input-button-icon {
+  /* Add send button icon styles here */
+}
+
+/* Chat Status */
+.live-chat-page__status {
+  /* Add status indicator styles here */
+}
+
+.live-chat-page__status--online {
+  /* Add online status styles here */
+}
+
+.live-chat-page__status--offline {
+  /* Add offline status styles here */
+}
+
+.live-chat-page__status--away {
+  /* Add away status styles here */
+}
+
+/* Chat Features */
+.live-chat-page__features {
+  /* Add features section styles here */
+}
+
+.live-chat-page__features-title {
+  /* Add features title styles here */
+}
+
+.live-chat-page__features-grid {
+  /* Add features grid container styles here */
+}
+
+.live-chat-page__feature {
+  /* Add individual feature item styles here */
+}
+
+.live-chat-page__feature-icon {
+  /* Add feature icon styles here */
+}
+
+.live-chat-page__feature-title {
+  /* Add feature title styles here */
+}
+
+.live-chat-page__feature-description {
+  /* Add feature description styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

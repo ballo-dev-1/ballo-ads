@@ -1,0 +1,177 @@
+/* ============================================
+   Careers Page Styles
+   File: app/careers/page.tsx
+   ============================================ */
+
+/* Careers Page Container */
+.careers-page {
+  /* Add main page container styles here */
+}
+
+.careers-page__container {
+  /* Add page container styles here */
+}
+
+/* Careers Header */
+.careers-page__header {
+  /* Add header section styles here */
+}
+
+.careers-page__title {
+  /* Add title styles here */
+}
+
+.careers-page__description {
+  /* Add description styles here */
+}
+
+/* Open Roles Section */
+.careers-page__open-roles {
+  /* Add open roles section styles here */
+}
+
+.careers-page__roles-title {
+  /* Add roles section title styles here */
+}
+
+.careers-page__roles-grid {
+  /* Add roles grid container styles here */
+}
+
+/* Job Listing Card */
+.job-listing {
+  /* Add individual job listing card styles here */
+}
+
+.job-listing__container {
+  /* Add job listing container styles here */
+}
+
+.job-listing__header {
+  /* Add job listing header styles here */
+}
+
+.job-listing__title {
+  /* Add job title styles here */
+}
+
+.job-listing__department {
+  /* Add department badge styles here */
+}
+
+.job-listing__location {
+  /* Add location information styles here */
+}
+
+.job-listing__type {
+  /* Add job type (full-time, part-time, etc.) styles here */
+}
+
+.job-listing__description {
+  /* Add job description styles here */
+}
+
+.job-listing__requirements {
+  /* Add requirements list styles here */
+}
+
+.job-listing__requirement {
+  /* Add individual requirement item styles here */
+}
+
+.job-listing__cta {
+  /* Add apply button styles here */
+}
+
+/* Life at BalloAds Section */
+.careers-page__culture {
+  /* Add culture section styles here */
+}
+
+.careers-page__culture-title {
+  /* Add culture section title styles here */
+}
+
+.careers-page__culture-content {
+  /* Add culture content styles here */
+}
+
+.careers-page__culture-image {
+  /* Add culture image styles here */
+}
+
+.careers-page__culture-description {
+  /* Add culture description styles here */
+}
+
+/* Hiring Process Section */
+.careers-page__process {
+  /* Add hiring process section styles here */
+}
+
+.careers-page__process-title {
+  /* Add process section title styles here */
+}
+
+.careers-page__process-steps {
+  /* Add process steps container styles here */
+}
+
+.careers-page__process-step {
+  /* Add individual process step styles here */
+}
+
+.careers-page__process-step-number {
+  /* Add process step number styles here */
+}
+
+.careers-page__process-step-title {
+  /* Add process step title styles here */
+}
+
+.careers-page__process-step-description {
+  /* Add process step description styles here */
+}
+
+/* Benefits Section */
+.careers-page__benefits {
+  /* Add benefits section styles here */
+}
+
+.careers-page__benefits-title {
+  /* Add benefits section title styles here */
+}
+
+.careers-page__benefits-grid {
+  /* Add benefits grid container styles here */
+}
+
+.careers-page__benefit {
+  /* Add individual benefit item styles here */
+}
+
+.careers-page__benefit-icon {
+  /* Add benefit icon styles here */
+}
+
+.careers-page__benefit-title {
+  /* Add benefit title styles here */
+}
+
+.careers-page__benefit-description {
+  /* Add benefit description styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

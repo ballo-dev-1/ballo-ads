@@ -1,0 +1,116 @@
+/* ============================================
+   Blog Page Styles
+   File: app/blog/page.tsx
+   ============================================ */
+
+/* Blog Page Container */
+.blog-page {
+  /* Add main page container styles here */
+}
+
+.blog-page__container {
+  /* Add page container styles here */
+}
+
+/* Blog Header */
+.blog-page__header {
+  /* Add header section styles here */
+}
+
+.blog-page__title {
+  /* Add title styles here */
+}
+
+.blog-page__description {
+  /* Add description styles here */
+}
+
+/* Blog Posts Grid */
+.blog-page__posts-grid {
+  /* Add posts grid container styles here */
+}
+
+/* Blog Post Card */
+.blog-post-card {
+  /* Add individual post card styles here */
+}
+
+.blog-post-card__container {
+  /* Add post card container styles here */
+}
+
+.blog-post-card__image {
+  /* Add post image styles here */
+}
+
+.blog-post-card__content {
+  /* Add post content container styles here */
+}
+
+.blog-post-card__category {
+  /* Add post category badge styles here */
+}
+
+.blog-post-card__title {
+  /* Add post title styles here */
+}
+
+.blog-post-card__excerpt {
+  /* Add post excerpt styles here */
+}
+
+.blog-post-card__meta {
+  /* Add post meta information styles here */
+}
+
+.blog-post-card__author {
+  /* Add author information styles here */
+}
+
+.blog-post-card__date {
+  /* Add publication date styles here */
+}
+
+.blog-post-card__read-more {
+  /* Add read more link styles here */
+}
+
+/* Blog Categories Filter */
+.blog-page__categories {
+  /* Add categories filter container styles here */
+}
+
+.blog-page__category-button {
+  /* Add category button styles here */
+}
+
+.blog-page__category-button--active {
+  /* Add active category button styles here */
+}
+
+/* Blog Pagination */
+.blog-page__pagination {
+  /* Add pagination container styles here */
+}
+
+.blog-page__pagination-button {
+  /* Add pagination button styles here */
+}
+
+.blog-page__pagination-button--active {
+  /* Add active pagination button styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

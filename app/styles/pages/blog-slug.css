@@ -1,0 +1,164 @@
+/* ============================================
+   Blog Post Detail Page Styles
+   File: app/blog/[slug]/page.tsx
+   ============================================ */
+
+/* Blog Post Page Container */
+.blog-post-page {
+  /* Add main page container styles here */
+}
+
+.blog-post-page__container {
+  /* Add page container styles here */
+}
+
+/* Blog Post Header */
+.blog-post-page__header {
+  /* Add header section styles here */
+}
+
+.blog-post-page__back-link {
+  /* Add back to blog link styles here */
+}
+
+.blog-post-page__category {
+  /* Add category badge styles here */
+}
+
+.blog-post-page__title {
+  /* Add post title styles here */
+}
+
+.blog-post-page__meta {
+  /* Add meta information container styles here */
+}
+
+.blog-post-page__author {
+  /* Add author information styles here */
+}
+
+.blog-post-page__date {
+  /* Add publication date styles here */
+}
+
+.blog-post-page__read-time {
+  /* Add reading time styles here */
+}
+
+/* Blog Post Featured Image */
+.blog-post-page__featured-image {
+  /* Add featured image container styles here */
+}
+
+.blog-post-page__image {
+  /* Add featured image styles here */
+}
+
+/* Blog Post Content */
+.blog-post-page__content {
+  /* Add post content container styles here */
+}
+
+.blog-post-page__content h1,
+.blog-post-page__content h2,
+.blog-post-page__content h3 {
+  /* Add heading styles within content here */
+}
+
+.blog-post-page__content p {
+  /* Add paragraph styles within content here */
+}
+
+.blog-post-page__content a {
+  /* Add link styles within content here */
+}
+
+.blog-post-page__content img {
+  /* Add image styles within content here */
+}
+
+.blog-post-page__content blockquote {
+  /* Add blockquote styles within content here */
+}
+
+.blog-post-page__content code {
+  /* Add code styles within content here */
+}
+
+.blog-post-page__content pre {
+  /* Add pre/code block styles within content here */
+}
+
+.blog-post-page__content ul,
+.blog-post-page__content ol {
+  /* Add list styles within content here */
+}
+
+.blog-post-page__content li {
+  /* Add list item styles within content here */
+}
+
+/* Blog Post Footer */
+.blog-post-page__footer {
+  /* Add post footer section styles here */
+}
+
+.blog-post-page__tags {
+  /* Add tags container styles here */
+}
+
+.blog-post-page__tag {
+  /* Add individual tag styles here */
+}
+
+.blog-post-page__share {
+  /* Add social share container styles here */
+}
+
+.blog-post-page__share-button {
+  /* Add social share button styles here */
+}
+
+/* Related Posts */
+.blog-post-page__related {
+  /* Add related posts section styles here */
+}
+
+.blog-post-page__related-title {
+  /* Add related posts title styles here */
+}
+
+.blog-post-page__related-grid {
+  /* Add related posts grid styles here */
+}
+
+/* Author Bio */
+.blog-post-page__author-bio {
+  /* Add author bio section styles here */
+}
+
+.blog-post-page__author-avatar {
+  /* Add author avatar styles here */
+}
+
+.blog-post-page__author-name {
+  /* Add author name styles here */
+}
+
+.blog-post-page__author-description {
+  /* Add author description styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

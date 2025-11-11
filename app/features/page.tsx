@@ -132,7 +132,7 @@ export default function FeaturesPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center min-h-[70vh]">
             {/* Left Side - Content */}
             <div className="flex flex-col gap-8">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight features-hero">
                 {features[currentSlide].title}
               </h1>
               <p className="text-lg md:text-xl text-white/90 leading-relaxed">

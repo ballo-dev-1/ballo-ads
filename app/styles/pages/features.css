@@ -1,0 +1,186 @@
+/* ============================================
+   Features Page Styles
+   File: app/features/page.tsx
+   ============================================ */
+
+/* Hero Section with Carousel */
+.features-hero {
+  /* Add hero section styles here */
+  color: green;
+}
+
+.features-hero__pattern {
+  /* Add background pattern styles here */
+}
+
+.features-hero__circles {
+  /* Add concentric circles background styles here */
+}
+
+.features-hero__faded-text {
+  /* Add faded text styles here */
+}
+
+.features-hero__container {
+  /* Add hero container styles here */
+}
+
+.features-hero__content {
+  /* Add hero content styles here */
+}
+
+.features-hero__title {
+  /* Add hero title styles here */
+}
+
+.features-hero__description {
+  /* Add hero description styles here */
+}
+
+.features-hero__cta {
+  /* Add hero CTA button styles here */
+}
+
+.features-hero__pagination {
+  /* Add pagination dots styles here */
+}
+
+.features-hero__pagination-dot {
+  /* Add individual pagination dot styles here */
+}
+
+.features-hero__pagination-dot--active {
+  /* Add active pagination dot styles here */
+}
+
+.features-hero__image-container {
+  /* Add image container styles here */
+}
+
+.features-hero__image {
+  /* Add feature image styles here */
+}
+
+/* Audience Growth Section */
+.features-growth {
+  /* Add growth section styles here */
+}
+
+.features-growth__background {
+  /* Add background blur effects styles here */
+}
+
+.features-growth__container {
+  /* Add growth container styles here */
+}
+
+.features-growth__content {
+  /* Add growth content styles here */
+}
+
+.features-growth__title {
+  /* Add growth title styles here */
+}
+
+.features-growth__description {
+  /* Add growth description styles here */
+}
+
+.features-growth__chart-container {
+  /* Add chart container styles here */
+}
+
+.features-growth__chart {
+  /* Add chart SVG styles here */
+}
+
+.features-growth__chart-grid {
+  /* Add chart grid styles here */
+}
+
+.features-growth__chart-line {
+  /* Add chart line styles here */
+}
+
+.features-growth__chart-point {
+  /* Add chart data point styles here */
+}
+
+.features-growth__chart-legend {
+  /* Add chart legend styles here */
+}
+
+.features-growth__chart-legend-item {
+  /* Add chart legend item styles here */
+}
+
+.features-growth__stats {
+  /* Add stats cards container styles here */
+}
+
+.features-growth__stat-card {
+  /* Add individual stat card styles here */
+}
+
+.features-growth__stat-label {
+  /* Add stat label styles here */
+}
+
+.features-growth__stat-value {
+  /* Add stat value styles here */
+}
+
+.features-growth__stat-description {
+  /* Add stat description styles here */
+}
+
+/* CTA Section */
+.features-cta {
+  /* Add CTA section styles here */
+}
+
+.features-cta__background {
+  /* Add CTA background effects styles here */
+}
+
+.features-cta__container {
+  /* Add CTA container styles here */
+}
+
+.features-cta__content {
+  /* Add CTA content styles here */
+}
+
+.features-cta__title {
+  /* Add CTA title styles here */
+}
+
+.features-cta__description {
+  /* Add CTA description styles here */
+}
+
+.features-cta__button {
+  /* Add CTA button styles here */
+}
+
+.features-cta__image-container {
+  /* Add CTA image container styles here */
+}
+
+.features-cta__image {
+  /* Add CTA image styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+

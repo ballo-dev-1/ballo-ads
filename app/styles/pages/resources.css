@@ -1,0 +1,183 @@
+/* ============================================
+   Resources Page Styles
+   File: app/resources/page.tsx
+   ============================================ */
+
+/* Resources Page Container */
+.resources-page {
+  /* Add main page container styles here */
+}
+
+.resources-page__container {
+  /* Add page container styles here */
+}
+
+/* Resources Header */
+.resources-page__header {
+  /* Add header section styles here */
+}
+
+.resources-page__title {
+  /* Add title styles here */
+}
+
+.resources-page__description {
+  /* Add description styles here */
+}
+
+/* Resources Categories */
+.resources-page__categories {
+  /* Add categories section styles here */
+}
+
+.resources-page__category {
+  /* Add individual category section styles here */
+}
+
+.resources-page__category-title {
+  /* Add category title styles here */
+}
+
+.resources-page__category-description {
+  /* Add category description styles here */
+}
+
+/* Guides Section */
+.resources-page__guides {
+  /* Add guides section styles here */
+}
+
+.resources-page__guides-title {
+  /* Add guides section title styles here */
+}
+
+.resources-page__guides-grid {
+  /* Add guides grid container styles here */
+}
+
+/* Guide Card */
+.resource-guide {
+  /* Add individual guide card styles here */
+}
+
+.resource-guide__container {
+  /* Add guide container styles here */
+}
+
+.resource-guide__image {
+  /* Add guide image styles here */
+}
+
+.resource-guide__content {
+  /* Add guide content container styles here */
+}
+
+.resource-guide__category {
+  /* Add guide category badge styles here */
+}
+
+.resource-guide__title {
+  /* Add guide title styles here */
+}
+
+.resource-guide__excerpt {
+  /* Add guide excerpt styles here */
+}
+
+.resource-guide__meta {
+  /* Add guide meta information styles here */
+}
+
+.resource-guide__read-time {
+  /* Add reading time styles here */
+}
+
+.resource-guide__link {
+  /* Add guide link styles here */
+}
+
+/* FAQs Section */
+.resources-page__faqs {
+  /* Add FAQs section styles here */
+}
+
+.resources-page__faqs-title {
+  /* Add FAQs section title styles here */
+}
+
+.resources-page__faqs-list {
+  /* Add FAQs list container styles here */
+}
+
+/* Professional Services Section */
+.resources-page__services {
+  /* Add services section styles here */
+}
+
+.resources-page__services-title {
+  /* Add services section title styles here */
+}
+
+.resources-page__services-grid {
+  /* Add services grid container styles here */
+}
+
+/* Service Card */
+.resource-service {
+  /* Add individual service card styles here */
+}
+
+.resource-service__container {
+  /* Add service container styles here */
+}
+
+.resource-service__icon {
+  /* Add service icon styles here */
+}
+
+.resource-service__title {
+  /* Add service title styles here */
+}
+
+.resource-service__description {
+  /* Add service description styles here */
+}
+
+.resource-service__features {
+  /* Add service features list styles here */
+}
+
+.resource-service__feature {
+  /* Add individual feature item styles here */
+}
+
+.resource-service__cta {
+  /* Add service CTA button styles here */
+}
+
+/* Blog Section */
+.resources-page__blog {
+  /* Add blog section styles here */
+}
+
+.resources-page__blog-title {
+  /* Add blog section title styles here */
+}
+
+.resources-page__blog-grid {
+  /* Add blog posts grid styles here */
+}
+
+/* Responsive Breakpoints */
+@media (min-width: 768px) {
+  /* Tablet styles */
+}
+
+@media (min-width: 1024px) {
+  /* Desktop styles */
+}
+
+@media (min-width: 1280px) {
+  /* Large desktop styles */
+}
+
