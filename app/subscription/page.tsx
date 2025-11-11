@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import "./subscription.css";
 
 // Sample subscription channels data
 const subscriptionChannels = [
@@ -90,68 +91,50 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--dark-blue)] text-white py-20 px-4">
-      <div className="container mx-auto">
+    <main className="subscription-page">
+      <div className="subscription-page__container">
         {/* Header Section */}
-        <section className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 max-w-5xl text-center mx-auto">
+        <section className="subscription-page__header">
+          <h1 className="subscription-page__title">
             Stay Connected With Businesses You Love
           </h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto">
+          <p className="subscription-page__description">
             Get exclusive deals, updates, and announcements directly from businesses you care about.
           </p>
         </section>
 
         {/* Subscription Cards Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <section className="subscription-page__cards-grid">
           {subscriptionChannels.map((channel) => {
             const isSubscribed = subscribedChannels.has(channel.id);
             
             return (
               <div
                 key={channel.id}
-                className="relative group"
+                className="subscription-card"
                 style={{
                   perspective: "1000px",
                 }}
               >
                 {/* 3D Card Container */}
-                <div
-                  className="relative bg-white rounded-3xl p-8 shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)]"
-                  style={{
-                    transformStyle: "preserve-3d",
-                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1)",
-                  }}
-                >
+                <div className="subscription-card__container">
                   {/* Background gradient effect */}
-                  <div
-                    className="absolute inset-0 rounded-3xl opacity-5"
-                    style={{
-                      background: "linear-gradient(135deg, #020055 0%, #0b4d8c 50%, #6b46c1 100%)",
-                    }}
-                  />
+                  <div className="subscription-card__background" />
 
                   {/* Content */}
-                  <div className="relative z-10 flex flex-col items-center gap-6">
+                  <div className="subscription-card__content">
                     {/* Profile Picture Placeholder */}
-                    <div className="relative">
-                      <div
-                        className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center"
-                        style={{
-                          boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.15)",
-                        }}
-                      >
+                    <div className="subscription-card__avatar-wrapper">
+                      <div className="subscription-card__avatar">
                         {channel.profileImage ? (
                           <img
                             src={channel.profileImage}
                             alt={channel.channelName}
-                            className="w-full h-full rounded-full object-cover"
+                            className="subscription-card__avatar-image"
                           />
                         ) : (
-                          <div 
-                            className="w-full h-full rounded-full flex items-center justify-center gradient-blue-purple"
-                          >
-                            <span className="text-4xl font-bold text-white">
+                          <div className="subscription-card__avatar-initial">
+                            <span className="subscription-card__avatar-text">
                               {channel.channelName.charAt(0)}
                             </span>
                           </div>
@@ -160,14 +143,14 @@ export default function SubscriptionPage() {
                     </div>
 
                     {/* Channel Info */}
-                    <div className="text-center space-y-2">
-                      <p className="text-xs uppercase tracking-wider text-gray-600 font-semibold">
+                    <div className="subscription-card__info">
+                      <p className="subscription-card__label">
                         SUBSCRIBE TO CHANNEL
                       </p>
-                      <h3 className="text-2xl font-bold text-gray-800 uppercase">
+                      <h3 className="subscription-card__name">
                         {channel.channelName}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="subscription-card__subscribers">
                         {channel.subscriberCount} subscribers
                       </p>
                     </div>
@@ -175,28 +158,18 @@ export default function SubscriptionPage() {
                     {/* Subscribe Button */}
                     <button
                       onClick={() => handleSubscribe(channel.id, channel.channelName)}
-                      className={`w-full py-4 rounded-xl font-bold text-lg uppercase transition-all duration-300 cursor-pointer ${
+                      className={`subscription-card__button ${
                         isSubscribed
-                          ? "bg-gray-400 text-white hover:bg-gray-500"
-                          : "gradient-blue-purple text-white hover:opacity-90 hover:shadow-lg"
+                          ? "subscription-card__button--subscribed"
+                          : "subscription-card__button--default"
                       }`}
-                      style={{
-                        boxShadow: isSubscribed
-                          ? "0 4px 12px rgba(0, 0, 0, 0.15)"
-                          : "0 4px 12px rgba(63, 219, 255, 0.3), 0 0 0 1px rgba(63, 219, 255, 0.1)",
-                      }}
                     >
                       {isSubscribed ? "SUBSCRIBED" : "SUBSCRIBE"}
                     </button>
                   </div>
 
                   {/* 3D Light rays effect */}
-                  <div
-                    className="absolute inset-0 rounded-3xl opacity-10 pointer-events-none"
-                    style={{
-                      background: "radial-gradient(circle at 50% 100%, #3fdbff 0%, transparent 70%)",
-                    }}
-                  />
+                  <div className="subscription-card__light-rays" />
                 </div>
               </div>
             );
@@ -204,12 +177,12 @@ export default function SubscriptionPage() {
         </section>
 
         {/* Additional Info Section */}
-        <section className="mt-24 text-center max-w-4xl mx-auto">
-          <div className="bg-white/5 rounded-3xl p-8 md:p-12 backdrop-blur-sm border border-white/10">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+        <section className="subscription-page__info">
+          <div className="subscription-page__info-card">
+            <h2 className="subscription-page__info-title">
               Why Subscribe?
             </h2>
-            <div className="grid md:grid-cols-3 gap-6 mt-8">
+            <div className="subscription-page__info-grid">
               {[
                 {
                   title: "Latest Updates",
@@ -224,11 +197,11 @@ export default function SubscriptionPage() {
                   description: "Discover best practices and optimization strategies",
                 },
               ].map((item, index) => (
-                <div key={index} className="flex flex-col gap-3">
-                  <h3 className="text-xl font-semibold text-[var(--brand-color-4)]">
+                <div key={index} className="subscription-page__info-item">
+                  <h3 className="subscription-page__info-item-title">
                     {item.title}
                   </h3>
-                  <p className="text-white/70">{item.description}</p>
+                  <p className="subscription-page__info-item-description">{item.description}</p>
                 </div>
               ))}
             </div>

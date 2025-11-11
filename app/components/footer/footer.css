@@ -1,9 +1,54 @@
-.glow-path {
+/* Footer Block */
+.footer {
+  background-color: black;
+  color: white;
+  padding: 4rem 1rem;
+}
+
+.footer__container {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.footer__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+}
+
+@media (min-width: 768px) {
+  .footer__grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Footer Logo Section */
+.footer__logo-section {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .footer__logo-section {
+    grid-column: span 1;
+    justify-content: flex-start;
+  }
+}
+
+.footer__logo-wrapper {
+  position: relative;
+  width: 8rem;
+  height: 12rem;
+}
+
+.footer__logo-wrapper .glow-path {
   filter: drop-shadow(0 0 4px #3fdbff);
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
-.glow-circle {
+.footer__logo-wrapper .glow-circle {
   filter: drop-shadow(0 0 8px #3fdbff);
   animation: glow-pulse 2s ease-in-out infinite;
 }
@@ -17,4 +62,84 @@
     opacity: 0.8;
     filter: drop-shadow(0 0 8px #3fdbff);
   }
+}
+
+/* Footer Column */
+.footer__column {
+  grid-column: span 1;
+}
+
+.footer__column-title {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+}
+
+/* Footer Link List */
+.footer__link-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer__link {
+  color: rgba(255, 255, 255, 0.8);
+  transition: color 0.2s;
+}
+
+.footer__link:hover {
+  color: white;
+}
+
+/* Footer Socials */
+.footer__socials {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.footer__social-link {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.footer__social-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Footer Contact */
+.footer__contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.footer__contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.footer__contact-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer__contact-link {
+  color: rgba(255, 255, 255, 0.8);
+  transition: color 0.2s;
+}
+
+.footer__contact-link:hover {
+  color: white;
 }

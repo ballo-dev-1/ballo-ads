@@ -3,12 +3,12 @@ import "./footer.css";
 
 const Footer = () => {
   return (
-    <footer className="bg-black text-white py-16 px-4">
-      <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-12">
+    <footer className="footer">
+      <div className="footer__container">
+        <div className="footer__grid">
           {/* Logo on Left */}
-          <div className="md:col-span-1 flex items-start justify-center md:justify-start">
-            <div className="relative w-32 h-48">
+          <div className="footer__logo-section">
+            <div className="footer__logo-wrapper">
               {/* Stylized 'b' or 'is' logo with glowing cyan line */}
               <svg
                 viewBox="0 0 100 150"
@@ -36,13 +36,13 @@ const Footer = () => {
           </div>
 
           {/* Information Column */}
-          <div className="md:col-span-1">
-            <h3 className="font-bold text-lg mb-4">Information</h3>
-            <ul className="space-y-2">
+          <div className="footer__column">
+            <h3 className="footer__column-title">Information</h3>
+            <ul className="footer__link-list">
               <li>
                 <Link
                   href="/features"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Features
                 </Link>
@@ -50,7 +50,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/how-it-works"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   How it works
                 </Link>
@@ -58,7 +58,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/pricing"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Pricing
                 </Link>
@@ -66,7 +66,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/blog"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Blog
                 </Link>
@@ -74,7 +74,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/faq"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   FAQ
                 </Link>
@@ -82,7 +82,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/careers"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Careers
                 </Link>
@@ -91,13 +91,13 @@ const Footer = () => {
           </div>
 
           {/* Help & Support Column */}
-          <div className="md:col-span-1">
-            <h3 className="font-bold text-lg mb-4">Help & Support</h3>
-            <ul className="space-y-2">
+          <div className="footer__column">
+            <h3 className="footer__column-title">Help & Support</h3>
+            <ul className="footer__link-list">
               <li>
                 <Link
                   href="/knowledge-base"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Knowledge Base
                 </Link>
@@ -105,7 +105,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/live-chat"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Live Chat
                 </Link>
@@ -113,7 +113,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/privacy-policy"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Privacy Policy
                 </Link>
@@ -121,7 +121,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/resources"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   Resources
                 </Link>
@@ -129,7 +129,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/whats-new"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__link"
                 >
                   What&apos;s New
                 </Link>
@@ -138,14 +138,14 @@ const Footer = () => {
           </div>
 
           {/* Our Socials Column */}
-          <div className="md:col-span-1">
-            <h3 className="font-bold text-lg mb-4">Our Socials</h3>
-            <div className="flex gap-3">
+          <div className="footer__column">
+            <h3 className="footer__column-title">Our Socials</h3>
+            <div className="footer__socials">
               <Link
                 href="https://www.facebook.com/profile.php?id=100087875482090&mibextid=LQQJ4d"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="footer__social-link"
                 aria-label="Facebook"
               >
                 <svg
@@ -162,7 +162,7 @@ const Footer = () => {
                 href="https://wa.me/+260979611334"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="footer__social-link"
                 aria-label="WhatsApp"
               >
                 <svg
@@ -179,7 +179,7 @@ const Footer = () => {
                 href="https://www.linkedin.com/company/ballo-innovations/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="footer__social-link"
                 aria-label="LinkedIn"
               >
                 <svg
@@ -196,7 +196,7 @@ const Footer = () => {
                 href="https://instagram.com/ballo_zm?igshid=YmMyMTA2M2Y="
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="footer__social-link"
                 aria-label="Instagram"
               >
                 <svg
@@ -213,11 +213,11 @@ const Footer = () => {
           </div>
 
           {/* Contact us Column */}
-          <div className="md:col-span-1">
-            <h3 className="font-bold text-lg mb-4">Contact us</h3>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+          <div className="footer__column">
+            <h3 className="footer__column-title">Contact us</h3>
+            <ul className="footer__contact-list">
+              <li className="footer__contact-item">
+                <div className="footer__contact-icon">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -230,13 +230,13 @@ const Footer = () => {
                 </div>
                 <Link
                   href="tel:+260979611334"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__contact-link"
                 >
                   +260979611334
                 </Link>
               </li>
-              <li className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+              <li className="footer__contact-item">
+                <div className="footer__contact-icon">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -249,7 +249,7 @@ const Footer = () => {
                 </div>
                 <Link
                   href="mailto:hello@balloads.com"
-                  className="text-white/80 hover:text-white transition-colors"
+                  className="footer__contact-link"
                 >
                   hello@balloads.com
                 </Link>

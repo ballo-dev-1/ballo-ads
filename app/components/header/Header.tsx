@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import "./header.css";
 
 type NavLink = {
   label: string;
@@ -68,21 +69,21 @@ const Header = () => {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="sticky top-0 z-50 w-full gradient-blue-purple">
-      <nav className="container mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+    <header className="header header--sticky">
+      <nav className="header__nav">
         {/* Logo */}
-        <Link href="/" className="flex flex-col gap-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-              <span className="text-[var(--brand-color-1)] font-bold text-lg">b</span>
+        <Link href="/" className="header__logo">
+          <div className="header__logo-container">
+            <div className="header__logo-icon">
+              <span className="header__logo-text">b</span>
             </div>
-            <span className="text-white font-semibold text-lg">ballo innovations</span>
+            <span className="header__logo-label">ballo innovations</span>
           </div>
-          <span className="text-white/70 text-xs ml-10">REBRANDING THE FUTURE</span>
+          <span className="header__logo-tagline">REBRANDING THE FUTURE</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="header__nav-desktop">
           {navItems.map((item) => {
             const hasDropdown = item.links && item.links.length > 0;
             const isDropdownOpen = activeDropdown === item.label;
@@ -92,10 +93,10 @@ const Header = () => {
                 <Link
                   key={item.label}
                   href={item.href ?? "#"}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
+                  className={`header__nav-link ${
                     item.href && isActive(item.href)
-                      ? "bg-[var(--brand-color-4)]/20 text-white"
-                      : "text-white hover:text-[var(--brand-color-4)]"
+                      ? "header__nav-link--active"
+                      : ""
                   }`}
                 >
                   {item.label}
@@ -106,23 +107,25 @@ const Header = () => {
             return (
               <div
                 key={item.label}
-                className="relative"
+                className="header__nav-dropdown"
                 onMouseEnter={() => setActiveDropdown(item.label)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <Link
                   href={item.href ?? "#"}
-                  className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-1 ${
+                  className={`header__nav-link header__nav-link--with-dropdown ${
                     item.href && isActive(item.href)
-                      ? "bg-[var(--brand-color-4)]/20 text-white"
-                      : "text-white hover:text-[var(--brand-color-4)]"
+                      ? "header__nav-link--active"
+                      : ""
                   }`}
                   onFocus={() => setActiveDropdown(item.label)}
                   onBlur={() => setActiveDropdown(null)}
                 >
                   {item.label}
                   <svg
-                    className={`w-4 h-4 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                    className={`header__nav-arrow ${
+                      isDropdownOpen ? "header__nav-arrow--open" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -138,16 +141,16 @@ const Header = () => {
 
                 {isDropdownOpen && (
                   <div 
-                    className="absolute left-1/2 top-full pt-2 w-60 -translate-x-1/2 rounded-2xl bg-white/95 p-4 text-[var(--dark-blue)] shadow-2xl"
+                    className="header__dropdown-menu"
                     onMouseEnter={() => setActiveDropdown(item.label)}
                     onMouseLeave={() => setActiveDropdown(null)}
                   >
-                    <div className="flex flex-col gap-2">
+                    <div className="header__dropdown-list">
                       {item.links?.map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}
-                          className="flex flex-col gap-1 rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-[var(--brand-color-4)]/10"
+                          className="header__dropdown-link"
                         >
                           {link.label}
                         </Link>
@@ -160,7 +163,7 @@ const Header = () => {
           })}
 
           <svg
-            className="w-5 h-5 text-white"
+            className="header__search-icon"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -175,16 +178,16 @@ const Header = () => {
         </div>
 
         {/* Sign In and Sign Up Buttons */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="header__actions">
           <Link
             href="#signin"
-            className="text-white px-6 py-2 rounded-lg font-semibold hover:text-[var(--brand-color-4)] transition-colors"
+            className="header__action-link header__action-link--signin"
           >
             Sign In
           </Link>
           <Link
             href="#signup"
-            className="bg-white text-[var(--brand-color-1)] px-6 py-2 rounded-lg font-semibold hover:bg-white/90 transition-colors"
+            className="header__action-link header__action-link--signup"
           >
             Sign Up
           </Link>
@@ -192,12 +195,12 @@ const Header = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-white"
+          className="header__menu-toggle"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label="Toggle menu"
         >
           <svg
-            className="w-6 h-6"
+            className="header__menu-icon"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -223,8 +226,8 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-[var(--dark-blue-2)] border-t border-white/20 px-4 py-4">
-          <div className="flex flex-col gap-6">
+        <div className="header__mobile-menu">
+          <div className="header__mobile-menu-content">
             {navItems.map((item) => {
               const hasDropdown = item.links && item.links.length > 0;
               const isExpanded = activeDropdown === item.label;
@@ -234,10 +237,10 @@ const Header = () => {
                   <Link
                     key={item.label}
                     href={item.href ?? "#"}
-                    className={`px-4 py-3 rounded-lg transition-colors ${
+                    className={`header__mobile-nav-link ${
                       item.href && isActive(item.href)
-                        ? "bg-[var(--brand-color-4)]/20 text-white"
-                        : "text-white hover:text-[var(--brand-color-4)]"
+                        ? "header__mobile-nav-link--active"
+                        : ""
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -247,21 +250,23 @@ const Header = () => {
               }
 
               return (
-                <div key={item.label} className="flex flex-col gap-3">
+                <div key={item.label} className="header__mobile-dropdown">
                   <button
                     type="button"
                     onClick={() =>
                       setActiveDropdown((prev) => (prev === item.label ? null : item.label))
                     }
-                    className={`flex items-center justify-between rounded-lg px-4 py-3 text-left text-white transition ${
+                    className={`header__mobile-dropdown-toggle ${
                       item.href && isActive(item.href)
-                        ? "bg-[var(--brand-color-4)]/20"
-                        : "hover:bg-white/10"
+                        ? "header__mobile-dropdown-toggle--active"
+                        : ""
                     }`}
                   >
                     {item.label}
                     <svg
-                      className={`h-5 w-5 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      className={`header__mobile-dropdown-arrow ${
+                        isExpanded ? "header__mobile-dropdown-arrow--open" : ""
+                      }`}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -273,12 +278,12 @@ const Header = () => {
                     </svg>
                   </button>
                   {isExpanded && (
-                    <div className="ml-4 flex flex-col gap-2">
+                    <div className="header__mobile-dropdown-content">
                       {item.links?.map((link) => (
                         <Link
                           key={link.href}
                           href={link.href}
-                          className="rounded-lg px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
+                          className="header__mobile-dropdown-link"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           {link.label}
@@ -290,17 +295,17 @@ const Header = () => {
               );
             })}
 
-            <div className="flex flex-col gap-3">
+            <div className="header__mobile-actions">
               <Link
                 href="#signin"
-                className="text-white px-6 py-3 rounded-lg font-semibold text-center hover:bg-white/10 transition-colors border border-white/20"
+                className="header__mobile-action-link header__mobile-action-link--signin"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign In
               </Link>
               <Link
                 href="#signup"
-                className="bg-white text-[var(--brand-color-1)] px-6 py-3 rounded-lg font-semibold text-center hover:bg-white/90 transition-colors"
+                className="header__mobile-action-link header__mobile-action-link--signup"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign Up
