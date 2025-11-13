@@ -3,35 +3,40 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import background from "@/public/Backgrounds/hero-bg.png";
-import pattern from "@/public/Backgrounds/pattern.png";
-import phone from "@/public/elements small/phone.png";
-import ctaPerson from "@/public/elements small/ballo-bot.png";
+//import background from "@/public/Backgrounds/hero-bg.png";
+//import pattern from "@/public/Backgrounds/pattern.png";
+import woman from "@/public/Assets/11.png";
+import woman1 from "@/public/Assets/12.png";
+import man from "@/public/Assets/14.png";
+import woman2 from "@/public/Assets/13.png";
+import ring from "@/public/Assets/8.png"
+import person from "@/public/Assets/15.png";
+import circle from "@/public/Assets/9.png"
 
 const features = [
   {
     title: "WHATSAPP MARKETING WITH PRECISION",
     description:
       "Experience automated email marketing for higher conversions. BalloAds gives you....",
-    image: phone, // Placeholder - replace with actual image
+    image: woman1, // Placeholder - replace with actual image
   },
   {
     title: "TARGETED BULK MESSAGING SOLUTIONS",
     description:
       "Experience automated email marketing for higher conversions. BalloAds gives you....",
-    image: phone, // Placeholder - replace with actual image
+    image: man, // Placeholder - replace with actual image
   },
   {
     title: "INITIATE WEB POP UPS AND PUSH NOTIFICATIONS",
     description:
       "Experience automated email marketing for higher conversions. BalloAds gives you....",
-    image: phone, // Placeholder - replace with actual image
+    image: woman2, // Placeholder - replace with actual image
   },
   {
     title: "EMAIL MARKETING AT YOUR FINGERTIPS",
     description:
       "Experience automated email marketing for higher conversions. BalloAds gives you....",
-    image: phone, // Placeholder - replace with actual image
+    image: woman, // Placeholder - replace with actual image
   },
 ];
 
@@ -100,7 +105,7 @@ export default function FeaturesPage() {
       <section
         className="relative min-h-screen flex items-center justify-center px-4 md:px-8 py-20 overflow-hidden"
         style={{
-          background: `url(${background.src})`,
+         // background: `url(${background.src})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -109,7 +114,7 @@ export default function FeaturesPage() {
         <div
           className="absolute inset-0 opacity-10"
           style={{
-            background: `url(${pattern.src})`,
+            //background: `url(${pattern.src})`,
             backgroundSize: "cover",
           }}
         />
@@ -123,8 +128,8 @@ export default function FeaturesPage() {
 
         {/* Large Faded Text */}
         <div className="absolute bottom-0 left-0 pointer-events-none">
-          <span className="text-[150px] md:text-[300px] font-bold text-white/5 select-none block">
-            REBRANDING
+        <span className="text-[50px] md:text-[100px] font-bold text-white/5 select-none">
+            REBRANDING THE FUTURE 
           </span>
         </div>
 
@@ -132,7 +137,7 @@ export default function FeaturesPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center min-h-[70vh]">
             {/* Left Side - Content */}
             <div className="flex flex-col gap-8">
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight features-hero">
+              <h1 className="text-4xl md:text-6xl lg:text-5xl font-bold leading-tight features-hero">
                 {features[currentSlide].title}
               </h1>
               <p className="text-lg md:text-xl text-white/90 leading-relaxed">
@@ -180,12 +185,20 @@ export default function FeaturesPage() {
             <div className="relative flex justify-center items-center">
               <div className="relative w-full max-w-md">
                 <div className="relative">
+                <Image
+                  src={ring}
+                  alt="Circles Ring"
+                  width={1600}
+                  height={1900}
+                  className="w-full h-auto absolute right-0 bottom-0 scale-[2]"
+                  priority
+                />
                   <Image
                     src={features[currentSlide].image}
                     alt={features[currentSlide].title}
                     width={400}
                     height={600}
-                    className="w-full h-auto transition-opacity duration-500"
+                    className="w-full h-auto transition-opacity duration-500 z-10 relative bottom-3.5 scale-[1.5]"
                     priority={currentSlide === 0}
                   />
                 </div>
@@ -347,7 +360,7 @@ export default function FeaturesPage() {
       <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 md:px-8 py-24">
         <div className="container mx-auto relative z-10 flex flex-col gap-12 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl flex flex-col gap-6">
-            <h3 className="text-4xl md:text-5xl font-bold leading-tight text-[var(--dark-blue)]">
+            <h3 className="text-4xl md:text-5xl font-bold drop-shadow-2xl leading-tight text-[var(--dark-blue)]">
               Rebranding the future of your industry starts here.
             </h3>
             <p className="text-base md:text-lg text-[var(--dark-blue)]/70 leading-relaxed max-w-xl">
@@ -379,12 +392,20 @@ export default function FeaturesPage() {
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#0A4ACB]/20 via-[#3D6BFF]/30 to-[#6BDFFF]/10 blur-2xl" />
               <div className="absolute inset-4 rounded-full bg-gradient-to-br from-white via-[#EFF3FF] to-[#DCE7FF] shadow-2xl" />
               <div className="absolute inset-8 flex items-center justify-center">
+              <Image
+                  src={circle}
+                  alt="Circles Ring"
+                  width={1600}
+                  height={1900}
+                  className="w-full h-auto absolute right-0 -bottom-13 scale-[2]"
+                  priority
+                />
                 <Image
-                  src={ctaPerson}
+                  src={person}
                   alt="Happy customer using BalloAds"
                   width={280}
                   height={280}
-                  className="object-contain drop-shadow-2xl"
+                  className="object-contain drop-shadow-2xl bottom-5 scale-[1.5]"
                   priority
                 />
               </div>
