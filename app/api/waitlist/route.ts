@@ -3,6 +3,15 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify database connection
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL environment variable is not set')
+      return NextResponse.json(
+        { error: 'Server configuration error. Please contact support.' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.json()
     const { name, email, phone } = body
 
@@ -24,8 +33,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existingEntry = await prisma.waitlist.findUnique({
-      where: { email },
+    const existingEntry = await prisma.waitlist.findFirst({
+      where: { 
+        email: email 
+      },
     })
 
     if (existingEntry) {
@@ -57,8 +68,23 @@ export async function POST(request: NextRequest) {
     )
   } catch (error) {
     console.error('Error creating waitlist entry:', error)
+    
+    // More detailed error logging for debugging
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
+    
+    // Check if it's a Prisma error
+    if (error && typeof error === 'object' && 'code' in error) {
+      console.error('Prisma error code:', (error as any).code)
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to join waitlist. Please try again.' },
+      { 
+        error: 'Failed to join waitlist. Please try again.',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : undefined
+      },
       { status: 500 }
     )
   }
