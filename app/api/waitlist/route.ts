@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
     
     // Check if it's a Prisma error
     if (error && typeof error === 'object' && 'code' in error) {
-      console.error('Prisma error code:', (error as any).code)
+      const prismaError = error as { code?: string }
+      console.error('Prisma error code:', prismaError.code)
     }
     
     return NextResponse.json(
