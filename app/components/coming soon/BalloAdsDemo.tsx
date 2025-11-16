@@ -125,25 +125,25 @@ const BalloAdsDemo = () => {
   return (
     <section
       id="balloAds"
-      className="min-h-screen text-white py-14 relative"
-      style={{ background: `url(${background.src})`, backgroundSize: "cover" }}
+      className="min-h-screen text-white py-8 sm:py-14 relative px-4 sm:px-6"
+      style={{ background: `url(${background.src})`, backgroundSize: "cover", backgroundPosition: "center" }}
     >
-      <div className="flex flex-center flex-col md:flex-row md:px-10 gap-10 md:gap-0">
-        <div className="flex justify-center items-center md:items-start flex-col text-center gap-10">
-          <Image src={appIcon} alt="Ballo Ads" quality={100} className="w-28" />
-          <h2 className="subheading mb-5 leading-[0.9em] md:text-[4.5em] md:text-left">
+      <div className="flex flex-center flex-col md:flex-row md:px-10 gap-6 sm:gap-10 md:gap-0 max-w-7xl mx-auto">
+        <div className="flex justify-center items-center md:items-start flex-col text-center md:text-left gap-6 sm:gap-10 w-full md:w-auto">
+          <Image src={appIcon} alt="Ballo Ads" quality={100} className="w-20 sm:w-24 md:w-28" />
+          <h2 className="subheading mb-5 leading-[1.1em] text-2xl sm:text-3xl md:text-4xl lg:text-[4.5em] md:text-left px-2 sm:px-0">
             Advertise your brand in only a few seconds.
           </h2>
           <button
             onClick={handleOpenForm}
-            className="hidden md:block rounded-full px-12 py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-2xl hover:scale-105 transition-transform duration-200 cursor-pointer"
+            className="hidden md:block rounded-full px-8 md:px-12 py-2 md:py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-xl md:text-2xl hover:scale-105 transition-transform duration-200 cursor-pointer"
           >
             Join waitlist
           </button>
         </div>
 
         <div
-          className={`relative w-full flex-center ${
+          className={`relative w-full flex-center max-w-md md:max-w-none mx-auto ${
             revealPhone ? "reveal-phone" : ""
           }`}
         >
@@ -152,7 +152,7 @@ const BalloAdsDemo = () => {
             src={balloAdsPhone}
             alt="Ballo Ads"
             quality={100}
-            className="w-full opacity-0"
+            className="w-full opacity-100"
             id="phone"
           />
 
@@ -161,7 +161,7 @@ const BalloAdsDemo = () => {
               src={appleStore}
               alt="Available on Apple Store"
               quality={100}
-              className="mobile-app-1 opacity-0 absolute top-[48%] left-[10%] w-1/3 rounded-xl"
+              className="mobile-app-1 opacity-100 absolute top-[48%] left-[10%] w-1/4 sm:w-1/3 rounded-xl"
             />
           </Link>
 
@@ -170,14 +170,14 @@ const BalloAdsDemo = () => {
               src={playStore}
               alt="Available on Paly Store"
               quality={100}
-              className="mobile-app-2 opacity-0 absolute top-[62%] left-[10%] w-1/3 rounded-xl"
+              className="mobile-app-2 opacity-100 absolute top-[62%] left-[10%] w-1/4 sm:w-1/3 rounded-xl"
             />
           </Link>
         </div>
 
         <button
           onClick={handleOpenForm}
-          className="block mt-5 md:hidden rounded-full px-12 py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-3xl hover:scale-105 transition-transform duration-200 cursor-pointer"
+          className="block mt-5 md:hidden rounded-full px-8 sm:px-12 py-2.5 sm:py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-xl sm:text-2xl md:text-3xl hover:scale-105 transition-transform duration-200 cursor-pointer w-full sm:w-auto"
         >
           Join waitlist
         </button>
@@ -193,27 +193,27 @@ const BalloAdsDemo = () => {
           />
           <div
             ref={formRef}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
           >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative">
+            <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={handleCloseForm}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 text-2xl sm:text-3xl font-bold w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer z-10"
                 aria-label="Close form"
               >
                 ×
               </button>
-              <h2 className="text-3xl font-bold text-[var(--brand-color-1)] mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold text-[var(--brand-color-1)] mb-2 pr-8">
                 Join the Waitlist
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
                 Be the first to know when we launch!
               </p>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                 <div>
                   <label
                     htmlFor="name"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Name
                   </label>
@@ -224,14 +224,14 @@ const BalloAdsDemo = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
                     placeholder="Enter your name"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Email
                   </label>
@@ -242,14 +242,14 @@ const BalloAdsDemo = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
                     placeholder="Enter your email"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="phone"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2"
                   >
                     Phone Number
                   </label>
@@ -260,14 +260,14 @@ const BalloAdsDemo = () => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
                     placeholder="Enter your phone number"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full rounded-full px-6 py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-lg hover:bg-[var(--brand-color-3)] hover:text-white transition-colors duration-200 mt-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full rounded-full px-4 sm:px-6 py-2.5 sm:py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-base sm:text-lg hover:bg-[var(--brand-color-3)] hover:text-white transition-colors duration-200 mt-4 sm:mt-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Submitting..." : "Submit"}
                 </button>
