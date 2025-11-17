@@ -1,11 +1,7 @@
 "use client";
 
 import "./style.css";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
 import background from "@/public/Backgrounds/hero-bg.png";
-// NOTE: Use the image bellow to animate effects
-// import balloAds from '@/public/elements small/1.png'
 import playStore from "@/public/elements small/18.png";
 import appleStore from "@/public/elements small/19.png";
 
@@ -37,22 +33,27 @@ const BalloAdsDemo = () => {
     }
   }, [inView]);
 
-  useGSAP(() => {
-    if (isFormOpen && formRef.current && overlayRef.current) {
-      // Animate overlay fade in
-      gsap.fromTo(
-        overlayRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.3, ease: "power2.out" }
-      );
-
-      // Animate form slide up and fade in
-      gsap.fromTo(
-        formRef.current,
-        { y: 50, opacity: 0, scale: 0.9 },
-        { y: 0, opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.2)" }
-      );
+  useEffect(() => {
+    if (isFormOpen) {
+      document.body.style.overflow = "hidden";
+      
+      requestAnimationFrame(() => {
+        if (overlayRef.current) {
+          overlayRef.current.classList.remove("opacity-0");
+          overlayRef.current.classList.add("opacity-100");
+        }
+        if (formRef.current) {
+          formRef.current.classList.remove("opacity-0", "translate-y-12", "scale-95");
+          formRef.current.classList.add("opacity-100", "translate-y-0", "scale-100");
+        }
+      });
+    } else {
+      document.body.style.overflow = "";
     }
+    
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isFormOpen]);
 
   const handleOpenForm = () => {
@@ -61,19 +62,14 @@ const BalloAdsDemo = () => {
 
   const handleCloseForm = () => {
     if (formRef.current && overlayRef.current) {
-      gsap.to(formRef.current, {
-        y: 50,
-        opacity: 0,
-        scale: 0.9,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => setIsFormOpen(false),
-      });
-      gsap.to(overlayRef.current, {
-        opacity: 0,
-        duration: 0.3,
-        ease: "power2.in",
-      });
+      overlayRef.current.classList.add("opacity-0");
+      overlayRef.current.classList.remove("opacity-100");
+      formRef.current.classList.add("opacity-0", "translate-y-12", "scale-95");
+      formRef.current.classList.remove("opacity-100", "translate-y-0", "scale-100");
+      
+      setTimeout(() => {
+        setIsFormOpen(false);
+      }, 300);
     } else {
       setIsFormOpen(false);
     }
@@ -135,6 +131,7 @@ const BalloAdsDemo = () => {
             Advertise your brand in only a few seconds.
           </h2>
           <button
+            type="button"
             onClick={handleOpenForm}
             className="hidden md:block rounded-full px-8 md:px-12 py-2 md:py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-xl md:text-2xl hover:scale-105 transition-transform duration-200 cursor-pointer"
           >
@@ -176,8 +173,9 @@ const BalloAdsDemo = () => {
         </div>
 
         <button
+          type="button"
           onClick={handleOpenForm}
-          className="block mt-5 md:hidden rounded-full px-8 sm:px-12 py-2.5 sm:py-3 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-xl sm:text-2xl md:text-3xl hover:scale-105 transition-transform duration-200 cursor-pointer w-full sm:w-auto"
+          className="block mt-5 md:hidden rounded-full px-8 sm:px-12 py-2.5 sm:py-5 bg-[var(--brand-color-4)] text-[var(--brand-color-1)] font-semibold text-xl sm:text-2xl md:text-3xl hover:scale-105 transition-transform duration-200 cursor-pointer w-full sm:w-auto"
         >
           Join waitlist
         </button>
@@ -185,17 +183,18 @@ const BalloAdsDemo = () => {
 
       {/* Form Modal */}
       {isFormOpen && (
-        <>
+        <div className="fixed inset-0 z-[9999]">
           <div
             ref={overlayRef}
             onClick={handleCloseForm}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300 ease-out"
           />
           <div
             ref={formRef}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 flex items-center justify-center p-4 sm:p-6 pointer-events-none opacity-0 translate-y-12 scale-95 transition-all duration-[400ms]"
+            style={{ transitionTimingFunction: "cubic-bezier(0.68, -0.55, 0.265, 1.55)" }}
           >
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto">
+            <div className="bg-white text-black rounded-xl sm:rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative max-h-[90vh] overflow-y-auto pointer-events-auto">
               <button
                 onClick={handleCloseForm}
                 className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-600 text-2xl sm:text-3xl font-bold w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors cursor-pointer z-10"
@@ -224,7 +223,7 @@ const BalloAdsDemo = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-500"
                     placeholder="Enter your name"
                   />
                 </div>
@@ -242,7 +241,7 @@ const BalloAdsDemo = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-500"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -260,7 +259,7 @@ const BalloAdsDemo = () => {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-4)] focus:border-transparent outline-none transition-all text-black placeholder:text-gray-500"
                     placeholder="Enter your phone number"
                   />
                 </div>
@@ -274,7 +273,7 @@ const BalloAdsDemo = () => {
               </form>
             </div>
           </div>
-        </>
+        </div>
       )}
     </section>
   );
