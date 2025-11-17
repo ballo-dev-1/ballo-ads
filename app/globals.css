@@ -29,3 +29,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.glitch-text {
+  position: relative;
+  display: inline-block;
+  text-shadow: 
+    -1px 0 #ff3b30,
+    1px 0 #00a3ff;
+}

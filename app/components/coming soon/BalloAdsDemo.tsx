@@ -121,13 +121,13 @@ const BalloAdsDemo = () => {
   return (
     <section
       id="balloAds"
-      className="min-h-screen text-white py-8 sm:py-14 relative px-4 sm:px-6"
+      className="min-h-screen text-white py-8 sm:py-14 relative px-4 sm:px-6 flex flex-col md:justify-center"
       style={{ background: `url(${background.src})`, backgroundSize: "cover", backgroundPosition: "center" }}
     >
-      <div className="flex flex-center flex-col md:flex-row md:px-10 gap-6 sm:gap-10 md:gap-0 max-w-7xl mx-auto">
-        <div className="flex justify-center items-center md:items-start flex-col text-center md:text-left gap-6 sm:gap-10 w-full md:w-auto">
+      <div className="flex flex-center flex-col md:flex-row md:items-center md:justify-center md:px-10 gap-6 sm:gap-10 md:gap-12 mx-auto w-full">
+        <div className="flex justify-center items-center md:items-center flex-col text-center gap-6 sm:gap-10 w-full md:w-1/2">
           <Image src={appIcon} alt="Ballo Ads" quality={100} className="w-20 sm:w-24 md:w-28" />
-          <h2 className="subheading mb-5 leading-[1.1em] text-2xl sm:text-3xl md:text-4xl lg:text-[4.5em] md:text-left px-2 sm:px-0">
+          <h2 className="glitch-text subheading mb-5 leading-[1.1em] text-2xl sm:text-3xl md:text-4xl lg:text-[4.5em] md:text-left px-2 sm:px-0">
             Advertise your brand in only a few seconds.
           </h2>
           <button
@@ -140,7 +140,7 @@ const BalloAdsDemo = () => {
         </div>
 
         <div
-          className={`relative w-full flex-center max-w-md md:max-w-none mx-auto ${
+          className={`relative w-full flex-center md:w-1/2 mx-auto ${
             revealPhone ? "reveal-phone" : ""
           }`}
         >
