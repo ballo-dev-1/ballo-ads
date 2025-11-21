@@ -3,12 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import background from "@/public/Backgrounds/hero-bg.png";
-import pattern from "@/public/Backgrounds/pattern.png";
-import phone from "@/public/elements small/phone.png";
-import appIcon from "@/public/Ballo Logo New/App icon 1.png";
-import playStore from "@/public/elements small/18.png";
-import appleStore from "@/public/elements small/19.png";
+//import background from "@/public/Backgrounds/hero-bg.png";
+//import pattern from "@/public/Backgrounds/pattern.png";
+import woman from "@/public/Assets/10.png";
+import ring from "@/public/Assets/8.png";
+import playStore from "@/public/elements small/19.png";
+import appleStore from "@/public/elements small/18.png";
+import phone from "@/public/Assets/3.png"
+import building from "@/public/Assets/46.png"
+import bglight from "@/public/Assets/2.png"
+import { Phone } from "lucide-react";
+
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -40,7 +45,7 @@ export default function Home() {
       <section
         className="relative min-h-screen flex items-center justify-center px-4 md:px-8 py-20 overflow-hidden"
         style={{
-          background: `url(${background.src})`,
+          //background: `url(${background.src})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -49,22 +54,22 @@ export default function Home() {
         <div
           className="absolute inset-0 opacity-10"
           style={{
-            background: `url(${pattern.src})`,
+            //background: `url(${pattern.src})`,
             backgroundSize: "cover",
           }}
         />
         
         {/* Large Faded Text */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <span className="text-[200px] md:text-[400px] font-bold text-white/5 select-none">
-            REBRANDING ORE
+        <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
+          <span className="text-[50px] md:text-[100px] font-bold text-white/5 select-none">
+            REBRANDING THE FUTURE
           </span>
         </div>
 
-        <div className="container mx-auto relative z-10 grid md:grid-cols-2 gap-12 items-center">
+        <div className="container mx-auto relative z-10 grid md:grid-cols-2 gap-12 items-center px-10">
           {/* Left Side - Content */}
-          <div className="flex flex-col gap-8">
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight">
+          <div className="flex flex-col gap-8 ">
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold leading-tight scale-[1.25]">
               YOUR DIGITAL MARKETING ASSISTANT
             </h1>
             <Link
@@ -88,12 +93,20 @@ export default function Home() {
             <div className="relative w-full max-w-md">
               {/* Placeholder for woman with phone - using phone image for now */}
               <div className="relative">
+              <Image
+                  src={ring}
+                  alt="Circles Ring"
+                  width={1600}
+                  height={1900}
+                  className="w-full h-auto absolute right-0 bottom-0 scale-[2]"
+                  priority
+                />
                 <Image
-                  src={phone}
+                  src={woman}
                   alt="Woman with phone"
                   width={400}
                   height={600}
-                  className="w-full h-auto"
+                  className="w-full h-auto z-10 relative scale-[1.5]"
                   priority
                 />
               </div>
@@ -107,7 +120,8 @@ export default function Home() {
         <div className="container mx-auto">
           <div className="gradient-blue-purple rounded-3xl p-8 md:p-12 text-center">
             <h2 className="text-4xl md:text-6xl font-bold">
-              <span className="text-gradient-cyan">POWERFUL</span> AND{" "}
+              <span className="text-gradient-cyan">POWERFUL </span> 
+              <span className="text-gradient-cyan">AND </span>
               <span className="text-gradient-purple">VERSATILE</span>
             </h2>
           </div>
@@ -119,34 +133,34 @@ export default function Home() {
         <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Left Side - iPhone Mockup */}
           <div className="relative flex justify-center">
-            <div className="relative w-full max-w-xs">
-              <div className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl" />
+            <div /*className="relative w-full max-w-xs"*/>
+              <div /*className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl"*/ />
               <div className="relative">
                 <Image
                   src={phone}
                   alt="BalloAds App"
                   width={300}
                   height={600}
-                  className="w-full h-auto glow-cyan"
+                  className="w-full h-auto scale-[1.5]"
                 />
                 {/* App Store Buttons */}
                 <div className="flex flex-col gap-3 mt-6 items-center">
                   <Link href="#" className="w-48">
                     <Image
-                      src={appleStore}
+                      src={playStore}
                       alt="Get it on the App Store"
-                      width={200}
+                      width={50}
                       height={60}
-                      className="w-full h-auto"
+                      className="w-1/4 h-auto absolute -left-10 bottom-20 scale-[2]"
                     />
                   </Link>
                   <Link href="#" className="w-48">
                     <Image
-                      src={playStore}
+                      src={appleStore}
                       alt="Get it on Google Play"
-                      width={200}
+                      width={50}
                       height={60}
-                      className="w-full h-auto"
+                      className="w-1/4 h-auto absolute -left-10 bottom-0 scale-[2]"
                     />
                   </Link>
                 </div>
@@ -236,16 +250,37 @@ export default function Home() {
 
           {/* Right Side - iPhone Mockup */}
           <div className="relative flex justify-center">
-            <div className="relative w-full max-w-xs">
-              <div className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl" />
+            <div /*className="relative w-full max-w-xs"*/>
+              <div /*className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl"*/ />
               <div className="relative">
                 <Image
                   src={phone}
                   alt="BalloAds App"
                   width={300}
                   height={600}
-                  className="w-full h-auto glow-cyan"
+                  className="w-full h-auto scale-[1.5]"
                 />
+                {/* App Store Buttons */}
+                <div className="flex flex-col gap-3 mt-6 items-center">
+                  <Link href="#" className="w-48">
+                    <Image
+                      src={playStore}
+                      alt="Get it on the App Store"
+                      width={50}
+                      height={60}
+                      className="w-1/4 h-auto absolute -left-10 bottom-20 scale-[2]"
+                    />
+                  </Link>
+                  <Link href="#" className="w-48">
+                    <Image
+                      src={appleStore}
+                      alt="Get it on Google Play"
+                      width={50}
+                      height={60}
+                      className="w-1/4 h-auto absolute -left-10 bottom-0 scale-[2]"
+                    />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -303,10 +338,26 @@ export default function Home() {
 
             {/* Right Side - Building Image */}
             <div className="relative">
-              <div className="relative w-full h-96 bg-gradient-to-br from-[var(--dark-blue-2)] to-[var(--purple)] rounded-3xl overflow-hidden">
+              <div /*className="relative w-full h-96 bg-gradient-to-br from-[var(--dark-blue-2)] to-[var(--purple)] rounded-3xl overflow-hidden"*/>
                 <div className="absolute inset-0 bg-[var(--brand-color-4)]/10 rounded-full blur-3xl" />
                 <div className="relative h-full flex items-center justify-center">
-                  <div className="text-6xl">🏢</div>
+                  <div className="text-6xl">
+                  <Image
+                  src={bglight}
+                  alt="Circles Ring"
+                  width={1600}
+                  height={1900}
+                  className="w-full h-auto absolute right-3 -bottom-50 scale-[0.75]"
+                  priority
+                />
+                  <Image
+                  src={building}
+                  alt="BalloAds App"
+                  width={300}
+                  height={600}
+                  className="w-full h-auto scale-[2.3]"
+                />
+                  </div>
                 </div>
               </div>
             </div>
@@ -318,7 +369,7 @@ export default function Home() {
       <section className="py-20 px-4 bg-[var(--dark-blue-2)]">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold text-center mb-12">
-            HEAR FROM THOSE WHO HAVE TRIED AND TESTED
+            <span className="text-gradient-cyan">HEAR FROM THOSE WHO HAVE TRIED AND TESTED</span>
           </h2>
           <div className="max-w-4xl mx-auto">
             <div className="gradient-blue-purple rounded-3xl p-8 md:p-12">
@@ -377,20 +428,42 @@ export default function Home() {
             {/* Left Side - iPhone Mockup */}
             <div className="relative flex justify-center">
               <div className="relative w-full max-w-xs">
-                <div className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl" />
+                <div /*className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl"*/ />
                 <div className="relative">
                   <Image
                     src={phone}
                     alt="BalloAds App"
                     width={300}
                     height={600}
-                    className="w-full h-auto glow-cyan"
+                    className="w-full h-auto scale-[1.5]"
                   />
+                  {/* App Store Buttons */}
+                <div className="flex flex-col gap-3 mt-6 items-start">
+                  <Link href="#" className="w-48">
+                    <Image
+                      src={playStore}
+                      alt="Get it on the App Store"
+                      width={50}
+                      height={60}
+                      className="w-1/4 h-auto absolute -left-10 bottom-20 scale-[2]"
+                    />
+                  </Link>
+                  <Link href="#" className="w-48">
+                    <Image
+                      src={appleStore}
+                      alt="Get it on Google Play"
+                      width={50}
+                      height={60}
+                      className="w-1/4 h-auto absolute -left-10 bottom-0 scale-[2]"
+                    />
+                  </Link>
+                </div>
                 </div>
               </div>
             </div>
 
             {/* Right Side - Form */}
+            {/*
             <div className="gradient-blue-purple rounded-3xl p-8 md:p-12">
               <p className="text-sm text-white/80 mb-6">
                 (One-Time Free Trial - KYC Required) Try BalloAds for free! But
@@ -449,7 +522,7 @@ export default function Home() {
                   SUBMIT
                 </button>
               </form>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>

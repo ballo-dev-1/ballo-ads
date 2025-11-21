@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
+import { Ubuntu } from "next/font/google";
 import "./styles/index.css";
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
+
+const ubuntu = Ubuntu({
+  weight: ["300", "400", "500", "700"],
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Ballo Ads",
@@ -15,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="">
+      <body className={ubuntu.className}>
         <Header />
         {children}
         <Footer />
