@@ -83,4 +83,10 @@ body {
   font-style: italic;
 }
 
-
+.glitch-text {
+  position: relative;
+  display: inline-block;
+  text-shadow: 
+    -1px 0 #ff3b30,
+    1px 0 #00a3ff;
+}

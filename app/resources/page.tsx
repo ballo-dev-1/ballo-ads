@@ -4,13 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import personSmile from "@/public/elements small/1.png";
-import pushNotifications from "@/public/elements small/2.png";
-import analyticsTile from "@/public/elements small/3.png";
-import smsTile from "@/public/elements small/4.png";
-import uploadContacts from "@/public/elements small/5.png";
-import whatsappTile from "@/public/elements small/6.png";
-import aiBoard from "@/public/elements small/stats-chart.PNG";
+import personSmile from "@/public/Assets/12.png";
+import pushNotifications from "@/public/Assets/10.png";
+import analyticsTile from "@/public/Assets/38.png";
+import smsTile from "@/public/Assets/44.png";
+import uploadContacts from "@/public/Assets/14.png";
+import whatsappTile from "@/public/Assets/11.png";
+import aiBoard from "@/public/elements small/stats-chart.png";
 import bankingImage from "@/public/elements small/handshake.png";
 import retailImage from "@/public/elements small/strategy.png";
 import transportImage from "@/public/elements small/market-analysis.png";
@@ -116,6 +116,7 @@ export default function ResourcesPage() {
         </div>
 
         <div className="container mx-auto flex flex-col gap-12">
+          {/*
           <div className="flex flex-col gap-4">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--brand-color-1)]">
               Guides
@@ -128,14 +129,17 @@ export default function ResourcesPage() {
               Select area · Preview · Done
             </div>
           </div>
+          */}
 
           <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px] shadow-2xl">
               <div className="flex h-full flex-col gap-8 rounded-[46px] bg-white/90 p-6 md:flex-row md:p-8">
                 <div className="flex flex-1 flex-col justify-center gap-4 text-[var(--dark-blue)]">
+                  <div className="glitch-text">
                   <h2 className="text-3xl font-bold md:text-4xl">
                     {heroCards.main.title}
                   </h2>
+                  </div>
                   <p className="text-base text-[var(--dark-blue)]/70">
                     Explore in-depth walkthroughs and video tutorials designed to help you launch campaigns in minutes.
                   </p>
@@ -165,26 +169,29 @@ export default function ResourcesPage() {
                     alt="Smiling marketer"
                     width={360}
                     height={320}
-                    className="relative h-auto w-full max-w-xs object-contain"
+                    className="relative h-auto w-full max-w-xs scale-[1.3] object-contain"
                     priority
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="grid gap-y-20 md:grid-cols-2 md:gap-x-20">
               {heroCards.secondary.map((card) => (
                 <div
                   key={card.title}
-                  className="flex items-center gap-4 rounded-[32px] bg-white/90 p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-color-1)]/20 to-[var(--brand-color-3)]/20">
-                    <Image src={card.image} alt={card.title} width={44} height={44} className="h-11 w-11 object-contain" />
-                  </div>
-                  <div className="text-sm font-semibold text-[var(--dark-blue)]">{card.title}</div>
+                  className="relative overflow-hidden flex items-center gap-4 rounded-[32px] bg-white/90 p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+                >   
+                  <Image
+                    src={card.image} 
+                    alt={card.title} 
+                    fill
+                    className="h-11 w-11 scale-[1.15] object-contain z-0" 
+                  />
+                  <div className="text-sm font-semibold text-[var(--dark-blue)] z-[1] relative">{card.title}</div>
                   <Link
                     href="/watch-demo"
-                    className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color-1)] text-white"
+                    className="ml-auto inline-flex h-9 w-9 items-center justify-center z-[1] relative rounded-full bg-[var(--brand-color-1)] text-white"
                     aria-label={`Watch demo for ${card.title}`}
                   >
                     <svg
