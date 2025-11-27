@@ -223,15 +223,20 @@ export default function ResourcesPage() {
 
         <div className="container mx-auto flex flex-col gap-12">
           <div className="flex flex-col items-center gap-4 text-center">
-            <span className="rounded-full bg-white/10 px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em]">
+            <span className="rounded-full bg-white/10 px-6 py-2 text-xl font-semibold uppercase tracking-[0.3em]">
               FAQs
             </span>
-            <div className="flex flex-col gap-3">
-              <h2 className="text-4xl font-bold md:text-5xl">Got any questions? We’ve got the answers</h2>
-              <p className="max-w-2xl text-sm text-white/70 md:text-base">
-                Browse through common questions from the BalloAds community. Switch categories to explore more
-                step-by-step guides.
-              </p>
+            <div className="flex items-center flex-col gap-3">
+              <div className="glitch-text">
+                <h2 className="text-4xl font-bold md:text-5xl">
+                  Got any questions? We’ve got the answers
+                </h2>
+              </div>
+              <div className="items-center">
+                <p className="max-w-2xl text-sm text-white/70 md:text-base">
+                  Browse through common questions from the BalloAds community. Switch categories to explore more step-by-step guides.
+                </p>
+              </div>
             </div>
             <div className="relative inline-flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 text-sm">
               <span className="text-white/80">Category</span>
@@ -312,13 +317,17 @@ export default function ResourcesPage() {
         </div>
 
         <div className="container mx-auto flex flex-col gap-16">
-          <div className="flex flex-col gap-4">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em]">
+          <div className="flex items-center flex-col gap-4">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-xl font-semibold uppercase tracking-[0.3em]">
               Professional Services
             </span>
-            <div>
-              <h2 className="text-4xl font-bold md:text-5xl">How can BalloAds benefit you?</h2>
-              <p className="mt-2 text-base text-white/70">Rebranding the future starts here</p>
+            <div className="items-center">
+              <div className="glitch-text">
+                <h2 className="text-4xl font-bold md:text-5xl">
+                  How can BalloAds benefit you?
+                </h2>
+              </div>
+              <p className="mt-2 items-center text-base text-white/70">Rebranding the future starts here</p>
             </div>
           </div>
 

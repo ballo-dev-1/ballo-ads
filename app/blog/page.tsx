@@ -3,6 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import React from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/effect-coverflow";
+import "swiper/css/pagination";
+import "swiper/css/navigation";
+import { EffectCoverflow, Pagination, Navigation } from "swiper/modules";
 
 import article1 from "@/public/elements small/1.png";
 import article2 from "@/public/elements small/2.png";
@@ -204,51 +211,79 @@ export default function BlogPage() {
     <main className="min-h-screen bg-[var(--dark-blue)] text-white">
       {/* Featured Articles Carousel */}
       <section className="relative overflow-hidden px-4 py-12 md:px-8">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-[100px]" />
+      </div>
         <div className="container mx-auto">
           <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+            <Swiper
+              effect={"coverflow"}
+              grabCursor={true}
+              centeredSlides={true}
+              loop={true}
+              slidesPerView={"auto"}
+              coverflowEffect={{
+                rotate: 0, // Keep images flat, not rotated
+                stretch: 0,
+                depth: 100, // How far back the side images go
+                modifier: 2.5, // Intensity of the effect
+                slideShadows: false, // We'll use our own CSS shadows/overlay
+              }}
+              // Navigation arrows (optional, add if you want arrows like the screenshot)
+              navigation={true}
+              modules={[EffectCoverflow, Pagination, Navigation]}
+              className="swiper_container py-8"
+            >
             {featuredArticles.map((article, index) => (
-              <div
-                key={index}
-                className={`relative min-w-[320px] md:min-w-[400px] flex-shrink-0 rounded-3xl overflow-hidden ${
-                  article.featured ? "ring-2 ring-white/30" : ""
-                }`}
-              >
-                <div className="relative h-64 md:h-80">
-                  <Image
-                    src={article.image}
-                    alt={article.title}
-                    fill
-                    className="object-cover"
-                    priority={article.featured}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="text-xl font-bold mb-4">{article.title}</h3>
-                    {article.featured && (
-                      <Link
-                        href={`/blog/${article.title.toLowerCase().replace(/\s+/g, "-")}`}
-                        className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2 text-sm font-semibold text-[var(--dark-blue)] transition hover:bg-white/90"
-                      >
-                        Read Article
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+              <SwiperSlide key={index} className="w-[280px] md:w-[350px]"> 
+                <div
+                  key={index}
+                  className={`relative min-w-[320px] md:min-w-[400px] flex-shrink-0 rounded-3xl overflow-hidden ${
+                    article.featured ? "ring-2 ring-white/30" : ""
+                  }`}
+                >
+                  <div className="group relative h-[450px] overflow-hidden rounded-[2rem] bg-gray-900 shadow-xl transition-all duration-300">
+                    <Image
+                      src={article.image}
+                      alt={article.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      priority={index===0}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 flex flex-col items-start p-6 md:p-8">
+                      <h3 className="mb-4 text-2xl font-bold leading-tight text-white md:text-3xl">
+                        {article.title}
+                      </h3>
+                      {article.featured && (
+                        <Link
+                          href={`/blog/${article.title
+                            .toLowerCase()
+                            .replace(/\s+/g, "-")}`}
+                          className="inline-flex items-center rounded-full bg-white px-6 py-2.5 text-sm font-bold text-gray-900 transition-colors hover:bg-gray-200"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </Link>
-                    )}
+                          Read Article
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </SwiperSlide>  
             ))}
+            </Swiper>
           </div>
         </div>
       </section>
@@ -288,8 +323,8 @@ export default function BlogPage() {
                 }
                 className={`rounded-full px-6 py-2 text-sm font-semibold transition ${
                   selectedCategory === category
-                    ? "bg-[var(--brand-color-1)] text-white"
-                    : "bg-white/10 text-white hover:bg-white/20"
+                    ? "bg-white text-[var(--brand-color-1)]"
+                    : "bg-white text-[var(--brand-color-1)] hover:bg-white"
                 }`}
               >
                 {category}
@@ -304,7 +339,11 @@ export default function BlogPage() {
         <section key={sectionIndex} className="px-4 py-16 md:px-8">
           <div className="container mx-auto flex flex-col gap-8">
             <div className="flex flex-col gap-4 max-w-4xl">
-              <h2 className="text-4xl md:text-5xl font-bold">{section.title}</h2>
+              <div className="glitch-text">
+                <h2 className="text-4xl md:text-5xl font-bold">
+                  {section.title}
+                </h2>
+              </div>
               <p className="text-base md:text-lg text-white/80 leading-relaxed">
                 {section.description}
               </p>
@@ -356,7 +395,11 @@ export default function BlogPage() {
 
         <div className="container mx-auto flex flex-col gap-12">
           <div className="flex flex-col items-center gap-6 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold">Get more on what you like to see right here</h2>
+            <div className="glitch-text">
+              <h2 className="text-4xl md:text-5xl font-bold">
+                Get more on what you like to see right here
+              </h2>
+            </div>
             <button className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold hover:bg-white/20 transition">
               Subscribe
               <svg
