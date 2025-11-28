@@ -112,7 +112,7 @@ export default function BlogPostContent({ slug }: { slug: string }) {
           {/* Main Article Content */}
           <article className="flex flex-col gap-8">
             {/* Hero Banner */}
-            <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden">
+            <div className="relative h-96 md:h-[500px] rounded-4xl overflow-hidden">
               <Image
                 src={articleData.heroImage}
                 alt={articleData.title}
@@ -122,7 +122,9 @@ export default function BlogPostContent({ slug }: { slug: string }) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-8">
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{articleData.title}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                  {articleData.title}
+                </h1>
                 <div className="flex items-center gap-4">
                   <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-white/30">
                     <Image
@@ -133,10 +135,16 @@ export default function BlogPostContent({ slug }: { slug: string }) {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-semibold">{articleData.author.name}</span>
-                    <span className="text-sm text-white/80">{articleData.author.role}</span>
+                    <span className="font-semibold">
+                      {articleData.author.name}
+                    </span>
+                    <span className="text-sm text-white/80">
+                    {articleData.author.role}
+                    </span>
                   </div>
-                  <span className="ml-auto text-sm text-white/70">{articleData.date}</span>
+                  <span className="ml-auto text-sm text-white/70">
+                  {articleData.date}
+                  </span>
                 </div>
               </div>
             </div>

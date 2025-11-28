@@ -248,66 +248,70 @@ export default function ResourcesPage() {
               </select>
             </div>
           </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="flex flex-col gap-4">
-              {faqItems.map((faq, index) => (
-                <button
-                  key={`faq-trigger-${faq.question}`}
-                  onClick={() => setActiveFaq(index)}
-                  className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
-                    activeFaq === index
-                      ? "bg-white text-[var(--dark-blue)] shadow-xl"
-                      : "bg-white/10 text-white/90 hover:bg-white/20"
-                  }`}
-                >
-                  {faq.question}
-                  <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
-                    {activeFaq === index ? "−" : "+"}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-6">
-              <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
-                <h3 className="text-xl font-semibold">
-                  {faqItems[activeFaq]?.question ?? faqItems[0].question}
-                </h3>
-                <p className="mt-4 text-sm leading-relaxed text-[var(--dark-blue)]/70">
-                  {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
-                </p>
-              </div>
-
-              <div className="rounded-[48px] bg-gradient-to-b from-white/80 to-white/60 p-8 text-center text-[var(--dark-blue)] shadow-2xl">
-                <h3 className="text-2xl font-semibold">Still have questions?</h3>
-                <p className="mt-3 text-sm text-[var(--dark-blue)]/70">
-                  Can’t find the answer you’re looking for? Contact us directly and we will get back to you as soon as
-                  possible.
-                </p>
-                <Link
-                  href="/contact"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--brand-color-2)]"
-                >
-                  Contact us
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M13 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
           </div>
-        </div>
-      </section>
+        </section>  
+
+          <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
+            <div className="container mx-auto flex flex-col gap-12">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="flex flex-col gap-4">
+                  {faqItems.map((faq, index) => (
+                    <button
+                      key={`faq-trigger-${faq.question}`}
+                      onClick={() => setActiveFaq(index)}
+                      className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
+                        activeFaq === index
+                          ? "bg-white text-[var(--dark-blue)] shadow-xl"
+                          : "bg-white/50 text-[var(--dark-blue)] hover:bg-white/70"
+                      }`}
+                    >
+                      {faq.question}
+                      <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
+                        {activeFaq === index ? "−" : "+"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
+                    <h3 className="text-xl font-semibold">
+                      {faqItems[activeFaq]?.question ?? faqItems[0].question}
+                    </h3>
+                    <p className="mt-4 text-sm font-semibold leading-relaxed text-[var(--dark-blue)]/70">
+                      {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[48px] bg-gradient-to-b from-white to-white/10 p-8 text-center text-[var(--dark-blue)] shadow-2xl">
+                    <h3 className="text-2xl font-semibold">Still have questions?</h3>
+                    <p className="mt-3 text-sm text-[var(--dark-blue)]/70">
+                      Can’t find the answer you’re looking for? Contact us directly and we will get back to you as soon as
+                      possible.
+                    </p>
+                    <Link
+                      href="/contact"
+                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--brand-color-2)]"
+                    >
+                      Contact us
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14" />
+                        <path d="M13 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
       {/* Professional Services Section */}
       <section className="relative overflow-hidden bg-[#020A2A] text-white px-4 pb-28 pt-24 md:px-8">
@@ -373,7 +377,7 @@ export default function ResourcesPage() {
             ))}
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+          <div className="relative gap-8 lg:grid-cols-[1.3fr_1fr]">
             <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px]">
               <div className="rounded-[46px] bg-[#01041A] p-12">
                 <h3 className="text-3xl font-semibold">Learn more about how we can support your growth</h3>
@@ -400,7 +404,7 @@ export default function ResourcesPage() {
               </div>
             </div>
 
-            <div className="flex flex-col justify-between gap-6 rounded-[32px] bg-white/10 p-10 text-center">
+            {/*<div className="flex flex-col justify-between gap-6 rounded-[32px] bg-white/10 p-10 text-center">
               <div className="space-y-4">
                 <Image
                   src={aiBoard}
@@ -412,8 +416,8 @@ export default function ResourcesPage() {
                 <p className="text-sm text-white/70">
                   Our consultants combine industry expertise with automation best practices to build campaigns that
                   convert.
-        </p>
-      </div>
+                </p>
+              </div> 
               <div className="flex flex-col items-center gap-3 md:flex-row md:justify-center">
                 <Link
                   href="/signup"
@@ -428,7 +432,7 @@ export default function ResourcesPage() {
                   Contact us
                 </Link>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
