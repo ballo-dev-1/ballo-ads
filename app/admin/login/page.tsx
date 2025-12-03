@@ -50,7 +50,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0e0e39] via-[#1a1a4e] to-[#0e0e39] px-4">
+    <div className=" fixed top-0 left-0 w-screen min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0e0e39] via-[#1a1a4e] to-[#0e0e39] px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <h1 className="text-3xl font-bold text-[#0e0e39] mb-2">Admin Login</h1>
         <p className="text-gray-600 mb-6">Enter your credentials to access the dashboard</p>
