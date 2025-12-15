@@ -4,18 +4,24 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import personSmile from "@/public/elements small/1.png";
-import pushNotifications from "@/public/elements small/2.png";
-import analyticsTile from "@/public/elements small/3.png";
-import smsTile from "@/public/elements small/4.png";
-import uploadContacts from "@/public/elements small/5.png";
-import whatsappTile from "@/public/elements small/6.png";
-import aiBoard from "@/public/elements small/stats-chart.PNG";
-import bankingImage from "@/public/elements small/handshake.png";
-import retailImage from "@/public/elements small/strategy.png";
-import transportImage from "@/public/elements small/market-analysis.png";
-import healthcareImage from "@/public/elements small/content-icon.png";
-
+import personSmile from "@/public/Assets/12.png";
+import pushNotifications from "@/public/Assets/10.png";
+import analyticsTile from "@/public/BalloAds Assets 2/1.png";
+import smsTile from "@/public/BalloAds Assets 2/24.png";
+import uploadContacts from "@/public/Assets/14.png";
+import whatsappTile from "@/public/BalloAds Assets 2/22.png";
+import aiBoard from "@/public/elements small/stats-chart.png";
+import bankingImage from "@/public/BalloAds Assets 2/1.png";
+import retailImage from "@/public/BalloAds Assets 2/4.png";
+import insurance from "@/public/BalloAds Assets 2/2.png";
+import transportImage from "@/public/BalloAds Assets 2/6.png";
+import healthcareImage from "@/public/BalloAds Assets 2/9.png";
+import mining from "@/public/BalloAds Assets 2/10.png";
+import restaurant from "@/public/BalloAds Assets 2/13.png";
+import education from "@/public/BalloAds Assets 2/15.png";
+import entertainment from "@/public/BalloAds Assets 2/17.png";
+import { title } from "process";
+import ring from "@/public/Assets/8.png";
 const heroCards = {
   main: {
     title: "Seamless email Marketing and at your fingertips",
@@ -35,72 +41,55 @@ const heroCards = {
 
 const faqItems = [
   {
-    question: "How do I create an account on BalloAds?",
+    question: "1. How do I create an account on BalloAds?",
     answer:
-      "Visit our homepage, click ‘Sign Up’, complete your details, and verify your account.",
+      "Simply visit the BalloAds website or download the app, click “Sign Up,” enter your persona & business details, and follow the guided setup to activate your dashboard in under 5 minutes.",
   },
   {
-    question: "How can I upload my contact lists?",
+    question: "2. What types of ads can I run on BalloAds?",
     answer:
-      "Upload CSV or Excel files directly from the dashboard, or integrate through our CRM connectors.",
+      "You can run web push ads, pop-up ads, SMS campaigns, email campaigns, and WhatsApp broadcasts - all managed from one central platform.",
   },
   {
-    question: "Can I automate my campaigns?",
+    question: "3. How does BalloAds target the right audience?",
     answer:
-      "Yes. Use workflow templates to schedule messages, set triggers, and personalise content at scale.",
+      "BalloAds uses behaviour-based data, device insights, and interest segments to deliver your ads to users who are most likely to engage.",
   },
   {
-    question: "Is there support available when I get stuck?",
+    question: "4. Can I track my campaign performance in real time?",
     answer:
-      "Our customer success team is available 24/7 via live chat, email, or phone to assist you.",
+      "Yes - BalloDash provides real-time analytics, showing impressions, clicks, conversions, spend, and performance insights instantly.",
   },
   {
-    question: "Do you provide analytics?",
+    question: "5. What industries can use BalloAds?",
     answer:
-      "Track open rates, clicks, conversions, and revenue impact from the analytics dashboard in real time.",
+      "Any business can benefit, including retail, banking, insurance, e-commerce, hospitality, health services, and SMEs looking to boost visibility.",
   },
   {
-    question: "What channels are supported?",
+    question: "6. How much does it cost to advertise on BalloAds?",
     answer:
-      "BalloAds currently supports SMS, Email, WhatsApp, Push Notifications, and social messaging.",
-  },
-];
-
-const professionalServices = [
-  {
-    title: "Banking & Financial Services",
-    description: "Promote products, services, and offers.",
-    image: bankingImage,
+      "Pricing depends on your chosen channels and ad volume, but all campaigns are optimised to reduce waste and maximise ROI.",
   },
   {
-    title: "Retail & Ecommerce",
-    description: "Promote products, services, and offers.",
-    image: retailImage,
+    question: "7. Do I need a technical team to use BalloAds?",
+    answer:
+      "No - BalloAds is built for simplicity, with an intuitive dashboard that anyone can manage without coding or technical skills.",
   },
   {
-    title: "Transport & Logistics",
-    description: "Promote products, services, and offers.",
-    image: transportImage,
+    question: "8. Can BalloAds integrate with my existing systems?",
+    answer:
+      "Absolutely! BalloAds seamlessly integrates with CRM systems, websites, payment gateways, and email platforms via APIs to unify your workflow.",
   },
   {
-    title: "Healthcare Services",
-    description: "Promote products, services, and offers.",
-    image: healthcareImage,
+    question: "9. How secure is the BalloAds platform?",
+    answer:
+      "We use enterprise-grade security, encrypted data handling, and strict compliance standards to keep your business and customer data safe.",
   },
   {
-    title: "Banking & Financial Services",
-    description: "Promote products, services, and offers.",
-    image: bankingImage,
+    question: "10. Can BalloAds help increase conversions for my business?",
+    answer:
+      "Yes - our multi-channel delivery, smart targeting, and automated optimisation work together to turn more leads into paying customers.",
   },
-];
-
-const supportHighlights = [
-  "24/7 Support",
-  "Free Training",
-  "Quick Response Time",
-  "System Integration",
-  "Implementation and Support",
-  "Dedicated Success Manager",
 ];
 
 export default function ResourcesPage() {
@@ -116,6 +105,7 @@ export default function ResourcesPage() {
         </div>
 
         <div className="container mx-auto flex flex-col gap-12">
+          {/*
           <div className="flex flex-col gap-4">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--brand-color-1)]">
               Guides
@@ -128,14 +118,17 @@ export default function ResourcesPage() {
               Select area · Preview · Done
             </div>
           </div>
+          */}
 
           <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px] shadow-2xl">
               <div className="flex h-full flex-col gap-8 rounded-[46px] bg-white/90 p-6 md:flex-row md:p-8">
                 <div className="flex flex-1 flex-col justify-center gap-4 text-[var(--dark-blue)]">
+                  <div className="glitch-text">
                   <h2 className="text-3xl font-bold md:text-4xl">
                     {heroCards.main.title}
                   </h2>
+                  </div>
                   <p className="text-base text-[var(--dark-blue)]/70">
                     Explore in-depth walkthroughs and video tutorials designed to help you launch campaigns in minutes.
                   </p>
@@ -165,26 +158,29 @@ export default function ResourcesPage() {
                     alt="Smiling marketer"
                     width={360}
                     height={320}
-                    className="relative h-auto w-full max-w-xs object-contain"
+                    className="relative h-auto w-full max-w-xs scale-[1.3] object-contain"
                     priority
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="grid gap-y-20 md:grid-cols-2 md:gap-x-20">
               {heroCards.secondary.map((card) => (
                 <div
                   key={card.title}
-                  className="flex items-center gap-4 rounded-[32px] bg-white/90 p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-color-1)]/20 to-[var(--brand-color-3)]/20">
-                    <Image src={card.image} alt={card.title} width={44} height={44} className="h-11 w-11 object-contain" />
-                  </div>
-                  <div className="text-sm font-semibold text-[var(--dark-blue)]">{card.title}</div>
+                  className="relative overflow-hidden flex items-center gap-4 rounded-[32px] bg-white/90 p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+                >   
+                  <Image
+                    src={card.image} 
+                    alt={card.title} 
+                    fill
+                    className="h-11 w-11 scale-[1.15] object-contain z-0" 
+                  />
+                  <div className="text-sm font-semibold text-[var(--dark-blue)] z-[1] relative">{card.title}</div>
                   <Link
                     href="/watch-demo"
-                    className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color-1)] text-white"
+                    className="ml-auto inline-flex h-9 w-9 items-center justify-center z-[1] relative rounded-full bg-[var(--brand-color-1)] text-white"
                     aria-label={`Watch demo for ${card.title}`}
                   >
                     <svg
@@ -216,15 +212,20 @@ export default function ResourcesPage() {
 
         <div className="container mx-auto flex flex-col gap-12">
           <div className="flex flex-col items-center gap-4 text-center">
-            <span className="rounded-full bg-white/10 px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em]">
+            <span className="rounded-full bg-white/10 px-6 py-2 text-xl font-semibold uppercase tracking-[0.3em]">
               FAQs
             </span>
-            <div className="flex flex-col gap-3">
-              <h2 className="text-4xl font-bold md:text-5xl">Got any questions? We’ve got the answers</h2>
-              <p className="max-w-2xl text-sm text-white/70 md:text-base">
-                Browse through common questions from the BalloAds community. Switch categories to explore more
-                step-by-step guides.
-              </p>
+            <div className="flex items-center flex-col gap-3">
+              <div className="glitch-text">
+                <h2 className="text-4xl font-bold md:text-5xl">
+                  Got any questions? We’ve got the answers
+                </h2>
+              </div>
+              <div className="items-center">
+                <p className="max-w-2xl text-sm text-white/70 md:text-base">
+                  Browse through common questions from the BalloAds community. Switch categories to explore more step-by-step guides.
+                </p>
+              </div>
             </div>
             <div className="relative inline-flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 text-sm">
               <span className="text-white/80">Category</span>
@@ -236,186 +237,73 @@ export default function ResourcesPage() {
               </select>
             </div>
           </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="flex flex-col gap-4">
-              {faqItems.map((faq, index) => (
-                <button
-                  key={`faq-trigger-${faq.question}`}
-                  onClick={() => setActiveFaq(index)}
-                  className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
-                    activeFaq === index
-                      ? "bg-white text-[var(--dark-blue)] shadow-xl"
-                      : "bg-white/10 text-white/90 hover:bg-white/20"
-                  }`}
-                >
-                  {faq.question}
-                  <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
-                    {activeFaq === index ? "−" : "+"}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-6">
-              <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
-                <h3 className="text-xl font-semibold">
-                  {faqItems[activeFaq]?.question ?? faqItems[0].question}
-                </h3>
-                <p className="mt-4 text-sm leading-relaxed text-[var(--dark-blue)]/70">
-                  {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
-                </p>
-              </div>
-
-              <div className="rounded-[48px] bg-gradient-to-b from-white/80 to-white/60 p-8 text-center text-[var(--dark-blue)] shadow-2xl">
-                <h3 className="text-2xl font-semibold">Still have questions?</h3>
-                <p className="mt-3 text-sm text-[var(--dark-blue)]/70">
-                  Can’t find the answer you’re looking for? Contact us directly and we will get back to you as soon as
-                  possible.
-                </p>
-                <Link
-                  href="/contact"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--brand-color-2)]"
-                >
-                  Contact us
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M13 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
           </div>
-        </div>
-      </section>
+        </section>  
 
-      {/* Professional Services Section */}
-      <section className="relative overflow-hidden bg-[#020A2A] text-white px-4 pb-28 pt-24 md:px-8">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-12 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full border border-white/10" />
-          <div className="absolute top-12 left-1/2 h-[780px] w-[780px] -translate-x-1/2 rounded-full border border-white/10" />
-        </div>
-
-        <div className="container mx-auto flex flex-col gap-16">
-          <div className="flex flex-col gap-4">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em]">
-              Professional Services
-            </span>
-            <div>
-              <h2 className="text-4xl font-bold md:text-5xl">How can BalloAds benefit you?</h2>
-              <p className="mt-2 text-base text-white/70">Rebranding the future starts here</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-6">
-            {professionalServices.map((service, index) => (
-              <div
-                key={`${service.title}-${index}`}
-                className="flex flex-col gap-6 rounded-[28px] border border-white/10 bg-white/5 p-6 transition hover:border-white/20 md:flex-row md:items-center"
-              >
-                <div className="flex w-full max-w-[260px] shrink-0 items-center justify-center rounded-[24px] bg-white/10 p-4">
-                  <Image
-                    src={service.image}
-                    alt={service.title}
-                    width={220}
-                    height={140}
-                    className="h-28 w-auto object-contain"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col gap-4">
-                  <div>
-                    <h3 className="text-2xl font-semibold">{service.title}</h3>
-                    <p className="mt-2 text-sm text-white/70">{service.description}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="ml-auto inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/40 text-white transition hover:border-white hover:bg-white/10"
-                  aria-label={`Toggle details for ${service.title}`}
-                >
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
-            <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px]">
-              <div className="rounded-[46px] bg-[#01041A] p-12">
-                <h3 className="text-3xl font-semibold">Learn more about how we can support your growth</h3>
-                <div className="mt-10 grid gap-6 sm:grid-cols-2">
-                  {supportHighlights.map((highlight) => (
-                    <div key={highlight} className="flex gap-3">
-                      <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/60">
-                        <svg
-                          className="h-3 w-3"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M5 12l4 4L19 6" />
-                        </svg>
+          <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
+            <div className="container mx-auto flex flex-col gap-12">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {faqItems.map((faq, index) => (
+                    <button
+                      key={`faq-trigger-${faq.question}`}
+                      onClick={() => setActiveFaq(index)}
+                      className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
+                        activeFaq === index
+                          ? "bg-white text-[var(--dark-blue)] shadow-xl"
+                          : "bg-white/50 text-[var(--dark-blue)] hover:bg-white/70"
+                      }`}
+                    >
+                      {faq.question}
+                      <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
+                        {activeFaq === index ? "−" : "+"}
                       </span>
-                      <div className="text-sm text-white/80">{highlight}</div>
-                    </div>
+                    </button>
                   ))}
                 </div>
-              </div>
-            </div>
 
-            <div className="flex flex-col justify-between gap-6 rounded-[32px] bg-white/10 p-10 text-center">
-              <div className="space-y-4">
-                <Image
-                  src={aiBoard}
-                  alt="AI powered assistance"
-                  width={260}
-                  height={200}
-                  className="mx-auto h-auto w-40 object-contain"
-                />
-                <p className="text-sm text-white/70">
-                  Our consultants combine industry expertise with automation best practices to build campaigns that
-                  convert.
-        </p>
-      </div>
-              <div className="flex flex-col items-center gap-3 md:flex-row md:justify-center">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-color-2)]"
-                >
-                  Get Started
-                </Link>
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
-                >
-                  Contact us
-                </Link>
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
+                    <h3 className="text-xl font-semibold">
+                      {faqItems[activeFaq]?.question ?? faqItems[0].question}
+                    </h3>
+                    <p className="mt-4 text-sm font-semibold leading-relaxed text-[var(--dark-blue)]/70">
+                      {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+          
+
+          <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
+            <div className="rounded-[48px] bg-gradient-to-b from-[#7393B3]/20 to-[#708090]/40 p-8 text-center text-[var(--dark-blue)] mx-auto max-w-2xl shadow-2xl">
+                <h3 className="text-2xl font-semibold">Still have questions?</h3>
+                  <p className="mt-3 text-sm text-[var(--dark-blue)]/70">
+                    Can’t find the answer you’re looking for? Contact us directly and we will get back to you as soon as
+                    possible.
+                  </p>
+                  <Link
+                    href="/contact"
+                    className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--brand-color-2)]"
+                  >
+                    Contact us
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14" />
+                      <path d="M13 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+              </div>
+          </section>
     </main>
   );
 }

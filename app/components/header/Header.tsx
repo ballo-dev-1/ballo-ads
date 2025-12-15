@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import logo from "@/public/Assets/1.png"
 
 type NavLink = {
   label: string;
@@ -21,6 +23,8 @@ const navItems: NavItem[] = [
     label: "Features",
     href: "/features",
     links: [
+      {label: "Professional Services", href:"/professional"},
+      {label: "For My Business", href:"/business"},
       { label: "Omnichannel Messaging", href: "/features#omnichannel" },
       { label: "Automations", href: "/features#automations" },
       { label: "Analytics & Reporting", href: "/features#analytics" },
@@ -41,19 +45,10 @@ const navItems: NavItem[] = [
     links: [
       { label: "Guides", href: "/resources#guides" },
       { label: "FAQs", href: "/resources#faqs" },
-      { label: "Professional Services", href: "/resources#services" },
       { label: "Blog", href: "/blog" },
     ],
   },
-  {
-    label: "Careers",
-    href: "/careers",
-    links: [
-      { label: "Open Roles", href: "/careers#open-roles" },
-      { label: "Life at BalloAds", href: "/careers#culture" },
-      { label: "Hiring Process", href: "/careers#process" },
-    ],
-  },
+  
   {
     label: "Pricing",
     href: "/pricing",
@@ -73,8 +68,14 @@ const Header = () => {
         {/* Logo */}
         <Link href="/" className="header__logo">
           <div className="header__logo-container">
-            <div className="header__logo-icon">
-              <span className="header__logo-text">b</span>
+            <div className="header__logo-icon ">
+            <Image
+                    src={logo}
+                    alt="BalloAds App"
+                    width={300}
+                    height={600}
+                    className="w-full h-auto"
+                  />
             </div>
             <span className="header__logo-label">ballo innovations</span>
           </div>
