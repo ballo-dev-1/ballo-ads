@@ -1,7 +1,7 @@
 "use client";
 // components/marketing/HeroSection.tsx
 
-import React from 'react';
+import React, {useState} from 'react';
 import Image from 'next/image';
 
 import Link from 'next/link';
@@ -74,24 +74,85 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
-
 // --- Component Definition ---
 
 export const HeroSection: React.FC = () => {
+  // State to capture the user's business needs
+  const [formData, setFormData] = useState({
+    businessType: '',
+    messageCount: '',
+    audience: '',
+    recipient: '',
+    frequency: '',
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   return (
     <div className="bg-[var(--brand-color-1)]">
       <section className="container mx-auto px-4 py-16 md:py-24 lg:py-16 bg-[var(--brand-color-1)]">
-        <div className="relative overflow-hidden">
-          <h3 className="text-4xl text-base text-white/70 text-center mb-5">
-            HI! WONDERING WHICH PLAN BEST SUITS YOU? WE WILL MEET YOU WHERE YOU ARE.
-          </h3>
-          <h4 className='text-6xl text-white leading-20'>
-            I have a _________ business and want to send _________ messages
-            to _______ people quickly and efficiently. I want to ensure ________
-            receives messages _________.
-          </h4>
+      <div className="relative overflow-hidden max-w-6xl mx-auto">
+        <h3 className="text-xl md:text-2xl text-white/70 text-center mb-8 uppercase tracking-widest">
+          HI! WONDERING WHICH PLAN BEST SUITS YOU? WE WILL MEET YOU WHERE YOU ARE.
+        </h3>
+
+        {/* The "Sentence" Input UI 
+          We use "inline-block" and "border-b-2" to keep the design looking like a fill-in-the-blank form.
+        */}
+        <div className="text-3xl md:text-5xl lg:text-6xl text-white leading-tight md:leading-relaxed text-center lg:text-left">
+          I have a 
+          <input
+            type="text"
+            name="businessType"
+            placeholder="e-commerce"
+            className="bg-transparent border-b-2 border-white/40 focus:border-white outline-none px-2 mx-2 placeholder:text-white/20 w-48 md:w-72 transition-colors"
+            onChange={handleChange}
+          />
+          business and want to send 
+          <input
+            type="text"
+            name="messageCount"
+            placeholder="50,000"
+            className="bg-transparent border-b-2 border-white/40 focus:border-white outline-none px-2 mx-2 placeholder:text-white/20 w-40 md:w-60 transition-colors"
+            onChange={handleChange}
+          />
+          messages to 
+          <input
+            type="text"
+            name="audience"
+            placeholder="active"
+            className="bg-transparent border-b-2 border-white/40 focus:border-white outline-none px-2 mx-2 placeholder:text-white/20 w-40 md:w-60 transition-colors"
+            onChange={handleChange}
+          />
+          people quickly and efficiently. I want to ensure 
+          <input
+            type="text"
+            name="recipient"
+            placeholder="everyone"
+            className="bg-transparent border-b-2 border-white/40 focus:border-white outline-none px-2 mx-2 placeholder:text-white/20 w-48 md:w-72 transition-colors"
+            onChange={handleChange}
+          />
+          receives messages 
+          <input
+            type="text"
+            name="frequency"
+            placeholder="instantly"
+            className="bg-transparent border-b-2 border-white/40 focus:border-white outline-none px-2 mx-2 placeholder:text-white/20 w-48 md:w-72 transition-colors"
+            onChange={handleChange}
+          />
+          .
         </div>
-      </section>
+
+        {/* Optional: Add a 'Find My Plan' button */}
+        <div className="mt-12 text-center lg:text-right">
+            <button className="bg-white text-[var(--brand-color-1)] font-bold py-4 px-10 rounded-full hover:bg-opacity-90 transition shadow-lg">
+                GET RECOMMENDED PLAN
+            </button>
+        </div>
+      </div>
+    </section>
       <section className="container mx-auto px-4 py-10 md:py-18 lg:py-8 bg-[var(--brand-color-1)]">
         <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px] shadow-2xl">
           <div className="flex h-full flex-col gap-8 rounded-[46px] gradient-blue-purple p-6 md:flex-row md:p-8">
