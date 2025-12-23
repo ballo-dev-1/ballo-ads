@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Sample subscription channels data
@@ -43,7 +43,7 @@ const subscriptionChannels = [
   },
 ];
 
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [subscribedChannels, setSubscribedChannels] = useState<Set<number>>(new Set());
@@ -208,6 +208,27 @@ export default function SubscriptionPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <main className="subscription-page">
+        <div className="subscription-page__container">
+          <section className="subscription-page__header">
+            <h1 className="subscription-page__title">
+              Stay Connected With Businesses You Love
+            </h1>
+            <p className="subscription-page__description">
+              Loading...
+            </p>
+          </section>
+        </div>
+      </main>
+    }>
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }
 

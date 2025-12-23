@@ -5,78 +5,13 @@ import React, {useState} from 'react';
 import Image from 'next/image';
 
 import Link from 'next/link';
-import clsx from 'clsx'; // Utility for conditionally joining class names
 import person from "@/public/Assets/15.png";
 import circle from "@/public/Assets/9.png";
 import man from"@/public/BalloAds Assets 2/18.png";
 
-// --- Prop Types & Variants ---
-
-type ButtonVariant = 'primary' | 'secondary' | 'ghost';
-type ButtonSize = 'medium' | 'large';
-
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  children: React.ReactNode;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  className?: string;
-  href?: string; // Optional: Makes the button act as a Next.js Link
-}
-
-// --- Base Styles (Shared) ---
-
-const baseStyles = 'font-semibold rounded-lg transition duration-300 ease-in-out focus:outline-none focus:ring-4';
-
-const sizeStyles: Record<ButtonSize, string> = {
-  medium: 'px-5 py-2 text-base',
-  large: 'px-8 py-3 text-lg shadow-xl', // Used in the Hero Section
-};
-
-const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500/50',
-  secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-300/50',
-  ghost: 'bg-transparent text-blue-600 hover:bg-blue-50 focus:ring-blue-500/20',
-};
-
-
-// --- Component ---
-
-export const Button: React.FC<ButtonProps> = ({
-  children,
-  variant = 'primary',
-  size = 'medium',
-  className,
-  href,
-  ...props
-}) => {
-  const classes = clsx(
-    baseStyles,
-    sizeStyles[size],
-    variantStyles[variant],
-    className
-  );
-
-  // If href is provided, render as a Next.js Link
-  if (href) {
-    return (
-      <Link href={href} passHref legacyBehavior>
-        <a className={classes}>
-          {children}
-        </a>
-      </Link>
-    );
-  }
-
-  // Otherwise, render as a standard <button>
-  return (
-    <button className={classes} {...props}>
-      {children}
-    </button>
-  );
-};
 // --- Component Definition ---
 
-export const HeroSection: React.FC = () => {
+const HeroSection: React.FC = () => {
   // State to capture the user's business needs
   const [formData, setFormData] = useState({
     businessType: '',
