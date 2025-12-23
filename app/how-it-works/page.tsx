@@ -69,7 +69,7 @@ export default function HowItWorksPage() {
         <div className="absolute inset-0">
           <Image
             src={ring}
-            alt="Circles Ring"
+            alt="Circle Ring"
             width={1600}
             height={1900}
             className="w-full h-auto absolute right-0 -top-150 scale-[0.5]"
