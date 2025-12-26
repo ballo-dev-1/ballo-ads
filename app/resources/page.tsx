@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -93,7 +93,11 @@ const faqItems = [
 ];
 
 export default function ResourcesPage() {
-  const [activeFaq, setActiveFaq] = useState(0);
+  const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
 
   return (
     <main className="bg-[#EEF2FF] text-[var(--dark-blue)]">
@@ -240,41 +244,59 @@ export default function ResourcesPage() {
           </div>
         </section>  
 
-          <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
-            <div className="container mx-auto flex flex-col gap-12">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="grid lg:grid-cols-2 gap-6">
-                  {faqItems.map((faq, index) => (
-                    <button
-                      key={`faq-trigger-${faq.question}`}
-                      onClick={() => setActiveFaq(index)}
-                      className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
-                        activeFaq === index
-                          ? "bg-white text-[var(--dark-blue)] shadow-xl"
-                          : "bg-white/50 text-[var(--dark-blue)] hover:bg-white/70"
-                      }`}
-                    >
-                      {faq.question}
-                      <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
-                        {activeFaq === index ? "−" : "+"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+        <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
+      <div className="container mx-auto max-w-6xl"> {/* Increased max-width for the grid */}
+        <h2 className="text-4xl font-bold text-center mb-16">
+          Frequently Asked Questions
+        </h2>
+        
+        {/* GRID CONFIGURATION:
+            - grid-cols-1: Single column on mobile
+            - lg:grid-cols-2: Two columns on large screens
+            - items-start: Prevents items from stretching to match height of the row
+        */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {faqItems.map((faq, index) => (
+            <div 
+              key={index} 
+              className={`overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 border-2 ${
+                activeFaq === index ? "border-blue-500 shadow-md" : "border-transparent"
+              }`}
+            >
+              {/* Trigger Button */}
+              <button
+                onClick={() => toggleFaq(index)}
+                className="flex w-full items-center justify-between px-6 py-5 text-left transition-colors"
+              >
+                <span className={`text-lg font-semibold leading-tight ${
+                  activeFaq === index ? "text-blue-600" : "text-[var(--dark-blue)]"
+                }`}>
+                  {faq.question}
+                </span>
+                <span className={`ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-current transition-transform duration-300 ${
+                  activeFaq === index ? "bg-blue-600 text-white border-blue-600 rotate-180" : "text-gray-400"
+                }`}>
+                  {activeFaq === index ? "−" : "+"}
+                </span>
+              </button>
 
-                <div className="flex flex-col gap-6">
-                  <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
-                    <h3 className="text-xl font-semibold">
-                      {faqItems[activeFaq]?.question ?? faqItems[0].question}
-                    </h3>
-                    <p className="mt-4 text-sm font-semibold leading-relaxed text-[var(--dark-blue)]/70">
-                      {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
-                    </p>
-                  </div>
+              {/* Collapsible Content */}
+              <div
+                className={`transition-all duration-300 ease-in-out ${
+                  activeFaq === index 
+                    ? "max-h-[500px] opacity-100 pb-6 px-6" 
+                    : "max-h-0 opacity-0 pb-0 px-6"
+                }`}
+              >
+                <div className="border-t border-gray-100 pt-4 text-gray-600 text-sm md:text-base leading-relaxed">
+                  {faq.answer}
                 </div>
               </div>
             </div>
-          </section>
+          ))}
+        </div>
+      </div>
+    </section>
           
 
           <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
@@ -306,6 +328,4 @@ export default function ResourcesPage() {
           </section>
     </main>
   );
-}
-
-
+};

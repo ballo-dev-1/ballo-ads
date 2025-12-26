@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -115,72 +115,98 @@ const supportHighlights = [
   },
 ];
 
-export default function ResourcesPage() {
-  const [activeFaq, setActiveFaq] = useState(0);
+export default function ProfessionalServicesPage() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggleService = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
 
   return (
     <main className="bg-[#EEF2FF] text-[var(--dark-blue)]">
 
       {/* Professional Services Section */}
       <section className="relative overflow-hidden bg-[#020A2A] text-white px-4 pb-28 pt-24 md:px-8">
+        {/* Decorative Background Circles */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-12 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full border border-white/10" />
           <div className="absolute top-12 left-1/2 h-[780px] w-[780px] -translate-x-1/2 rounded-full border border-white/10" />
         </div>
 
         <div className="container mx-auto flex flex-col gap-16">
-          <div className="flex items-center flex-col gap-4">
+          {/* Header Section */}
+          <div className="flex items-center flex-col gap-4 text-center">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-xl font-semibold uppercase tracking-[0.3em]">
               Professional Services
             </span>
-            <div className="items-center">
+            <div>
               <div className="glitch-text">
                 <h2 className="text-4xl font-bold md:text-5xl">
                   How can BalloAds benefit you?
                 </h2>
               </div>
-              <p className="mt-2 items-center text-base text-white/70">Rebranding the future starts here</p>
+              <p className="mt-2 text-base text-white/70">Rebranding the future starts here</p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-6">
+          {/* Dropdown Items */}
+          <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
             {professionalServices.map((service, index) => (
               <div
                 key={`${service.title}-${index}`}
-                className="flex flex-col gap-6 rounded-[28px] border border-white/10 bg-white/5 p-6 transition hover:border-white/20 md:flex-row md:items-center"
+                className={`flex flex-col overflow-hidden rounded-[28px] border transition-all duration-300 bg-white/5 ${
+                  openIndex === index ? "border-white/40 bg-white/10" : "border-white/10 hover:border-white/20"
+                }`}
               >
-                <div className="flex w-full max-w-[260px] shrink-0 items-center justify-center rounded-[24px] bg-white/10 p-4">
-                  <Image
-                    src={service.image}
-                    alt={service.title}
-                    width={220}
-                    height={140}
-                    className="h-28 max-w-[260px]object-fill scale-[1.3] rounded-[20px]"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col gap-4">
-                  <div>
-                    <h3 className="text-2xl font-semibold">{service.title}</h3>
-                    <p className="mt-2 text-sm text-white/70">{service.description}</p>
+                {/* Visible Header of the Item */}
+                <button
+                  onClick={() => toggleService(index)}
+                  className="flex w-full flex-row items-center justify-between p-6 text-left focus:outline-none"
+                >
+                  <div className="flex items-center gap-6">
+                    {/* Small Icon/Image Preview (optional, always visible) */}
+                    <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                      <Image src={service.image} alt="" width={40} height={40} className="object-cover rounded-md" />
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-semibold">{service.title}</h3>
+                  </div>
+
+                  <div className={`ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-white/40 transition-transform duration-300 ${
+                    openIndex === index ? "rotate-180 bg-white text-[#020A2A]" : ""
+                  }`}>
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
+                </button>
+
+                {/* Collapsible Content */}
+                <div
+                  className={`transition-all duration-500 ease-in-out ${
+                    openIndex === index ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <div className="flex flex-col gap-8 p-6 pt-0 md:flex-row md:items-start">
+                    {/* Image Detail */}
+                    <div className="flex w-full max-w-[300px] shrink-0 items-center justify-center rounded-[24px] bg-white/10 p-4">
+                      <Image
+                        src={service.image}
+                        alt={service.title}
+                        width={280}
+                        height={180}
+                        className="h-auto w-full rounded-[20px] object-cover"
+                      />
+                    </div>
+
+                    {/* Description Detail */}
+                    <div className="flex flex-1 flex-col justify-center py-2">
+                      <p className="text-lg leading-relaxed text-white/80">
+                        {service.description}
+                      </p>
+                      {/* You can add more detailed points or a "Learn More" button here */}
+                    </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="ml-auto inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/40 text-white transition hover:border-white hover:bg-white/10"
-                  aria-label={`Toggle details for ${service.title}`}
-                >
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
               </div>
             ))}
           </div>
