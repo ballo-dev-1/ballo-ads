@@ -132,7 +132,7 @@ const Header = () => {
                   <div className={`${item.label === "Resources" ? "flex w-[500px]" : "header__dropdown-list"}`}>
                     
                     {/* Left Column: Primary Links */}
-                    <div className={`${item.label === "Resources" ? "w-1/2 p-4 border-r border-white/10" : ""}`}>
+                    <div className={`${item.label === "Resources" ? "w-1/2 p-4 border-r border-[var(--dark-blue)]" : ""}`}>
                       {item.links?.map((link) => {
                         // Check if this specific link (like "Developers") has its own sub-links
                         const hasSubLinks = link.label === "Developers";
