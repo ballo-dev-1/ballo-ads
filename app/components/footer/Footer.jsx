@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import logo from "@/public/Assets/1.png" 
 
 const Footer = () => {
   return (
@@ -9,28 +11,13 @@ const Footer = () => {
           <div className="footer__logo-section">
             <div className="footer__logo-wrapper">
               {/* Stylized 'b' or 'is' logo with glowing cyan line */}
-              <svg
-                viewBox="0 0 100 150"
-                className="w-full h-full"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* Glowing cyan line forming 'b' or 'is' */}
-                <path
-                  d="M 20 20 Q 20 40 30 50 Q 40 60 30 70 Q 20 80 20 100 Q 20 120 30 130 L 30 20"
-                  stroke="#3fdbff"
-                  strokeWidth="3"
-                  fill="none"
-                  className="glow-path"
-                />
-                {/* Glowing circle (dot of 'i' or top of 'b') */}
-                <circle
-                  cx="30"
-                  cy="15"
-                  r="8"
-                  fill="#3fdbff"
-                  className="glow-circle"
-                />
-              </svg>
+              <Image
+                    src={logo}
+                    alt="BalloAds App"
+                    width={300}
+                    height={600}
+                    className="w-full h-auto absolute right-0 bottom-0 scale-[2.5]"
+                  />
             </div>
           </div>
 

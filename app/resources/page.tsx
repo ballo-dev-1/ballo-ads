@@ -4,13 +4,13 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import personSmile from "@/public/elements small/1.png";
-import pushNotifications from "@/public/elements small/2.png";
-import analyticsTile from "@/public/elements small/3.png";
-import smsTile from "@/public/elements small/4.png";
-import uploadContacts from "@/public/elements small/5.png";
-import whatsappTile from "@/public/elements small/6.png";
-import aiBoard from "@/public/elements small/stats-chart.PNG";
+import personSmile from "@/public/Assets/12.png";
+import pushNotifications from "@/public/Assets/10.png";
+import analyticsTile from "@/public/Assets/38.png";
+import smsTile from "@/public/Assets/44.png";
+import uploadContacts from "@/public/Assets/14.png";
+import whatsappTile from "@/public/Assets/11.png";
+import aiBoard from "@/public/elements small/stats-chart.png";
 import bankingImage from "@/public/elements small/handshake.png";
 import retailImage from "@/public/elements small/strategy.png";
 import transportImage from "@/public/elements small/market-analysis.png";
@@ -116,6 +116,7 @@ export default function ResourcesPage() {
         </div>
 
         <div className="container mx-auto flex flex-col gap-12">
+          {/*
           <div className="flex flex-col gap-4">
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--brand-color-1)]">
               Guides
@@ -128,14 +129,17 @@ export default function ResourcesPage() {
               Select area · Preview · Done
             </div>
           </div>
+          */}
 
           <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px] shadow-2xl">
               <div className="flex h-full flex-col gap-8 rounded-[46px] bg-white/90 p-6 md:flex-row md:p-8">
                 <div className="flex flex-1 flex-col justify-center gap-4 text-[var(--dark-blue)]">
+                  <div className="glitch-text">
                   <h2 className="text-3xl font-bold md:text-4xl">
                     {heroCards.main.title}
                   </h2>
+                  </div>
                   <p className="text-base text-[var(--dark-blue)]/70">
                     Explore in-depth walkthroughs and video tutorials designed to help you launch campaigns in minutes.
                   </p>
@@ -165,26 +169,29 @@ export default function ResourcesPage() {
                     alt="Smiling marketer"
                     width={360}
                     height={320}
-                    className="relative h-auto w-full max-w-xs object-contain"
+                    className="relative h-auto w-full max-w-xs scale-[1.3] object-contain"
                     priority
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="grid gap-y-20 md:grid-cols-2 md:gap-x-20">
               {heroCards.secondary.map((card) => (
                 <div
                   key={card.title}
-                  className="flex items-center gap-4 rounded-[32px] bg-white/90 p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-color-1)]/20 to-[var(--brand-color-3)]/20">
-                    <Image src={card.image} alt={card.title} width={44} height={44} className="h-11 w-11 object-contain" />
-                  </div>
-                  <div className="text-sm font-semibold text-[var(--dark-blue)]">{card.title}</div>
+                  className="relative overflow-hidden flex items-center gap-4 rounded-[32px] bg-white/90 p-4 shadow-lg transition hover:-translate-y-1 hover:shadow-xl"
+                >   
+                  <Image
+                    src={card.image} 
+                    alt={card.title} 
+                    fill
+                    className="h-11 w-11 scale-[1.15] object-contain z-0" 
+                  />
+                  <div className="text-sm font-semibold text-[var(--dark-blue)] z-[1] relative">{card.title}</div>
                   <Link
                     href="/watch-demo"
-                    className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color-1)] text-white"
+                    className="ml-auto inline-flex h-9 w-9 items-center justify-center z-[1] relative rounded-full bg-[var(--brand-color-1)] text-white"
                     aria-label={`Watch demo for ${card.title}`}
                   >
                     <svg
@@ -216,15 +223,20 @@ export default function ResourcesPage() {
 
         <div className="container mx-auto flex flex-col gap-12">
           <div className="flex flex-col items-center gap-4 text-center">
-            <span className="rounded-full bg-white/10 px-6 py-2 text-xs font-semibold uppercase tracking-[0.3em]">
+            <span className="rounded-full bg-white/10 px-6 py-2 text-xl font-semibold uppercase tracking-[0.3em]">
               FAQs
             </span>
-            <div className="flex flex-col gap-3">
-              <h2 className="text-4xl font-bold md:text-5xl">Got any questions? We’ve got the answers</h2>
-              <p className="max-w-2xl text-sm text-white/70 md:text-base">
-                Browse through common questions from the BalloAds community. Switch categories to explore more
-                step-by-step guides.
-              </p>
+            <div className="flex items-center flex-col gap-3">
+              <div className="glitch-text">
+                <h2 className="text-4xl font-bold md:text-5xl">
+                  Got any questions? We’ve got the answers
+                </h2>
+              </div>
+              <div className="items-center">
+                <p className="max-w-2xl text-sm text-white/70 md:text-base">
+                  Browse through common questions from the BalloAds community. Switch categories to explore more step-by-step guides.
+                </p>
+              </div>
             </div>
             <div className="relative inline-flex items-center gap-3 rounded-full bg-white/10 px-5 py-3 text-sm">
               <span className="text-white/80">Category</span>
@@ -236,66 +248,70 @@ export default function ResourcesPage() {
               </select>
             </div>
           </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="flex flex-col gap-4">
-              {faqItems.map((faq, index) => (
-                <button
-                  key={`faq-trigger-${faq.question}`}
-                  onClick={() => setActiveFaq(index)}
-                  className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
-                    activeFaq === index
-                      ? "bg-white text-[var(--dark-blue)] shadow-xl"
-                      : "bg-white/10 text-white/90 hover:bg-white/20"
-                  }`}
-                >
-                  {faq.question}
-                  <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
-                    {activeFaq === index ? "−" : "+"}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-6">
-              <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
-                <h3 className="text-xl font-semibold">
-                  {faqItems[activeFaq]?.question ?? faqItems[0].question}
-                </h3>
-                <p className="mt-4 text-sm leading-relaxed text-[var(--dark-blue)]/70">
-                  {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
-                </p>
-              </div>
-
-              <div className="rounded-[48px] bg-gradient-to-b from-white/80 to-white/60 p-8 text-center text-[var(--dark-blue)] shadow-2xl">
-                <h3 className="text-2xl font-semibold">Still have questions?</h3>
-                <p className="mt-3 text-sm text-[var(--dark-blue)]/70">
-                  Can’t find the answer you’re looking for? Contact us directly and we will get back to you as soon as
-                  possible.
-                </p>
-                <Link
-                  href="/contact"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--brand-color-2)]"
-                >
-                  Contact us
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M13 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
           </div>
-        </div>
-      </section>
+        </section>  
+
+          <section className="relative overflow-hidden bg-[#EEF2FF] text-[var(--dark-blue)] px-4 py-24 md:px-8">
+            <div className="container mx-auto flex flex-col gap-12">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="flex flex-col gap-4">
+                  {faqItems.map((faq, index) => (
+                    <button
+                      key={`faq-trigger-${faq.question}`}
+                      onClick={() => setActiveFaq(index)}
+                      className={`flex items-center justify-between rounded-full px-6 py-4 text-left text-sm font-semibold transition ${
+                        activeFaq === index
+                          ? "bg-white text-[var(--dark-blue)] shadow-xl"
+                          : "bg-white/50 text-[var(--dark-blue)] hover:bg-white/70"
+                      }`}
+                    >
+                      {faq.question}
+                      <span className="ml-4 flex h-9 w-9 items-center justify-center rounded-full border border-current">
+                        {activeFaq === index ? "−" : "+"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-[32px] bg-white p-8 text-[var(--dark-blue)] shadow-2xl">
+                    <h3 className="text-xl font-semibold">
+                      {faqItems[activeFaq]?.question ?? faqItems[0].question}
+                    </h3>
+                    <p className="mt-4 text-sm font-semibold leading-relaxed text-[var(--dark-blue)]/70">
+                      {faqItems[activeFaq]?.answer ?? faqItems[0].answer}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[48px] bg-gradient-to-b from-white to-white/10 p-8 text-center text-[var(--dark-blue)] shadow-2xl">
+                    <h3 className="text-2xl font-semibold">Still have questions?</h3>
+                    <p className="mt-3 text-sm text-[var(--dark-blue)]/70">
+                      Can’t find the answer you’re looking for? Contact us directly and we will get back to you as soon as
+                      possible.
+                    </p>
+                    <Link
+                      href="/contact"
+                      className="mt-6 inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--brand-color-2)]"
+                    >
+                      Contact us
+                      <svg
+                        className="h-5 w-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M5 12h14" />
+                        <path d="M13 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
       {/* Professional Services Section */}
       <section className="relative overflow-hidden bg-[#020A2A] text-white px-4 pb-28 pt-24 md:px-8">
@@ -305,13 +321,17 @@ export default function ResourcesPage() {
         </div>
 
         <div className="container mx-auto flex flex-col gap-16">
-          <div className="flex flex-col gap-4">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-xs font-semibold uppercase tracking-[0.3em]">
+          <div className="flex items-center flex-col gap-4">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-5 py-2 text-xl font-semibold uppercase tracking-[0.3em]">
               Professional Services
             </span>
-            <div>
-              <h2 className="text-4xl font-bold md:text-5xl">How can BalloAds benefit you?</h2>
-              <p className="mt-2 text-base text-white/70">Rebranding the future starts here</p>
+            <div className="items-center">
+              <div className="glitch-text">
+                <h2 className="text-4xl font-bold md:text-5xl">
+                  How can BalloAds benefit you?
+                </h2>
+              </div>
+              <p className="mt-2 items-center text-base text-white/70">Rebranding the future starts here</p>
             </div>
           </div>
 
@@ -357,7 +377,7 @@ export default function ResourcesPage() {
             ))}
           </div>
 
-          <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+          <div className="relative gap-8 lg:grid-cols-[1.3fr_1fr]">
             <div className="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px]">
               <div className="rounded-[46px] bg-[#01041A] p-12">
                 <h3 className="text-3xl font-semibold">Learn more about how we can support your growth</h3>
@@ -384,7 +404,7 @@ export default function ResourcesPage() {
               </div>
             </div>
 
-            <div className="flex flex-col justify-between gap-6 rounded-[32px] bg-white/10 p-10 text-center">
+            {/*<div className="flex flex-col justify-between gap-6 rounded-[32px] bg-white/10 p-10 text-center">
               <div className="space-y-4">
                 <Image
                   src={aiBoard}
@@ -396,8 +416,8 @@ export default function ResourcesPage() {
                 <p className="text-sm text-white/70">
                   Our consultants combine industry expertise with automation best practices to build campaigns that
                   convert.
-        </p>
-      </div>
+                </p>
+              </div> 
               <div className="flex flex-col items-center gap-3 md:flex-row md:justify-center">
                 <Link
                   href="/signup"
@@ -412,7 +432,7 @@ export default function ResourcesPage() {
                   Contact us
                 </Link>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
