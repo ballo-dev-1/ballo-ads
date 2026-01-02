@@ -149,8 +149,8 @@ export default function ProfessionalServicesPage() {
             </div>
           </div>
 
-          {/* Dropdown Items */}
-          <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
+          {/* Dropdown Items George to look into the height issue*/}
+          <div className="flex flex-col gap-6 h-300% max-w-8xl mx-auto w-full">
             {professionalServices.map((service, index) => (
               <div
                 key={`${service.title}-${index}`}

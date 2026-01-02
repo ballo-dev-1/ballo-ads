@@ -224,7 +224,7 @@ export default function HowItWorksPage() {
             {benefits.map((benefit) => (
               <div
                 key={benefit.title}
-                className="rounded-[32px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[1px] shadow-lg"
+                className="rounded-[32px] bg-gradient-to-br from-[#0F1F4C] via-[#133A7C] to-[#0A4ACB] p-[2px] shadow-lg"
               >
                 <div className="h-full rounded-[30px] bg-[var(--brand-color-1)] p-6">
                   <h4 className="text-xl font-bold text-white">

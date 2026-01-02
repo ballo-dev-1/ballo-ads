@@ -25,9 +25,9 @@ const navItems: NavItem[] = [
     label: "Features",
     href: "/features",
     links: [
-      { label: "Omnichannel Messaging", href: "/features#omnichannel" },
-      { label: "Automations", href: "/features#automations" },
-      { label: "Analytics & Reporting", href: "/features#analytics" },
+      { label: "Bulk SMS", href: "/features#omnichannel" },
+      { label: "WhatsApp Marketing ", href: "/features#automations" },
+      { label: "Email Marketing", href: "/features#analytics" },
     ],
   },
 
@@ -76,7 +76,10 @@ const Header = () => {
 
   return (
     <header className="header header--sticky">
-      <nav className="header__nav">
+      <nav className="header__nav fixed w-[95vw] min-w-[380px] max-w-[1440px] shadow h-16 md:flex  
+      p-4 mx-0 mt-2 top-0 left-1/2 -translate-x-1/2 rounded-full ring-white/50  ring-2 backdrop-blur-md 
+      shadow-[0_10px_20px_-10px_black] bg-[var(--brand-color-1)]             
+              data-text-bright:**:text-white">
         {/* Logo */}
         <Link href="/" className="header__logo">
           <div className="header__logo-container">

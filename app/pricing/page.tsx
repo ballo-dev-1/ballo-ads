@@ -2,6 +2,7 @@
 import {useState, useMemo} from "react";
 import Image from "next/image";
 import { Check, X, MessageSquare, Mail, Phone, MessageCircle } from "lucide-react";
+import { useRouter, usePathname } from 'next/navigation';
 
 import bg from "@/public/BalloAds Assets 2/1.png";
 import step1 from "@/public/Assets/45.png";
@@ -147,7 +148,12 @@ const PricingCard: React.FC<PricingCardProps> = ({ tier, initialMessages, maxMes
 };
 // Assume you are defining this component in a file like PricingAndSteps.tsx
 export default function PricingAndSteps() {
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'unlimited'>('monthly');
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Determine the active state based on the current URL path
+  const isMonthly = pathname === '/pricing/monthly' || pathname === '/pricing';
+  const isUnlimited = pathname === '/pricing/unlimited';
   
   // Data for the Step Flow (matching the image sequence)
   const stepsFlow = [
@@ -182,23 +188,29 @@ export default function PricingAndSteps() {
             </h1>
             
             {/* Toggle Switch */}
-            <div className="inline-flex bg-white/10 backdrop-blur-sm p-1 rounded-full">
-              <button 
-                onClick={() => setBillingCycle('monthly')}
-                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
-                  billingCycle === 'monthly' ? 'bg-blue-900 text-white' : 'text-white hover:bg-white/10'
-                }`}
-              >
-                Monthly
-              </button>
-              <button 
-                onClick={() => setBillingCycle('unlimited')}
-                className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
-                  billingCycle === 'unlimited' ? 'bg-blue-900 text-white' : 'text-white hover:bg-white/10'
-                }`}
-              >
-                Unlimited
-              </button>
+            <div className="flex justify-center my-8">
+              <div className="inline-flex bg-white/10 backdrop-blur-sm p-1 rounded-full border border-white/5">
+                <button 
+                  onClick={() => router.push('/pricing')}
+                  className={`px-8 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    isMonthly 
+                      ? 'bg-blue-900 text-white shadow-lg' 
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button 
+                  onClick={() => router.push('/pricing/unlimited')}
+                  className={`px-8 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    isUnlimited 
+                      ? 'bg-blue-900 text-white shadow-lg' 
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  Unlimited
+                </button>
+              </div>
             </div>
           </div>
 
