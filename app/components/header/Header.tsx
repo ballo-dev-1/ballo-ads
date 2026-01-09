@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
       { label: "Bulk SMS", href: "/features#omnichannel" },
       { label: "WhatsApp Marketing ", href: "/features#automations" },
       { label: "Email Marketing", href: "/features#analytics" },
+      {label: "Brutus AI", href:"/brutus"},
     ],
   },
 
