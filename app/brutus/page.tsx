@@ -36,6 +36,39 @@ const slides: SlideData[] = [
         <rect x="0.9" y="1.4" width="46.2" height="46.2" rx="23.1" stroke="white" strokeWidth="1.8" />
       </svg>
     )
+  },
+  {
+    category: "At the heart of BalloAds’ messaging intelligence is Brutus™, your always-on guardian ensuring every message you send is safe, credible, and trusted. In an era where scams and phishing attempts erode customer confidence, Brutus works behind the scenes to protect both your brand and your audience before a single message is delivered.",
+    title: "Fraud Detection & Content Safety",
+    imageUrl: phone.src,
+    icon: (
+      <svg className="shrink-0 mt-3" width="48" height="49" viewBox="0 0 48 49" fill="none">
+        <path d="M12.5743 15.8831C11.6719 16.0706 10.8516 16.6565 10.5 17.3713C10.1719 18.051 10.1719 17.8987 10.1719 25.0471V34.1995H36.2579C37.0665 33.4143 37.5586 32.7815 37.7461 31.9026V18.0745C37.5586 17.1956 36.2579 16.5627 36.2579 16.1643H12.5743Z" fill="white" stroke="white" strokeWidth="0.5" />
+        <rect x="0.9" y="1.4" width="46.2" height="46.2" rx="23.1" stroke="white" strokeWidth="1.8" />
+      </svg>
+    )
+  },
+  {
+    category: "Brutus™ acts as your always-available creative partner, transforming ideas into ready-to-use messaging that is clear, engaging, and performance-driven. Built into the BalloAds ecosystem, Content Generation & Creative Intelligence helps brands move faster without sacrificing quality or consistency across channels.",
+    title: "Content Generation & Creative Intelligence ",
+    imageUrl: phone.src,
+    icon: (
+      <svg className="shrink-0 mt-3" width="48" height="49" viewBox="0 0 48 49" fill="none">
+        <path d="M12.5743 15.8831C11.6719 16.0706 10.8516 16.6565 10.5 17.3713C10.1719 18.051 10.1719 17.8987 10.1719 25.0471V34.1995H36.2579C37.0665 33.4143 37.5586 32.7815 37.7461 31.9026V18.0745C37.5586 17.1956 36.2579 16.5627 36.2579 16.1643H12.5743Z" fill="white" stroke="white" strokeWidth="0.5" />
+        <rect x="0.9" y="1.4" width="46.2" height="46.2" rx="23.1" stroke="white" strokeWidth="1.8" />
+      </svg>
+    )
+  },
+  {
+    category: "Brutus™ transforms how your brand communicates by automating message delivery with precision, intelligence, and perfect timing. Instead of manual sending and fragmented workflows, Brutus enables seamless, rule-based messaging that works in the background — ensuring your customers receive the right message at exactly the right moment.",
+    title: "Automations & Scheduling",
+    imageUrl: phone.src,
+    icon: (
+      <svg className="shrink-0 mt-3" width="48" height="49" viewBox="0 0 48 49" fill="none">
+        <path d="M12.5743 15.8831C11.6719 16.0706 10.8516 16.6565 10.5 17.3713C10.1719 18.051 10.1719 17.8987 10.1719 25.0471V34.1995H36.2579C37.0665 33.4143 37.5586 32.7815 37.7461 31.9026V18.0745C37.5586 17.1956 36.2579 16.5627 36.2579 16.1643H12.5743Z" fill="white" stroke="white" strokeWidth="0.5" />
+        <rect x="0.9" y="1.4" width="46.2" height="46.2" rx="23.1" stroke="white" strokeWidth="1.8" />
+      </svg>
+    )
   }
 ];
 
@@ -132,92 +165,80 @@ export default function Page() {
         </div>
     </section>
     
-    <section className="relative w-full h-screen py-20 overflow-hidden bg-black">
-      {/* Background Image Container */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {/* The "Ring" Asset - Now movable */}
-        <div className="absolute w-[800px] h-auto -bottom-20 -right-20 pointer-events-none opacity-80">
-          <Image
-            src={ring}
-            alt="Decorative Ring"
-            width={1200} // Provide a base width
-            height={1200} // Provide a base height
-            className="w-full h-auto scale-[1.5] -top-160 left-30"
-            priority
-          />
-        </div>
-
-        {/* Overlay - Optional: only keep if you want the dark tint over the whole section */}
-        <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-      </div>
-
-      <div className="relative z-10 overflow-hidden md:overflow-visible py-20 px-4 md:px-8 lg:px-0 min-h-[600px] md:h-[540px] 2xl:h-[700px]">
-        
-        {/* SVG Background Layer */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <svg className="hidden md:block w-full h-full scale-110 -translate-x-[5%]" viewBox="0 0 1200 540" fill="none" preserveAspectRatio="none">
-            {/* 2. Changed fill to white/40 (rgba(255,255,255,0.4)) and removed gradient ref */}
-            <path 
-              d="M417.616 0C404.551 0 396.134 3.93474 389.697 10.2961L373.613 26.2278C371.249 28.575 366.793 30.0265 361.969 30.0265H21.5005C3.57885 30.0265 -5.38198 30.0265 -12.2272 33.5142C-18.2483 36.5822 -23.1437 41.4776 -26.2117 47.4988C-29.6995 54.3439 -29.6995 63.3048 -29.6995 81.2264V488.8C-29.6995 506.722 -29.6995 515.682 -26.2117 522.528C-23.1437 528.549 -18.2483 533.444 -12.2272 536.512C-5.38198 540 3.57886 540 21.5005 540H342.371C353.648 540 364.046 534.931 369.588 529.443L380.593 517.832C382.957 515.484 387.668 510.869 397.843 510.869H1148.44C1166.37 510.869 1175.33 510.869 1182.17 507.381C1188.19 504.314 1193.09 499.418 1196.16 493.397C1199.64 486.552 1199.64 477.591 1199.64 459.669V51.2C1199.64 33.2783 1199.64 24.3175 1196.16 17.4723C1193.09 11.4511 1188.19 6.55574 1182.17 3.48779C1175.33 0 1166.37 0 1148.44 0H417.616Z" 
-              fill="white" 
-              fillOpacity="0.4"
-            />
-          </svg>
-          {/* 3. Updated Mobile Fallback to white/40 */}
-          <div className="md:hidden absolute inset-0 bg-white/40 backdrop-blur-sm" />
-        </div>
-
-        {/* Slider Content */}
-        <div className="relative z-10 container mx-auto h-full flex items-center">
-          <div className="w-full relative h-full min-h-[400px]">
+    <section className="relative w-full h-screen flex items-center justify-center bg-black overflow-hidden">
+         
+        {/* 1. The Design-Match Background (The Card) */}
+        <div className="relative w-[90%] max-w-[1200px] h-[450px] rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-md px-12 py-16 flex items-center">
+          
+          {/* Slider Content Loop */}
+          <div className="relative w-full h-full">
             {slides.map((slide, index) => (
               <div
                 key={index}
-                className={`absolute inset-0 transition-opacity duration-1000 flex flex-col md:flex-row items-center gap-10 ${
-                  currentSlide === index ? "opacity-100 z-20" : "opacity-0 z-10"
+                className={`absolute inset-0 transition-all duration-700 flex flex-col md:flex-row items-center ${
+                  currentSlide === index ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
                 }`}
-              >
-                <div className="md:w-1/2 text-white">
-                  <div className="mt-6 flex flex-col md:flex-row gap-6">
-                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight drop-shadow-lg">
-                      {slide.title}
-                    </h2>
-                  </div>
-                  <p className="uppercase text-sm tracking-widest font-medium opacity-90">{slide.category}</p>
+                >
+                {/* Left Side: Text Content */}
+                <div className="md:w-3/5 text-white z-10">
+                  <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+                    {slide.title}
+                  </h2>
+                  <p className="text-white/70 text-lg mb-8 max-w-md leading-relaxed">
+                    {slide.category} {/* Added a description field to your data */}
+                  </p>
+                  <button className="bg-white text-blue-900 px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-opacity-90 transition-all">
+                    Read more 
+                    <span className="border border-blue-900 rounded-full w-5 h-5 flex items-center justify-center text-xs">→</span>
+                  </button>
                 </div>
-                
-                <div className="md:w-1/2 flex justify-center">
-                  <div 
-                    className="w-full max-w-[650px] aspect-[4/3] rounded-[30px] lg:rounded-[40px] bg-cover bg-center shadow-2xl border border-white/20"
-                    style={{ backgroundImage: `url(${slide.imageUrl})` }}
-                  />
+
+                {/* Right Side: The Phone (Absolute Positioned to Pop Out) */}
+                <div className="md:w-2/5 relative h-full flex justify-end items-center">
+                  {/* Glow Effect behind phone */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/20 blur-[100px] rounded-full" />
+                  
+                  <div className="relative w-[280px] md:w-[320px] lg:w-[380px] top-10 transform md:translate-x-10 lg:translate-x-20 -translate-y-10">
+                    <Image
+                      src={phone}
+                      alt="Phone Preview"
+                      width={500}
+                      height={1000}
+                      className="w-full h-auto object-contain drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
+                      priority
+                    />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Pagination */}
-        <div className="absolute bottom-10 left-4 md:left-20 z-30">
-          <div className="flex items-center gap-3">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`group flex flex-col gap-2 transition-all duration-500 ${
-                  currentSlide === index ? "w-24 md:w-48 opacity-100" : "w-12 opacity-50"
-                }`}
-              >
-                <div className={`h-[3px] w-full transition-colors ${currentSlide === index ? 'bg-white' : 'bg-white/40'}`} />
-                <span className="text-white text-xs font-bold tracking-tighter">0{index + 1}</span>
-              </button>
-            ))}
+          {/* 2. The Decorative Asset (Replacing the CSS Ring with your Image) */}
+          <div className="absolute top-120 left-1/2 scale-[2] -translate-x-1/2 w-[700px] h-auto  z-20 pointer-events-none">
+            <Image
+              src={ring} // Replace this with your imported image (e.g., ring, glow, etc.)
+              alt="Decorative element"
+              width={800}
+              height={400}
+              className="w-full h-auto object-contain opacity-90"
+              priority
+            />
           </div>
         </div>
-      </div>
+
+        {/* Pagination (Dots or Bars) */}
+        <div className="absolute bottom-10 flex gap-2">
+          {slides.map((_, i) => (
+            <button 
+              key={i} 
+              onClick={() => setCurrentSlide(i)}
+              className={`h-1.5 rounded-full transition-all ${currentSlide === i ? 'w-12 bg-white' : 'w-4 bg-white/20'}`}
+            />
+          ))}
+        </div>
     </section>
 
-    <section className="relative w-full h-screen py-20 px-20 overflow-hidden bg-black">
+    <section className="relative w-full h-screen px-25 overflow-hidden bg-black">
             <div className="absolute inset-0 z-0">
               <Image
                 src={world}
@@ -227,8 +248,8 @@ export default function Page() {
                 priority
               />
             </div>
-            <div className="relative z-10 overflow-hidden">
-                <h3 className="relative z-10 text-3xl font-semibold text-center">Learn more about how we can support your growth</h3>
+            <div className="relative z-10 px-4 pb-28 pt-24 md:px-8 overflow-hidden">
+                <h3 className="relative z-10 text-[38.4px] md:text-[40px] font-bold text-center">Learn more about how we can support your growth</h3>
                 <div className="mt-10 grid gap-6 sm:grid-cols-2">
                   {supportHighlights.map((highlight) => (
                     <div key={highlight.title} className="flex gap-3">
@@ -247,24 +268,24 @@ export default function Page() {
                       </span>
                       <div className="relative z-10 flex flex-1 flex-col gap-4">
                         <div className="relative z-10">
-                          <h3 className="relative z-10 text-2xl font-semibold">{highlight.title}</h3>
-                          <p className="relative z-10 mt-2 text-sm text-white/70">{highlight.description}</p>
+                          <h3 className="relative z-10 text-[23px] md:text-[25px] font-semibold">{highlight.title}</h3>
+                          <p className="relative z-10 mt-2 text-[20px] text-white/70">{highlight.description}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               
-              <div className="relative z-10 flex flex-col items-center gap-5 md:flex-row md:justify-center">
+              <div className="relative z-10 flex flex-col items-center gap-5 px-4 pb-28 pt-24 md:px-8 md:flex-row md:justify-center">
                 <Link
                   href="/signup"
-                  className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-color-2)]"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-2rem font-semibold text-white transition hover:bg-[var(--brand-color-2)]"
                 >
                   Get Started
                 </Link>
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-2rem font-semibold text-[var(--brand-color-1)] transition hover:border-white hover:bg-white/10"
                 >
                   Contact us
                 </Link>
