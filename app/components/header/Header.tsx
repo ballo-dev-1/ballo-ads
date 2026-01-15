@@ -47,11 +47,11 @@ const navItems: NavItem[] = [
     links: [
       { label: "Guides", href: "/resources#guides" },
       {label: "Professional Services", href:"/professional"},
-      { label: "Developers", href: "/developers", 
+      { label: "Developers", href: "/api", 
         subLinks: [
-          { label: "SMS API", href: "/developers/sms-api" },
-          { label: "Email API", href: "/developers/email-api" },
-          { label: "WhatsApp API", href: "/developers/whatsapp-api" },
+          { label: "SMS API", href: "/api/sms-api" },
+          { label: "Email API", href: "/api/email-api" },
+          { label: "WhatsApp API", href: "/api/whatsapp-api" },
         ],
       },
     ],
