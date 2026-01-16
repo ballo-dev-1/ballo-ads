@@ -16,12 +16,14 @@ import {
   ThumbsDown,
 } from "lucide-react";
 import clsx from "clsx";
+import Image from "next/image";
+import ringImage from "@/public/Assets/9.png";
 
 // --- 1. CONFIGURATION: Left Sidebar Data ---
 const LEFT_MENU_ITEMS = [
   { name: "Overview", href: "/api", icon: LayoutDashboard, active: false },
   { name: "Getting Started", href: "#", icon: Rocket, active: true },
-  { name: "API Reference", href: "#", icon: FileCode, active: false },
+  { name: "API Reference", href: "/api/api-reference", icon: FileCode, active: false },
   { name: "Company Management", href: "#", icon: Building2, active: false },
   { name: "Client Subscriptions", href: "#", icon: Users, active: false },
   { name: "Purchase Orders", href: "#", icon: ShoppingCart, active: false },
@@ -32,12 +34,13 @@ const LEFT_MENU_ITEMS = [
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---
 const RIGHT_MENU_ITEMS = [
-  { id: "overview", label: "Overview" },
-  { id: "key-features", label: "Key Features" },
-  { id: "campaign-management", label: "Campaign Management" },
-  { id: "company-management", label: "Company & Client Mgmt" },
-  { id: "billing", label: "Purchase Orders & Billing" },
-  { id: "security", label: "Security & Authentication" },
+  { id: "overview1", label: "Base URL" },
+  { id: "key-features", label: "Authentication" },
+  { id: "campaign-management", label: "Quick Start" },
+  { id: "compaign-management1", label: "1. Register an Account" },
+  { id: "company-management", label: "2. Confirm your email" },
+  { id: "billing", label: "3. Login" },
+  { id: "security", label: "4. Create a Company" },
 ];
 
 // --- 3. COMPONENT: Left Sidebar ---
@@ -208,116 +211,127 @@ export default function BalloAdsDocumentation() {
           {/* A. The Readable Content Column */}
           <div className="flex-1 min-w-0"> {/* min-w-0 prevents flex child from overflowing */}
             
-            {/* Decorative Rings */}
-            <div className="flex -space-x-6 opacity-40 mb-10 pl-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div 
-                  key={i} 
-                  className="w-20 h-20 rounded-full border-[6px] items-center border-blue-400/30 shadow-[0_0_15px_rgba(59,130,246,0.2)] backdrop-blur-sm" 
-                />
-              ))}
+            {/* Decorative Rings - Image Version */}
+            <div className="flex -space-x-6 opacity-40 mb-10 pl-2 items-center">
+                {/* We keep the map loop to repeat it 6 times */}
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    // We use a wrapper div to define the exact size (w-20 h-20 = 80px)
+                    // shrink-0 ensures the flex container doesn't squish them
+                    <div key={i} className="relative w-40 h-40 shrink-0">
+                    <Image
+                        src={ringImage} // <--- Replace with your actual image variable name
+                        alt="Decorative ring"
+                        fill // This makes the image fill the w-20 h-20 parent
+                        className="object-contain pointer-events-none scale-[2]" // Ensures the whole ring is visible without stretching
+                        sizes="(max-width: 768px) 80px, 80px" // Performance optimization
+                    />
+                    </div>
+                ))}
             </div>
 
             {/* SECTION: Overview */}
             <section id="overview" className="scroll-mt-24 mb-16">
               <h1 className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300/50 uppercase drop-shadow-sm mb-6">
-                Overview
+                Getting Started
               </h1>
-              <p className="text-lg md:text-xl text-white leading-relaxed font-light">
+              {/*<p className="text-lg md:text-xl text-white leading-relaxed font-light">
                 <span className="font-medium">BalloAds</span> is a powerful multi-channel advertising and 
                 messaging platform that enables businesses to create, manage, and execute marketing campaigns across 
                 SMS, WhatsApp, and Email channels. Built with <span className="text-blue-300">.NET</span> and <span className="text-blue-300">PostgreSQL</span>, 
                 BalloAds provides a comprehensive API for managing companies, campaigns, purchase orders, and client subscriptions.
-              </p>
+              </p>*/}
+            </section>
+
+            {/* SECTION: Overview1 */}
+            <section id="overview1" className="scroll-mt-24 mb-16 space-y-8">
+              <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
+                Base URL
+              </h3>
+              
+              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                  https://api.balloads.com/v1 
+                  </p>
+              </div>
             </section>
 
             {/* SECTION: Key Features */}
-            <section id="key-features" className="scroll-mt-24 mb-16 space-y-8">
-              <h2 className="text-4xl font-bold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
-                KEY FEATURES
-              </h2>
-              
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold text-white">Multi-Channel Messaging</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">SMS Campaigns:</strong> Send bulk SMS messages to your target audience.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">WhatsApp Messaging:</strong> Reach customers through WhatsApp with rich media support.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">Email Campaigns:</strong> Deliver personalized email marketing campaigns.</span>
-                  </li>
-                </ul>
+            <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
+               <h3 className="text-2xl font-semibold text-white">Authentication</h3>
+                <p className="space-y-3 text-white text-lg">
+                    All protected endpoints require a JWT token in the Authorization header:
+                </p>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                  Authorization: Bearer <span className="text-green" >"your-jwt-token"</span>
+                  </p>
               </div>
             </section>
 
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Campaign Management</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Create and manage advertising campaigns with flexible scheduling.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Support for multiple campaign purposes: SMS Ads, Leads, Competitions.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Real-time campaign logs and analytics.</span>
-                  </li>
-                </ul>
+               <h3 className="text-2xl font-semibold text-white">Quick Start</h3>
+                <p id="campaign-management1" className="space-y-3 text-white text-lg">
+                    1. Register an Account
+                </p>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    POST /v1/auth/registration <br />
+                    Content-Type: application/json
+                    <br />
+                    <br />
+                    "email": "user@example.com", <br />
+                    "password": "SecurePassword123!", <br />
+                    "firstName": "John", <br />
+                    "lastName": "Doe", <br />
+                    
+                  </p>
+              </div>
             </section>
 
             {/* SECTION: Company Management */}
             <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Company & Client Management</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Company profile management with logo and social media integration.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Client subscription management and role-based access.</span>
-                  </li>
-                </ul>
+                <p className="space-y-3 text-white text-lg">
+                    2. Confirm Your Email <br />
+                    <br />
+                    Click the confirmation link sent to your email address.
+                </p>
             </section>
 
             {/* SECTION: Billing */}
             <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Purchase Orders & Billing</h3>
-                <ul className="space-y-3 text-blue-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Flexible purchase order system for message credits.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Pricing models based on message volume thresholds.</span>
-                  </li>
-                </ul>
+                <p className="space-y-3 text-white text-lg">
+                    3. Login
+                </p>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                  POST /v1/auth/login <br />
+                  Content-Type: application/json
+                    <br />
+                    <br />
+                    "email": "user@example.com", <br />
+                    "password": "SecurePassword123!", 
+                  </p>
+              </div>
             </section>
 
              {/* SECTION: Security */}
              <section id="security" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Security & Authentication</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>JWT-based authentication and Email verification system.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Secure API endpoints with company-level access control.</span>
-                  </li>
-                </ul>
+             <p className="space-y-3 text-white text-lg">
+                    4. Create a Company
+                </p>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    POST /v1/companies <br />
+                    Authorization: Bearer "your-token" <br />
+                    Content-Type: application/json 
+                    <br />
+                    <br />
+                    "name": "My Business", <br />
+                    "description": "Business description", <br />
+                    "pacraNumber": "123456"
+                  </p>
+              </div>
             </section>
 
             {/* Feedback Footer */}
