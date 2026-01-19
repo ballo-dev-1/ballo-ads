@@ -21,25 +21,25 @@ import ringImage from "@/public/Assets/9.png";
 
 // --- 1. CONFIGURATION: Left Sidebar Data ---
 const LEFT_MENU_ITEMS = [
-    { name: "Overview", href: "#", icon: LayoutDashboard, active: true },
-    { name: "Getting Started", href: "/api/getting-started", icon: Rocket, active: false },
-    { name: "API Reference", href: "/api/api-reference", icon: FileCode, active: false },
-    { name: "Company Management", href: "/api/company-management", icon: Building2, active: false },
-    { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
-    { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
-    { name: "Campaign Management", href: "/api/campaign-management", icon: Megaphone, active: false },
-    { name: "Pricing Models", href: "#", icon: Tags, active: false },
-    { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
+  { name: "Overview", href: "/api", icon: LayoutDashboard, active: false },
+  { name: "Getting Started", href: "/api/getting-started", icon: Rocket, active: false },
+  { name: "API Reference", href: "/api/api-reference", icon: FileCode, active: false },
+  { name: "Company Management", href: "/api/company-management", icon: Building2, active: false },
+  { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
+  { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
+  { name: "Campaign Management", href: "#", icon: Megaphone, active: true },
+  { name: "Pricing Models", href: "#", icon: Tags, active: false },
+  { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
 ];
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---
 const RIGHT_MENU_ITEMS = [
-  { id: "overview", label: "Overview" },
-  { id: "key-features", label: "Key Features" },
-  { id: "campaign-management", label: "Campaign Management" },
-  { id: "company-management", label: "Company & Client Mgmt" },
-  { id: "billing", label: "Purchase Orders & Billing" },
-  { id: "security", label: "Security & Authentication" },
+  { id: "overview", label: "Company Management "},
+  { id: "overview1", label: "Create Company" },
+  { id: "key-features", label: "Get All Companies" },
+  { id: "campaign-management", label: "Update Company Socials" },
+  { id: "company-management", label: "Update Company Logo" },
+  { id: "billing", label: "Update Sender ID" },
 ];
 
 // --- 3. COMPONENT: Left Sidebar ---
@@ -231,103 +231,104 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Overview */}
             <section id="overview" className="scroll-mt-24 mb-16">
               <h1 className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300/50 uppercase drop-shadow-sm mb-6">
-                Overview
+                Campaign Management
               </h1>
-              <p className="text-lg md:text-xl text-white leading-relaxed font-light">
-                <span className="font-medium">BalloAds</span> is a powerful multi-channel advertising and 
-                messaging platform that enables businesses to create, manage, and execute marketing campaigns across 
-                SMS, WhatsApp, and Email channels. Built with <span className="text-blue-300">.NET</span> and <span className="text-blue-300">PostgreSQL</span>, 
-                BalloAds provides a comprehensive API for managing companies, campaigns, purchase orders, and client subscriptions.
-              </p>
+            </section>
+
+            {/* SECTION: Overview1 */}
+            <section id="overview1" className="scroll-mt-24 mb-16 space-y-8">
+              <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
+                Create Company
+              </h3>
+              
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    POST /v1/companies/`id`/campaigns <br />
+                    Authorization: Bearer `token` <br />
+                    Content-Type: multipart/form-data <br /> <br />
+                    Creates a new advertising campaign.
+
+                  </p>
+                </div>
+                <p className="space-y-3 text-white text-lg">
+                    Request Fields: - name (string, required) - Campaign name - campaignMessage (string, required) 
+                    - Message content - campaignPurpose (enum, required) - Campaign purpose - campaignChannel (enum, required)
+                    - Delivery channel - recipients (array of strings, required) - List of recipient phone numbers/emails 
+                    - startDate (datetime, required) - Campaign start date - endDate (datetime, required) - Campaign end date 
+                    - mediaFile (file, optional) - Media file for WhatsApp/Email (not allowed for SMS)
+                </p>
+                <p className="space-y-3 text-white text-lg">
+                Campaign Purpose Options: - SmsAdvert - SMS Advertisement - PersonalizedMessage - Personalized Message - ShareCoupon 
+                - Share Coupon - CollectLeads - Collect Leads - RunCompetition - Run Competition
+                </p>
+                <p className="space-y-3 text-white text-lg">
+                Campaign Channel Options: - Sms - SMS only - WhatsApp - WhatsApp only - Email - Email only - AllPlatforms - All platforms
+                </p>
             </section>
 
             {/* SECTION: Key Features */}
-            <section id="key-features" className="scroll-mt-24 mb-16 space-y-8">
-              <h2 className="text-4xl font-bold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
-                KEY FEATURES
-              </h2>
-              
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold text-white">Multi-Channel Messaging</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">SMS Campaigns:</strong> Send bulk SMS messages to your target audience.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">WhatsApp Messaging:</strong> Reach customers through WhatsApp with rich media support.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">Email Campaigns:</strong> Deliver personalized email marketing campaigns.</span>
-                  </li>
-                </ul>
-              </div>
+            <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
+               <h3 className="text-2xl font-semibold text-white">Get All Companies</h3>
+                <p className="space-y-3 text-white text-lg">
+                    Retrieves all companies accessible by the authenticated user.
+                </p>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    GET /v1/companies <br />
+                    Authorization: Bearer 'token'
+                  </p>
+                </div>
             </section>
 
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Campaign Management</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Create and manage advertising campaigns with flexible scheduling.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Support for multiple campaign purposes: SMS Ads, Leads, Competitions.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Real-time campaign logs and analytics.</span>
-                  </li>
-                </ul>
+               <h3 className="text-2xl font-semibold text-white">Update Company Socials</h3>
+            
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    PATCH /v1/companies/`id`/socials <br />
+                    Authorization: Bearer `token` <br />
+                    <br />
+                    Request Body: <br />
+                    <br />
+                    "facebook": "https://facebook.com/company", <br />
+                    "twitter": "https://twitter.com/company", <br />
+                    "instagram": "https://instagram.com/company", <br />
+                    "linkedin": "https://linkedin.com/company" 
+                  </p>
+                </div>
             </section>
 
             {/* SECTION: Company Management */}
             <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Company & Client Management</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Company profile management with logo and social media integration.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Client subscription management and role-based access.</span>
-                  </li>
-                </ul>
+                <h3 className="text-2xl font-semibold text-white">Update Company Logo</h3>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    PATCH /v1/companies/`id`/logos <br />
+                    Authorization: Bearer `token` <br />
+                    Content-Type: multipart/form-data
+                  </p>
+                </div>
+                <p className="space-y-3 text-white text-lg">
+                    Uploads or updates company logo. <br />
+                    Request: Form data with logo file field
+                </p>
             </section>
 
             {/* SECTION: Billing */}
             <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Purchase Orders & Billing</h3>
-                <ul className="space-y-3 text-blue-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Flexible purchase order system for message credits.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Pricing models based on message volume thresholds.</span>
-                  </li>
-                </ul>
-            </section>
-
-             {/* SECTION: Security */}
-             <section id="security" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Security & Authentication</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>JWT-based authentication and Email verification system.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Secure API endpoints with company-level access control.</span>
-                  </li>
-                </ul>
+                <h3 className="text-2xl font-semibold text-white">Update Sender ID</h3>
+                
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    PATCH /v1/companies/`id`/sender-id <br />
+                    Authorization: Bearer `token` <br /> <br />
+                    Updates the SMS sender ID for the company. <br />
+                    Request Body: <br />
+                    <br />
+                    "senderId": "COMPANY"
+                  </p>
+              </div>
             </section>
 
             {/* Feedback Footer */}

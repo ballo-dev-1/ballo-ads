@@ -21,25 +21,23 @@ import ringImage from "@/public/Assets/9.png";
 
 // --- 1. CONFIGURATION: Left Sidebar Data ---
 const LEFT_MENU_ITEMS = [
-    { name: "Overview", href: "#", icon: LayoutDashboard, active: true },
-    { name: "Getting Started", href: "/api/getting-started", icon: Rocket, active: false },
-    { name: "API Reference", href: "/api/api-reference", icon: FileCode, active: false },
-    { name: "Company Management", href: "/api/company-management", icon: Building2, active: false },
-    { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
-    { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
-    { name: "Campaign Management", href: "/api/campaign-management", icon: Megaphone, active: false },
-    { name: "Pricing Models", href: "#", icon: Tags, active: false },
-    { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
+  { name: "Overview", href: "/api", icon: LayoutDashboard, active: false },
+  { name: "Getting Started", href: "/api/getting-started", icon: Rocket, active: false },
+  { name: "API Reference", href: "/api/api-reference", icon: FileCode, active: false },
+  { name: "Company Management", href: "/api/company-management", icon: Building2, active: false },
+  { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
+  { name: "Purchase Orders", href: "#", icon: ShoppingCart, active: true },
+  { name: "Campaign Management", href: "/api/campaign-management", icon: Megaphone, active: false },
+  { name: "Pricing Models", href: "#", icon: Tags, active: false },
+  { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
 ];
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---
 const RIGHT_MENU_ITEMS = [
-  { id: "overview", label: "Overview" },
-  { id: "key-features", label: "Key Features" },
-  { id: "campaign-management", label: "Campaign Management" },
-  { id: "company-management", label: "Company & Client Mgmt" },
-  { id: "billing", label: "Purchase Orders & Billing" },
-  { id: "security", label: "Security & Authentication" },
+  { id: "overview", label: "Purchase Orders" },
+  { id: "overview1", label: "Create Purchase Order" },
+  { id: "key-features", label: "Get Purchase Orders" },
+  { id: "campaign-management", label: "Get Consolidated Purchase Orders" },
 ];
 
 // --- 3. COMPONENT: Left Sidebar ---
@@ -231,103 +229,57 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Overview */}
             <section id="overview" className="scroll-mt-24 mb-16">
               <h1 className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300/50 uppercase drop-shadow-sm mb-6">
-                Overview
+                Purchase Orders
               </h1>
-              <p className="text-lg md:text-xl text-white leading-relaxed font-light">
-                <span className="font-medium">BalloAds</span> is a powerful multi-channel advertising and 
-                messaging platform that enables businesses to create, manage, and execute marketing campaigns across 
-                SMS, WhatsApp, and Email channels. Built with <span className="text-blue-300">.NET</span> and <span className="text-blue-300">PostgreSQL</span>, 
-                BalloAds provides a comprehensive API for managing companies, campaigns, purchase orders, and client subscriptions.
-              </p>
+            </section>
+
+            {/* SECTION: Overview1 */}
+            <section id="overview1" className="scroll-mt-24 mb-16 space-y-8">
+              <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
+                Create Purchase Order
+              </h3>
+              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    POST /v1/companies/`id`/purchase-orders <br />
+                    Authorization: Bearer `token` <br /> <br />
+                    Creates a new purchase order for message credits. <br />
+                    <br />
+                    Request Body: <br />
+                    <br />
+                    "platform": "Sms", <br />
+                    "messageCount": 1000, <br />
+                    "amount": 100.00 <br />
+                    <br />
+                    Platform Options: - Sms - SMS messages - WhatsApp - WhatsApp messages - Email - Email messages
+                  </p>
+              </div>
             </section>
 
             {/* SECTION: Key Features */}
-            <section id="key-features" className="scroll-mt-24 mb-16 space-y-8">
-              <h2 className="text-4xl font-bold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
-                KEY FEATURES
-              </h2>
-              
-              <div className="space-y-6">
-                <h3 className="text-2xl font-semibold text-white">Multi-Channel Messaging</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">SMS Campaigns:</strong> Send bulk SMS messages to your target audience.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">WhatsApp Messaging:</strong> Reach customers through WhatsApp with rich media support.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span><strong className="text-white font-semibold">Email Campaigns:</strong> Deliver personalized email marketing campaigns.</span>
-                  </li>
-                </ul>
-              </div>
+            <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
+               <h3 className="text-2xl font-semibold text-white">
+                    Get Purchase Orders
+               </h3>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    GGET /v1/companies/`id`/purchase-orders?status=Active&platform=Sms <br />
+                    Authorization: Bearer `token` <br /> <br />
+                    Retrieves purchase orders with optional filtering. <br />
+                    Query Parameters: - status - Filter by order status - platform - Filter by platform type - page - Page number - pageSize - Items per page
+                  </p>
+                </div>
             </section>
 
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Campaign Management</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Create and manage advertising campaigns with flexible scheduling.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Support for multiple campaign purposes: SMS Ads, Leads, Competitions.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Real-time campaign logs and analytics.</span>
-                  </li>
-                </ul>
-            </section>
-
-            {/* SECTION: Company Management */}
-            <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Company & Client Management</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Company profile management with logo and social media integration.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Client subscription management and role-based access.</span>
-                  </li>
-                </ul>
-            </section>
-
-            {/* SECTION: Billing */}
-            <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Purchase Orders & Billing</h3>
-                <ul className="space-y-3 text-blue-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Flexible purchase order system for message credits.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Pricing models based on message volume thresholds.</span>
-                  </li>
-                </ul>
-            </section>
-
-             {/* SECTION: Security */}
-             <section id="security" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Security & Authentication</h3>
-                <ul className="space-y-3 text-white text-lg">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>JWT-based authentication and Email verification system.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 bg-white rounded-full shrink-0" />
-                    <span>Secure API endpoints with company-level access control.</span>
-                  </li>
-                </ul>
+               <h3 className="text-2xl font-semibold text-white">Get Consolidated Purchase Orders</h3>
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    GET /v1/companies/`id`/purchase-orders/totals <br />
+                    Authorization: Bearer `token` <br />
+                    Returns consolidated summary of all purchase orders. 
+                  </p>
+              </div>
             </section>
 
             {/* Feedback Footer */}

@@ -24,23 +24,20 @@ const LEFT_MENU_ITEMS = [
   { name: "Overview", href: "/api", icon: LayoutDashboard, active: false },
   { name: "Getting Started", href: "/api/getting-started", icon: Rocket, active: false },
   { name: "API Reference", href: "#", icon: FileCode, active: true },
-  { name: "Company Management", href: "#", icon: Building2, active: false },
-  { name: "Client Subscriptions", href: "#", icon: Users, active: false },
-  { name: "Purchase Orders", href: "#", icon: ShoppingCart, active: false },
-  { name: "Campaign Management", href: "#", icon: Megaphone, active: false },
+  { name: "Company Management", href: "/api/company-management", icon: Building2, active: false },
+  { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
+  { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
+  { name: "Campaign Management", href: "/api/campaign-management", icon: Megaphone, active: false },
   { name: "Pricing Models", href: "#", icon: Tags, active: false },
   { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
 ];
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---
 const RIGHT_MENU_ITEMS = [
-  { id: "overview1", label: "Base URL" },
-  { id: "key-features", label: "Authentication" },
-  { id: "campaign-management", label: "Quick Start" },
-  { id: "compaign-management1", label: "1. Register an Account" },
-  { id: "company-management", label: "2. Confirm your email" },
-  { id: "billing", label: "3. Login" },
-  { id: "security", label: "4. Create a Company" },
+  { id: "overview", label: "API Reference" },
+  { id: "overview1", label: "Authentication Endpoints" },
+  { id: "key-features", label: "Login" },
+  { id: "campaign-management", label: "Confirm Email" },
 ];
 
 // --- 3. COMPONENT: Left Sidebar ---
@@ -294,51 +291,6 @@ export default function BalloAdsDocumentation() {
                 Confirms user email address. Returns an HTML confirmation page.
                 </p>
             </section>
-
-            {/* SECTION: Company Management 
-            <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
-                <p className="space-y-3 text-white text-lg">
-                    2. Confirm Your Email <br />
-                    <br />
-                    Click the confirmation link sent to your email address.
-                </p>
-            </section>
-
-             SECTION: Billing 
-            <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
-                <p className="space-y-3 text-white text-lg">
-                    3. Login
-                </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
-                  <p className="mt-3 text-sm text-black">
-                  POST /v1/auth/login <br />
-                  Content-Type: application/json
-                    <br />
-                    <br />
-                    "email": "user@example.com", <br />
-                    "password": "SecurePassword123!", 
-                  </p>
-              </div>
-            </section>
-
-              SECTION: Security 
-             <section id="security" className="scroll-mt-24 mb-16 space-y-6">
-             <p className="space-y-3 text-white text-lg">
-                    4. Create a Company
-                </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
-                  <p className="mt-3 text-sm text-black">
-                    POST /v1/companies <br />
-                    Authorization: Bearer "your-token" <br />
-                    Content-Type: application/json 
-                    <br />
-                    <br />
-                    "name": "My Business", <br />
-                    "description": "Business description", <br />
-                    "pacraNumber": "123456"
-                  </p>
-              </div>
-            </section> */}
 
             {/* Feedback Footer */}
             <FeedbackButtons />
