@@ -23,21 +23,19 @@ import ringImage from "@/public/Assets/9.png";
 const LEFT_MENU_ITEMS = [
   { name: "Overview", href: "/api", icon: LayoutDashboard, active: false },
   { name: "Getting Started", href: "/api/getting-started", icon: Rocket, active: false },
-  { name: "API Reference", href: "#", icon: FileCode, active: true },
+  { name: "API Reference", href: "/api/api-reference", icon: FileCode, active: false },
   { name: "Company Management", href: "/api/company-management", icon: Building2, active: false },
   { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
   { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
   { name: "Campaign Management", href: "/api/campaign-management", icon: Megaphone, active: false },
   { name: "Pricing Models", href: "/api/pricing-models", icon: Tags, active: false },
-  { name: "Payment Integration", href: "/api/payment-intergration", icon: CreditCard, active: false },
+  { name: "Payment Integration", href: "#", icon: CreditCard, active: true },
 ];
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---
 const RIGHT_MENU_ITEMS = [
-  { id: "overview", label: "API Reference" },
-  { id: "overview1", label: "Authentication Endpoints" },
-  { id: "key-features", label: "Login" },
-  { id: "campaign-management", label: "Confirm Email" },
+  { id: "overview", label: "Payment Integration" },
+  { id: "overview1", label: "Payment Callback" },
 ];
 
 // --- 3. COMPONENT: Left Sidebar ---
@@ -229,67 +227,22 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Overview */}
             <section id="overview" className="scroll-mt-24 mb-16">
               <h1 className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300/50 uppercase drop-shadow-sm mb-6">
-                API Reference
+                Payment Integration
               </h1>
-              {/*<p className="text-lg md:text-xl text-white leading-relaxed font-light">
-                <span className="font-medium">BalloAds</span> is a powerful multi-channel advertising and 
-                messaging platform that enables businesses to create, manage, and execute marketing campaigns across 
-                SMS, WhatsApp, and Email channels. Built with <span className="text-blue-300">.NET</span> and <span className="text-blue-300">PostgreSQL</span>, 
-                BalloAds provides a comprehensive API for managing companies, campaigns, purchase orders, and client subscriptions.
-              </p>*/}
             </section>
 
             {/* SECTION: Overview1 */}
             <section id="overview1" className="scroll-mt-24 mb-16 space-y-8">
               <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
-                Authentication Endpoints
+                Payment Callback
               </h3>
-              <p className="space-y-3 text-white text-lg">
-                    Register User <br />
-                    POST /v1/auth/registration <br /> <br />
-                    Creates a new user account. Requires email confirmation. <br />
-                </p>
               <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    Request Body: <br /> <br />
-                    "email": "string", <br />
-                    "password": "string", <br />
-                    "firstName": "string", <br />
-                    "lastName": "string"
+                    POST /v1/payments/callbacks/purchase-order <br />
+                    <br />
+                    Webhook endpoint for Lipila payment gateway callbacks (handled automatically).
                   </p>
               </div>
-            </section>
-
-            {/* SECTION: Key Features */}
-            <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Login</h3>
-                <p className="space-y-3 text-white text-lg">
-                    POST /v1/auth/login <br />
-                    Authenticates a user and returns a JWT token.
-                </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
-                  <p className="mt-3 text-sm text-black">
-                    Request Body: <br /> <br />
-                    "email": "string", <br />
-                    "password": "string" <br /> <br />
-                    Response: <br /> <br />
-                    "token": "jwt-token-string", <br />
-                    "expiresAt": "2024-01-01T00:00:00Z"
-                  </p>
-              </div>
-            </section>
-
-            {/* SECTION: Campaign Management */}
-            <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Confirm Email</h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
-                  <p className="mt-3 text-sm text-black">
-                    GET /v1/auth/confirm-email?id='userId'&token='confirmationToken'
-                  </p>
-              </div>
-              <p className="space-y-3 text-white text-lg">
-                Confirms user email address. Returns an HTML confirmation page.
-                </p>
             </section>
 
             {/* Feedback Footer */}

@@ -28,8 +28,8 @@ const LEFT_MENU_ITEMS = [
   { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
   { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
   { name: "Campaign Management", href: "/api/campaign-management", icon: Megaphone, active: false },
-  { name: "Pricing Models", href: "#", icon: Tags, active: false },
-  { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
+  { name: "Pricing Models", href: "/api/pricing-models", icon: Tags, active: false },
+  { name: "Payment Integration", href: "/api/payment-intergration", icon: CreditCard, active: false },
 ];
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---

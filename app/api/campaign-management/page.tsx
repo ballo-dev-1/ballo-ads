@@ -28,18 +28,18 @@ const LEFT_MENU_ITEMS = [
   { name: "Client Subscriptions", href: "/api/client-subscription", icon: Users, active: false },
   { name: "Purchase Orders", href: "/api/purchase-orders", icon: ShoppingCart, active: false },
   { name: "Campaign Management", href: "#", icon: Megaphone, active: true },
-  { name: "Pricing Models", href: "#", icon: Tags, active: false },
-  { name: "Payment Integration", href: "#", icon: CreditCard, active: false },
+  { name: "Pricing Models", href: "/api/pricing-models", icon: Tags, active: false },
+  { name: "Payment Integration", href: "/api/payment-intergration", icon: CreditCard, active: false },
 ];
 
 // --- 2. CONFIGURATION: Right Sidebar Data (Table of Contents) ---
 const RIGHT_MENU_ITEMS = [
-  { id: "overview", label: "Company Management "},
-  { id: "overview1", label: "Create Company" },
-  { id: "key-features", label: "Get All Companies" },
-  { id: "campaign-management", label: "Update Company Socials" },
-  { id: "company-management", label: "Update Company Logo" },
-  { id: "billing", label: "Update Sender ID" },
+  { id: "overview", label: "Campagn Management "},
+  { id: "overview1", label: "Create Campaign" },
+  { id: "key-features", label: "Get Campaigns" },
+  { id: "campaign-management", label: "Activate Campaign" },
+  { id: "company-management", label: "Cancel Campaign" },
+  { id: "billing", label: "Get Campaign Logs" },
 ];
 
 // --- 3. COMPONENT: Left Sidebar ---
@@ -238,7 +238,7 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Overview1 */}
             <section id="overview1" className="scroll-mt-24 mb-16 space-y-8">
               <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
-                Create Company
+                Create Campaign
               </h3>
               
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
@@ -264,69 +264,78 @@ export default function BalloAdsDocumentation() {
                 <p className="space-y-3 text-white text-lg">
                 Campaign Channel Options: - Sms - SMS only - WhatsApp - WhatsApp only - Email - Email only - AllPlatforms - All platforms
                 </p>
-            </section>
-
-            {/* SECTION: Key Features */}
-            <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Get All Companies</h3>
-                <p className="space-y-3 text-white text-lg">
-                    Retrieves all companies accessible by the authenticated user.
-                </p>
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    GET /v1/companies <br />
-                    Authorization: Bearer 'token'
+                    curl -X POST "https://api.balloads.com/v1/companies/1/campaigns" \ <br />
+                    -H "Authorization: Bearer `token`" \ <br />
+                    -F "name=Summer Sale" \ <br />
+                    -F "campaignMessage=Get 50% off on all products!" \ <br />
+                    -F "campaignPurpose=SmsAdvert" \ <br />
+                    -F "campaignChannel=Sms" \ <br />
+                    -F "recipients=[\"+260971234567\", \"+260971234568\"]" \ <br />
+                    -F "startDate=2024-06-01T00:00:00Z" \ <br />
+                    -F "endDate=2024-06-30T23:59:59Z"
                   </p>
                 </div>
             </section>
 
+            {/* SECTION: Key Features */}
+            <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
+               <h3 className="text-2xl font-semibold text-white">Get Campaigns</h3>
+                
+                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                  <p className="mt-3 text-sm text-black">
+                    GET /v1/companies/`id`/campaigns?status=Active&startDate=2024-01-01 <br />
+                    Authorization: Bearer `token`
+                  </p>
+                </div>
+                <p className="space-y-3 text-white text-lg">
+                    Retrieves campaigns with optional filtering.
+                </p>
+                <p className="space-y-3 text-white text-lg">
+                Query Parameters: - id - Filter by campaign ID - status - Filter by status (Pending, 
+                Active, Completed, Cancelled) - startDate - Filter by start date - endDate - Filter by end date 
+                - query - Search query - page - Page number - pageSize - Items per page
+                </p>
+            </section>
+
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
-               <h3 className="text-2xl font-semibold text-white">Update Company Socials</h3>
+               <h3 className="text-2xl font-semibold text-white">Activate Campaign</h3>
             
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/companies/`id`/socials <br />
+                    PATCH /v1/companies/`id`/campaigns/`campaignId`/activate <br />
                     Authorization: Bearer `token` <br />
                     <br />
-                    Request Body: <br />
-                    <br />
-                    "facebook": "https://facebook.com/company", <br />
-                    "twitter": "https://twitter.com/company", <br />
-                    "instagram": "https://instagram.com/company", <br />
-                    "linkedin": "https://linkedin.com/company" 
+                    Activates a pending campaign.
                   </p>
                 </div>
             </section>
 
             {/* SECTION: Company Management */}
             <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
-                <h3 className="text-2xl font-semibold text-white">Update Company Logo</h3>
+                <h3 className="text-2xl font-semibold text-white">Cancel Campaign</h3>
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/companies/`id`/logos <br />
+                    PATCH /v1/companies/`id`/campaigns/`campaignId`/cancel <br />
                     Authorization: Bearer `token` <br />
-                    Content-Type: multipart/form-data
+                    <br />
+                    Cancels an active or pending campaign.
                   </p>
                 </div>
-                <p className="space-y-3 text-white text-lg">
-                    Uploads or updates company logo. <br />
-                    Request: Form data with logo file field
-                </p>
             </section>
 
             {/* SECTION: Billing */}
             <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
-                <h3 className="text-2xl font-semibold text-white">Update Sender ID</h3>
+                <h3 className="text-2xl font-semibold text-white">Get Campaign Logs</h3>
                 
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/companies/`id`/sender-id <br />
-                    Authorization: Bearer `token` <br /> <br />
-                    Updates the SMS sender ID for the company. <br />
-                    Request Body: <br />
+                    GET /v1/companies/`id`/campaigns/`campaignId`/logs <br />
+                    Authorization: Bearer `token` <br />
                     <br />
-                    "senderId": "COMPANY"
+                    Retrieves activity logs for a specific campaign.
                   </p>
               </div>
             </section>
