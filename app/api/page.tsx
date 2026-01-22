@@ -14,6 +14,7 @@ import {
   CreditCard,
   ThumbsUp, 
   ThumbsDown,
+  Download
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
@@ -73,11 +74,29 @@ const Sidebar = () => {
         })}
       </nav>
       
-      {/*<div className="p-6 mt-auto">
-        <div className="bg-blue-900/20 p-4 rounded-2xl border border-white/5">
-           <p className="text-xs text-blue-200/50 text-center">v2.4.0 Documentation</p>
-        </div>
-      </div>*/}
+      <div className="p-6 mt-auto">
+        <a 
+          href="/public/Assets/BalloAPI.docx" // 1. Path to your file in the 'public' folder
+          download="BalloAPI.docx" // 2. The name the user sees when saving
+          className="group flex items-center gap-3 bg-blue-900/20 hover:bg-blue-600/20 p-4 rounded-2xl border border-white/5 hover:border-blue-400/30 transition-all duration-300 w-full cursor-pointer"
+        >
+          {/* Icon with background circle */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 group-hover:bg-blue-500 text-blue-300 group-hover:text-white transition-colors shrink-0">
+            <Download size={16} />
+          </div>
+
+          {/* Text Content */}
+          <div className="flex flex-col min-w-0"> {/* min-w-0 is key for text truncation responsiveness */}
+            <span className="text-xs font-semibold text-white group-hover:text-blue-200 transition-colors truncate">
+              Download Docs
+            </span>
+            <span className="text-[10px] text-blue-200/50 group-hover:text-blue-200/80 uppercase tracking-wider truncate">
+              v2.4.0 
+            </span>
+          </div>
+        </a>
+      </div>
+
     </aside>
   );
 };

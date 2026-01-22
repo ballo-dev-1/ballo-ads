@@ -14,6 +14,8 @@ import {
   CreditCard,
   ThumbsUp, 
   ThumbsDown,
+  Download,
+  FileText,
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
@@ -71,11 +73,28 @@ const Sidebar = () => {
         })}
       </nav>
       
-      {/*<div className="p-6 mt-auto">
-        <div className="bg-blue-900/20 p-4 rounded-2xl border border-white/5">
-           <p className="text-xs text-blue-200/50 text-center">v2.4.0 Documentation</p>
-        </div>
-      </div>*/}
+      <div className="p-6 mt-auto">
+        <a 
+          href="/public/Assets/BalloAPI.docx" // 1. Path to your file in the 'public' folder
+          download="BalloAPI.docx" // 2. The name the user sees when saving
+          className="group flex items-center gap-3 bg-blue-900/20 hover:bg-blue-600/20 p-4 rounded-2xl border border-white/5 hover:border-blue-400/30 transition-all duration-300 w-full cursor-pointer"
+        >
+          {/* Icon with background circle */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 group-hover:bg-blue-500 text-blue-300 group-hover:text-white transition-colors shrink-0">
+            <Download size={16} />
+          </div>
+
+          {/* Text Content */}
+          <div className="flex flex-col min-w-0"> {/* min-w-0 is key for text truncation responsiveness */}
+            <span className="text-xs font-semibold text-white group-hover:text-blue-200 transition-colors truncate">
+              Download Docs
+            </span>
+            <span className="text-[10px] text-blue-200/50 group-hover:text-blue-200/80 uppercase tracking-wider truncate">
+              v2.4.0 
+            </span>
+          </div>
+        </a>
+      </div>
     </aside>
   );
 };
@@ -244,8 +263,8 @@ export default function BalloAdsDocumentation() {
                     Retrieves all available pricing models (public endpoint). <br />
                     <br />
                     Response: <br />
-                    `[ <br />
-                    
+                    [ <br />
+                      {'{'} <br /> 
                         "id": 1, <br />
                         "platform": "Sms", <br />
                         "thresholdStart": 0, <br />
@@ -254,8 +273,8 @@ export default function BalloAdsDocumentation() {
                         "duration": 30, <br />
                         "isEnabled": true, <br />
                         "createdAt": "2024-01-01T00:00:00Z" <br />
-                    
-                    ]`
+                      {'}'} <br />
+                    ]
                   </p>
               </div>
             </section>
@@ -268,7 +287,7 @@ export default function BalloAdsDocumentation() {
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/pricings <br />
-                    Authorization: Bearer `token` <br />
+                    Authorization: Bearer {'<token>'} <br />
                     <br />
                     Creates a new pricing model (admin only).
                   </p>
@@ -280,9 +299,9 @@ export default function BalloAdsDocumentation() {
                <h3 className="text-2xl font-semibold text-white">Enable/Disable Pricing Model</h3>
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/pricings/`id`/enable <br />
-                    PATCH /v1/pricings/`id`/disable <br />
-                    Authorization: Bearer `token` <br />
+                    PATCH /v1/pricings/{'{id}'}/enable <br />
+                    PATCH /v1/pricings/{'{id}'}/disable <br />
+                    Authorization: Bearer {'<token>'} <br />
                     <br />
                     Enables or disables a pricing model.
                   </p>

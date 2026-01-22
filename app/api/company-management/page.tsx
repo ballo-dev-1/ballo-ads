@@ -14,6 +14,7 @@ import {
   CreditCard,
   ThumbsUp, 
   ThumbsDown,
+  Download
 } from "lucide-react";
 import clsx from "clsx";
 import Image from "next/image";
@@ -73,11 +74,29 @@ const Sidebar = () => {
         })}
       </nav>
       
-      {/*<div className="p-6 mt-auto">
-        <div className="bg-blue-900/20 p-4 rounded-2xl border border-white/5">
-           <p className="text-xs text-blue-200/50 text-center">v2.4.0 Documentation</p>
-        </div>
-      </div>*/}
+      <div className="p-6 mt-auto">
+        <a 
+          href="/public/Assets/BalloAPI.docx" // 1. Path to your file in the 'public' folder
+          download="BalloAPI.docx" // 2. The name the user sees when saving
+          className="group flex items-center gap-3 bg-blue-900/20 hover:bg-blue-600/20 p-4 rounded-2xl border border-white/5 hover:border-blue-400/30 transition-all duration-300 w-full cursor-pointer"
+        >
+          {/* Icon with background circle */}
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500/20 group-hover:bg-blue-500 text-blue-300 group-hover:text-white transition-colors shrink-0">
+            <Download size={16} />
+          </div>
+
+          {/* Text Content */}
+          <div className="flex flex-col min-w-0"> {/* min-w-0 is key for text truncation responsiveness */}
+            <span className="text-xs font-semibold text-white group-hover:text-blue-200 transition-colors truncate">
+              Download Docs
+            </span>
+            <span className="text-[10px] text-blue-200/50 group-hover:text-blue-200/80 uppercase tracking-wider truncate">
+              v2.4.0 
+            </span>
+          </div>
+        </a>
+      </div>
+
     </aside>
   );
 };
@@ -233,12 +252,6 @@ export default function BalloAdsDocumentation() {
               <h1 className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-blue-300/50 uppercase drop-shadow-sm mb-6">
                 Company Management
               </h1>
-              {/*<p className="text-lg md:text-xl text-white leading-relaxed font-light">
-                <span className="font-medium">BalloAds</span> is a powerful multi-channel advertising and 
-                messaging platform that enables businesses to create, manage, and execute marketing campaigns across 
-                SMS, WhatsApp, and Email channels. Built with <span className="text-blue-300">.NET</span> and <span className="text-blue-300">PostgreSQL</span>, 
-                BalloAds provides a comprehensive API for managing companies, campaigns, purchase orders, and client subscriptions.
-              </p>*/}
             </section>
 
             {/* SECTION: Overview1 */}
@@ -250,14 +263,16 @@ export default function BalloAdsDocumentation() {
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/companies <br />
-                    Authorization: Bearer 'token bearer' <br />
+                    Authorization: Bearer {'<'}token{'>'} <br />
                     <br />
                     Creates a new company profile. <br />
                     Request Body: <br />
                     <br />
+                    {'{'} <br />
                     "name": "Company Name", <br />
                     "description": "Company description", <br />
                     "pacraNumber": "PACRA123456" <br />
+                    {'}'}
                   </p>
                 </div>
             </section>
@@ -271,7 +286,7 @@ export default function BalloAdsDocumentation() {
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/companies <br />
-                    Authorization: Bearer 'token'
+                    Authorization: Bearer {'<'}token{'>'}
                   </p>
                 </div>
             </section>
@@ -282,15 +297,17 @@ export default function BalloAdsDocumentation() {
             
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/companies/`id`/socials <br />
-                    Authorization: Bearer `token` <br />
+                    PATCH /v1/companies/{'{'}id{'}'}/socials <br />
+                    Authorization: Bearer {'<'}token{'>'} <br />
                     <br />
                     Request Body: <br />
                     <br />
+                    {'{'} <br />
                     "facebook": "https://facebook.com/company", <br />
                     "twitter": "https://twitter.com/company", <br />
                     "instagram": "https://instagram.com/company", <br />
-                    "linkedin": "https://linkedin.com/company" 
+                    "linkedin": "https://linkedin.com/company" <br />
+                    {'}'}
                   </p>
                 </div>
             </section>
@@ -300,8 +317,8 @@ export default function BalloAdsDocumentation() {
                 <h3 className="text-2xl font-semibold text-white">Update Company Logo</h3>
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/companies/`id`/logos <br />
-                    Authorization: Bearer `token` <br />
+                    PATCH /v1/companies/{'{'}id{'}'}/logos <br />
+                    Authorization: Bearer {'<'}token{'>'} <br />
                     Content-Type: multipart/form-data
                   </p>
                 </div>
@@ -317,12 +334,14 @@ export default function BalloAdsDocumentation() {
                 
                 <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
-                    PATCH /v1/companies/`id`/sender-id <br />
-                    Authorization: Bearer `token` <br /> <br />
+                    PATCH /v1/companies/{'{'}id{'}'}/sender-id <br />
+                    Authorization: Bearer {'<'}token{'>'} <br /> <br />
                     Updates the SMS sender ID for the company. <br />
                     Request Body: <br />
                     <br />
-                    "senderId": "COMPANY"
+                    {'{'} <br />
+                    "senderId": "COMPANY" <br />
+                    {'}'}
                   </p>
               </div>
             </section>
