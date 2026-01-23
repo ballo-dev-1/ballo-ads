@@ -257,7 +257,7 @@ export default function BalloAdsDocumentation() {
               <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
                 Get Pricing Models
               </h3>
-              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+              <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/pricings <br />
                     Retrieves all available pricing models (public endpoint). <br />
@@ -284,7 +284,7 @@ export default function BalloAdsDocumentation() {
                <h3 className="text-2xl font-semibold text-white">
                     Create Pricing Model
                </h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/pricings <br />
                     Authorization: Bearer {'<token>'} <br />
@@ -297,7 +297,7 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
                <h3 className="text-2xl font-semibold text-white">Enable/Disable Pricing Model</h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     PATCH /v1/pricings/{'{id}'}/enable <br />
                     PATCH /v1/pricings/{'{id}'}/disable <br />

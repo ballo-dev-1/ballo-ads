@@ -257,7 +257,7 @@ export default function BalloAdsDocumentation() {
               <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
                 Create Purchase Order
               </h3>
-              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+              <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/companies/{'{id}'}/purchase-orders <br />
                     Authorization: Bearer {'<token>'} <br /> <br />
@@ -281,7 +281,7 @@ export default function BalloAdsDocumentation() {
                <h3 className="text-2xl font-semibold text-white">
                     Get Purchase Orders
                </h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GGET /v1/companies/{'{id}'}/purchase-orders?status=Active&platform=Sms <br />
                     Authorization: Bearer {'<token>'} <br /> <br />
@@ -294,7 +294,7 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
                <h3 className="text-2xl font-semibold text-white">Get Consolidated Purchase Orders</h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/companies/{'{id}'}/purchase-orders/totals <br />
                     Authorization: Bearer {'<token>'} <br />

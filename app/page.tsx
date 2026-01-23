@@ -183,7 +183,7 @@ export default function Home() {
   const activeCase = useCases.find(c => c.id === activeCaseId) || useCases[0];
 
   return (
-    <main className="min-h-screen bg-[var(--dark-blue-2)] text-white">
+    <main className="min-h-screen bg-[var(--dark-blue-2)]  text-white">
       {/* Hero Section */}
       <section
         className="relative min-h-screen flex items-center justify-center px-4 md:px-8 py-20 overflow-hidden"
@@ -626,92 +626,9 @@ export default function Home() {
                     height={600}
                     className="w-full h-auto scale-[1.5]"
                   />
-                  {/* App Store Buttons */}
-                {/*<div className="flex flex-col gap-3 mt-6 items-start">
-                  <Link href="#" className="w-48">
-                    <Image
-                      src={playStore}
-                      alt="Get it on the App Store"
-                      width={50}
-                      height={60}
-                      className="w-1/4 h-auto absolute -left-10 bottom-20 scale-[2]"
-                    />
-                  </Link>
-                  <Link href="#" className="w-48">
-                    <Image
-                      src={appleStore}
-                      alt="Get it on Google Play"
-                      width={50}
-                      height={60}
-                      className="w-1/4 h-auto absolute -left-10 bottom-0 scale-[2]"
-                    />
-                  </Link>
-                </div> */}
                 </div>
               </div>
             </div>
-
-            {/* Right Side - Form */}
-            {/*
-            <div className="gradient-blue-purple rounded-3xl p-8 md:p-12">
-              <p className="text-sm text-white/80 mb-6">
-                (One-Time Free Trial - KYC Required) Try BalloAds for free! But
-                first, let&apos;s sign up.
-              </p>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="NAME"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white text-[var(--brand-color-1)] placeholder:text-[var(--brand-color-1)]/60 font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]"
-                  required
-                />
-                <input
-                  type="text"
-                  name="businessName"
-                  placeholder="DISPLAY BUSINESS NAME"
-                  value={formData.businessName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white text-[var(--brand-color-1)] placeholder:text-[var(--brand-color-1)]/60 font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]"
-                  required
-                />
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="EMAIL"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white text-[var(--brand-color-1)] placeholder:text-[var(--brand-color-1)]/60 font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]"
-                  required
-                />
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="PHONE NUMBER"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white text-[var(--brand-color-1)] placeholder:text-[var(--brand-color-1)]/60 font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]"
-                  required
-                />
-                <textarea
-                  name="message"
-                  placeholder="MESSAGE"
-                  value={formData.message}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-white text-[var(--brand-color-1)] placeholder:text-[var(--brand-color-1)]/60 font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)] resize-none"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-[var(--brand-color-4)] text-[var(--brand-color-1)] px-8 py-4 rounded-xl font-bold text-lg hover:bg-[var(--cyan-light)] transition-colors"
-                >
-                  SUBMIT
-                </button>
-              </form>
-            </div> */}
           </div>
         </div>
       </section>

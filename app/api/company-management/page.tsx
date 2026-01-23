@@ -260,7 +260,7 @@ export default function BalloAdsDocumentation() {
                 Create Company
               </h3>
               
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/companies <br />
                     Authorization: Bearer {'<'}token{'>'} <br />
@@ -283,7 +283,7 @@ export default function BalloAdsDocumentation() {
                 <p className="space-y-3 text-white text-lg">
                     Retrieves all companies accessible by the authenticated user.
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/companies <br />
                     Authorization: Bearer {'<'}token{'>'}
@@ -295,7 +295,7 @@ export default function BalloAdsDocumentation() {
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
                <h3 className="text-2xl font-semibold text-white">Update Company Socials</h3>
             
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     PATCH /v1/companies/{'{'}id{'}'}/socials <br />
                     Authorization: Bearer {'<'}token{'>'} <br />
@@ -315,7 +315,7 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Company Management */}
             <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
                 <h3 className="text-2xl font-semibold text-white">Update Company Logo</h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     PATCH /v1/companies/{'{'}id{'}'}/logos <br />
                     Authorization: Bearer {'<'}token{'>'} <br />
@@ -332,7 +332,7 @@ export default function BalloAdsDocumentation() {
             <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
                 <h3 className="text-2xl font-semibold text-white">Update Sender ID</h3>
                 
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     PATCH /v1/companies/{'{'}id{'}'}/sender-id <br />
                     Authorization: Bearer {'<'}token{'>'} <br /> <br />

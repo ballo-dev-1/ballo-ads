@@ -260,7 +260,7 @@ export default function BalloAdsDocumentation() {
                 Create Campaign
               </h3>
               
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/companies/{'{id}'}/campaigns <br />
                     Authorization: Bearer {'<token>'} <br />
@@ -283,7 +283,7 @@ export default function BalloAdsDocumentation() {
                 <p className="space-y-3 text-white text-lg">
                 Campaign Channel Options: - Sms - SMS only - WhatsApp - WhatsApp only - Email - Email only - AllPlatforms - All platforms
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     curl -X POST "https://api.balloads.com/v1/companies/1/campaigns" \ <br />
                     -H "Authorization: Bearer `token`" \ <br />
@@ -302,7 +302,7 @@ export default function BalloAdsDocumentation() {
             <section id="key-features" className="scroll-mt-24 mb-16 space-y-6">
                <h3 className="text-2xl font-semibold text-white">Get Campaigns</h3>
                 
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/companies/{'{id}'}/campaigns?status=Active&startDate=2024-01-01 <br />
                     Authorization: Bearer {'<token>'}
@@ -322,7 +322,7 @@ export default function BalloAdsDocumentation() {
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
                <h3 className="text-2xl font-semibold text-white">Activate Campaign</h3>
             
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     PATCH /v1/companies/{'{id}'}/campaigns/{'{campaignId}'}/activate <br />
                     Authorization: Bearer {'<token>'} <br />
@@ -335,7 +335,7 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Company Management */}
             <section id="company-management" className="scroll-mt-24 mb-16 space-y-6">
                 <h3 className="text-2xl font-semibold text-white">Cancel Campaign</h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     PATCH /v1/companies/{'{id}'}/campaigns/{'{campaignId}'}/cancel <br />
                     Authorization: Bearer {'<token>'} <br />
@@ -349,7 +349,7 @@ export default function BalloAdsDocumentation() {
             <section id="billing" className="scroll-mt-24 mb-16 space-y-6">
                 <h3 className="text-2xl font-semibold text-white">Get Campaign Logs</h3>
                 
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/companies/{'{id}'}/campaigns/{'{campaignId}'}/logs <br />
                     Authorization: Bearer {'<token>'} <br />

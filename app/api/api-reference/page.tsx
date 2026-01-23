@@ -262,7 +262,7 @@ export default function BalloAdsDocumentation() {
                     POST /v1/auth/registration <br /> <br />
                     Creates a new user account. Requires email confirmation. <br />
                 </p>
-              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+              <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     Request Body: <br /> 
                     <br />
@@ -283,7 +283,7 @@ export default function BalloAdsDocumentation() {
                     POST /v1/auth/login <br />
                     Authenticates a user and returns a JWT token.
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     Request Body: <br /> 
                     <br />
@@ -301,7 +301,7 @@ export default function BalloAdsDocumentation() {
             {/* SECTION: Campaign Management */}
             <section id="campaign-management" className="scroll-mt-24 mb-16 space-y-6">
                <h3 className="text-2xl font-semibold text-white">Confirm Email</h3>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     GET /v1/auth/confirm-email?id={'{'}userId{'}'}&token={'{'}confirmationToken{'}'}
                   </p>

@@ -394,7 +394,7 @@ export default function FeaturedCarousel() {
       ))}
 
       {/* Subscribe Section */}
-      <section className="relative z-10 overflow-hidden bg-[#020A2A] text-white px-4 pb-28 pt-24 md:px-8">
+      <section className="relative z-10 overflow-hidden bg-[#020A2A] text-white px-25 pb-28 pt-24">
           <div className="relative z-10 gap-8 lg:grid-cols-[1.3fr_1fr]">
             <div className="absolute inset-0">
               <Image
@@ -402,12 +402,12 @@ export default function FeaturedCarousel() {
                 alt="Circles Ring"
                 width={1600}
                 height={1900}
-                className="w-50px h-50px absolute left-0 -bottom-170 scale-[0.7] z-10"
+                className="w-50px h-50px absolute left-0 -bottom-110 scale-[0.7] z-10"
                 priority
               />
             </div>
             <div className="relative z-10 overflow-hidden">
-                <h3 className="relative z-10 text-3xl font-semibold text-center">Learn more about how we can support your growth</h3>
+                <h3 className="relative z-10 text-[38.4px] md:text-[40px] font-bold text-center">Learn more about how we can support your growth</h3>
                 <div className="mt-10 grid gap-6 sm:grid-cols-2">
                   {supportHighlights.map((highlight) => (
                     <div key={highlight.title} className="flex gap-3">
@@ -426,7 +426,7 @@ export default function FeaturedCarousel() {
                       </span>
                       <div className="relative z-10 flex flex-1 flex-col gap-4">
                         <div className="relative z-10">
-                          <h3 className="relative z-10 text-2xl font-semibold">{highlight.title}</h3>
+                          <h3 className="relative z-10 text-[23px] md:text-[25px] font-semibold">{highlight.title}</h3>
                           <p className="relative z-10 mt-2 text-sm text-white/70">{highlight.description}</p>
                         </div>
                       </div>
@@ -434,7 +434,7 @@ export default function FeaturedCarousel() {
                   ))}
                 </div>
               
-              <div className="relative z-10 flex flex-col items-center gap-5 md:flex-row md:justify-center">
+              <div className="relative z-10 flex flex-col items-center gap-5 px-4 pb-28 pt-24 md:px-8 md:flex-row md:justify-center">
                 <Link
                   href="/signup"
                   className="inline-flex items-center gap-2 rounded-full bg-[var(--brand-color-1)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--brand-color-2)]"
@@ -443,7 +443,7 @@ export default function FeaturedCarousel() {
                 </Link>
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
+                  className="inline-flex items-center gap-2 rounded-full border bg-white px-6 py-3 text-2remm font-semibold text-[var(--brand-color-1)] transition hover:border-white hover:bg-white/10"
                 >
                   Contact us
                 </Link>

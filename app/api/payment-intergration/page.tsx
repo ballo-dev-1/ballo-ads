@@ -255,7 +255,7 @@ export default function BalloAdsDocumentation() {
               <h3 className="text-2xl font-semibold text-white tracking-wide border-b border-white/10 pb-4 inline-block">
                 Payment Callback
               </h3>
-              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+              <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/payments/callbacks/purchase-order <br />
                     <br />

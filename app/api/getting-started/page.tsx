@@ -261,7 +261,7 @@ export default function BalloAdsDocumentation() {
                 Base URL
               </h3>
               
-              <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+              <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                   https://api.balloads.com/v1 
                   </p>
@@ -274,7 +274,7 @@ export default function BalloAdsDocumentation() {
                 <p className="space-y-3 text-white text-lg">
                     All protected endpoints require a JWT token in the Authorization header:
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                   Authorization: Bearer {'<'}your-jwt-token{'>'}
                   </p>
@@ -287,7 +287,7 @@ export default function BalloAdsDocumentation() {
                 <p id="campaign-management1" className="space-y-3 text-white text-lg">
                     1. Register an Account
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black font-Hammersmith One">
                     POST /v1/auth/registration <br />
                     Content-Type: application/json
@@ -317,7 +317,7 @@ export default function BalloAdsDocumentation() {
                 <p className="space-y-3 text-white text-lg">
                     3. Login
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                   POST /v1/auth/login <br />
                   Content-Type: application/json
@@ -336,7 +336,7 @@ export default function BalloAdsDocumentation() {
              <p className="space-y-3 text-white text-lg">
                     4. Create a Company
                 </p>
-                <div className="rounded-[48px] bg-[#708090]/80 p-8 mx-auto max-w-2xl shadow-2xl">
+                <div className="rounded-[48px] bg-white p-8 mx-auto max-w-2xl shadow-2xl">
                   <p className="mt-3 text-sm text-black">
                     POST /v1/companies <br />
                     Authorization: Bearer "your-token" <br />
