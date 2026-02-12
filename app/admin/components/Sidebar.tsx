@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutDashboard, Users, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, LogOut, Building2, Tags } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
 
@@ -54,6 +54,28 @@ export default function Sidebar() {
           >
             <LayoutDashboard className="w-5 h-5" />
             <span>Dashboard</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/companies')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/companies')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <Building2 className="w-5 h-5" />
+            <span>Companies</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/pricing')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/pricing')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <Tags className="w-5 h-5" />
+            <span>Pricing</span>
           </button>
           <button
             onClick={() => router.push('/admin/waitlist')}
