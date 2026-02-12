@@ -75,6 +75,11 @@ const Header = () => {
 
   const isActive = (path: string) => pathname === path;
 
+  // Hide the public site header on admin routes, which have their own layout/nav
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="header header--sticky">
       <nav className="header__nav fixed w-[95vw] min-w-[380px] max-w-[1440px] shadow h-16 md:flex  
