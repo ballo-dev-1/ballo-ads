@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Ubuntu } from "next/font/google";
 import "./styles/index.css";
+import "./globals.css";
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 
@@ -14,6 +15,12 @@ const ubuntu = Ubuntu({
 export const metadata: Metadata = {
   title: "Ballo Ads",
   description: "Ballo Ads - Your Digital Marketing Assistant",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

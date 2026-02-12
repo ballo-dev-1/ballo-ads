@@ -1,17 +1,23 @@
-.reveal-phone #phone {
+#phone {
   opacity: 1 !important;
   transition: all 0.75s ease-in-out;
   cursor: pointer;
 }
 
-.reveal-phone .mobile-app-1 {
+.mobile-app-1 {
   opacity: 1;
-  animation: grow 2s ease-in-out;
   cursor: pointer;
 }
 
-.reveal-phone .mobile-app-2 {
+.mobile-app-2 {
   opacity: 1;
+}
+
+.reveal-phone .mobile-app-1 {
+  animation: grow 2s ease-in-out;
+}
+
+.reveal-phone .mobile-app-2 {
   animation: grow-2 2s ease-in-out;
 }
 
