@@ -5,16 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 import laptopImage from "@/public/elements small/4.png";
-import article1 from "@/public/elements small/1.png";
 import article2 from "@/public/elements small/2.png";
 import article3 from "@/public/elements small/3.png";
 import article5 from "@/public/elements small/5.png";
 import article6 from "@/public/elements small/6.png";
-import article7 from "@/public/elements small/7.png";
 import handshake from "@/public/elements small/handshake.png";
-import strategy from "@/public/elements small/strategy.png";
-import marketAnalysis from "@/public/elements small/market-analysis.png";
-import contentIcon from "@/public/elements small/content-icon.png";
 import balloBot from "@/public/elements small/ballo-bot.png";
 
 const articleData = {
@@ -101,9 +96,11 @@ const chartData = {
   ],
 };
 
-export default function BlogPostContent({ slug }: { slug: string }) {
+// slug is part of the route contract but not yet used for content lookup
+export default function BlogPostContent({ slug: _slug }: { slug: string }) {
+  void _slug
   const [likes, setLikes] = useState(0);
-  const [commentCount, setCommentCount] = useState(comments.length);
+  const [commentCount] = useState(comments.length);
 
   return (
     <main className="min-h-screen bg-[var(--dark-blue)] text-white">

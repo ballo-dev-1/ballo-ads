@@ -1,11 +1,15 @@
-import type { Metadata } from "next";
-import "./styles/index.css";
-import Header from "./components/header/Header";
-import Footer from "./components/footer/Footer";
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Ballo Ads",
-  description: "Ballo Ads - Your Digital Marketing Assistant",
+  description: "Ballo Ads",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -16,9 +20,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="">
-        <Header />
         {children}
-        <Footer />
+        {/* <Footer /> */}
       </body>
     </html>
   );
