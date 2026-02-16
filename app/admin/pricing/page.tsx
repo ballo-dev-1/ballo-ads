@@ -25,8 +25,8 @@ export default function PricingPage() {
     try {
       const data = await adminApi.getPricingModels()
       setModels(data)
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load pricing models')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load pricing models')
     } finally {
       setLoading(false)
     }
@@ -41,8 +41,8 @@ export default function PricingPage() {
     try {
       const created = await adminApi.createPricingModel(form)
       setModels((prev) => [created, ...prev])
-    } catch (e: any) {
-      setError(e?.message || 'Failed to create pricing model')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to create pricing model')
     }
   }
 
@@ -52,8 +52,8 @@ export default function PricingPage() {
         ? await adminApi.enablePricingModel(model.id)
         : await adminApi.disablePricingModel(model.id)
       setModels((prev) => prev.map((m) => (m.id === model.id ? updated : m)))
-    } catch (e: any) {
-      setError(e?.message || 'Failed to update pricing model')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to update pricing model')
     }
   }
 
@@ -83,7 +83,10 @@ export default function PricingPage() {
               <select
                 value={form.platform}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, platform: e.target.value as any }))
+                  setForm((f) => ({
+                    ...f,
+                    platform: e.target.value as PricingModelRequest['platform'],
+                  }))
                 }
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >

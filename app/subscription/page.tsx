@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 // Sample subscription channels data
@@ -43,7 +43,7 @@ const subscriptionChannels = [
   },
 ];
 
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [subscribedChannels, setSubscribedChannels] = useState<Set<number>>(new Set());
@@ -126,6 +126,7 @@ export default function SubscriptionPage() {
                     <div className="subscription-card__avatar-wrapper">
                       <div className="subscription-card__avatar">
                         {channel.profileImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- dynamic avatar URL, not known at build time
                           <img
                             src={channel.profileImage}
                             alt={channel.channelName}
@@ -208,6 +209,24 @@ export default function SubscriptionPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="subscription-page">
+          <div className="subscription-page__container">
+            <div className="subscription-page__header" style={{ padding: "2rem", textAlign: "center" }}>
+              Loading…
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }
 

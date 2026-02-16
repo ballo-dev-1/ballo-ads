@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 
 interface WaitlistEntry {
   id: string
@@ -36,9 +35,7 @@ export default function WaitlistDashboard() {
     limit: 10,
     totalPages: 1,
   })
-  const router = useRouter()
-
-  const fetchWaitlist = async (page = 1, limit?: number) => {
+  const fetchWaitlist = useCallback(async (page = 1, limit?: number) => {
     setLoading(true)
     setError('')
 
@@ -60,11 +57,11 @@ export default function WaitlistDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.limit])
 
   useEffect(() => {
     fetchWaitlist(1, pagination.limit)
-  }, [])
+  }, [fetchWaitlist, pagination.limit])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

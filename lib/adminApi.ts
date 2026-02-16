@@ -87,9 +87,11 @@ async function request<T>(
 ): Promise<T> {
   const url = `${BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(typeof options.headers === 'object' && options.headers !== null && !(options.headers instanceof Headers)
+      ? (options.headers as Record<string, string>)
+      : {}),
   };
 
   if (options.authToken) {

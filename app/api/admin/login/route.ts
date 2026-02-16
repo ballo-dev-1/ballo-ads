@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ success: true }, { status: 200 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error)
 
     // #region agent log
@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
         location: 'app/api/admin/login/route.ts:POST:catch',
         message: 'admin login POST error (prisma)',
         data: {
-          errorMessage: typeof error?.message === 'string' ? error.message : 'unknown',
+          errorMessage:
+            error instanceof Error ? error.message : 'unknown',
         },
         timestamp: Date.now(),
       }),
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const cookieStore = await cookies()
   const authCookie = cookieStore.get(ADMIN_AUTH_COOKIE)?.value
 
