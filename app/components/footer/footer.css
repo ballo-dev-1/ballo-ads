@@ -1,0 +1,28 @@
+.footer-ring {
+  position: absolute;
+  z-index: 0;
+  height: auto;
+  width: 50%;
+  opacity: 0.5;
+  animation: footer-ring-glow 6s ease-in-out infinite;
+}
+
+@keyframes footer-ring-glow {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.17;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .footer-ring {
+    width: 100%;
+  }
+}
