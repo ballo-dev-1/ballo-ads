@@ -105,6 +105,20 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Notify admin (SSE stream will pick this up via DB polling)
+    try {
+      await prisma.notification.create({
+        data: {
+          title: 'New waitlist signup',
+          message: `${name} (${email})`,
+          type: 'waitlist',
+          link: '/admin/waitlist',
+        },
+      })
+    } catch (notifErr) {
+      console.error('Failed to create admin notification:', notifErr)
+    }
+
     return NextResponse.json(
       {
         message: 'Successfully joined the waitlist!',
