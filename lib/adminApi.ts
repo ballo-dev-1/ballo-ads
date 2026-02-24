@@ -90,6 +90,35 @@ function mapCompanyLeanResponse(r: Record<string, unknown>): CompanyLeanResponse
   };
 }
 
+/** Backend expects PascalCase; POST /pricing uses query params (see Swagger). */
+function pricingRequestToBody(p: PricingModelRequest): Record<string, unknown> {
+  return {
+    Platform: p.platform,
+    ThresholdStart: p.thresholdStart,
+    ThresholdEnd: p.thresholdEnd,
+    AmountPerMessage: p.amountPerMessage,
+    Duration: p.duration,
+  };
+}
+
+function pricingCreateQuery(p: PricingModelRequest): string {
+  const q = pricingRequestToBody(p) as Record<string, string | number>;
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(q)) {
+    params.set(k, String(v));
+  }
+  return params.toString();
+}
+
+function editPricingRequestToBody(p: EditPricingModelRequest): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (p.thresholdStart !== undefined) out.ThresholdStart = p.thresholdStart;
+  if (p.thresholdEnd !== undefined) out.ThresholdEnd = p.thresholdEnd;
+  if (p.amountPerMessage !== undefined) out.AmountPerMessage = p.amountPerMessage;
+  if (p.duration !== undefined) out.Duration = p.duration;
+  return out;
+}
+
 /** Normalize pricing response from backend (PascalCase) to camelCase for the app */
 function mapPricingResponse(r: Record<string, unknown>): PricingModelResponse {
   return {
@@ -201,12 +230,14 @@ export const adminApi = {
       list.map(mapPricingResponse)
     ),
 
-  createPricingModel: (payload: PricingModelRequest, authToken?: string) =>
-    request<Record<string, unknown>>('pricing', {
+  createPricingModel: (payload: PricingModelRequest, authToken?: string) => {
+    const query = pricingCreateQuery(payload);
+    const path = query ? `pricing?${query}` : 'pricing';
+    return request<Record<string, unknown>>(path, {
       method: 'POST',
-      body: JSON.stringify(payload),
       authToken,
-    }).then(mapPricingResponse),
+    }).then(mapPricingResponse);
+  },
 
   enablePricingModel: (id: number, authToken?: string) =>
     request<Record<string, unknown>>(`pricing/${id}/enable`, {
@@ -223,7 +254,7 @@ export const adminApi = {
   updatePricingModel: (id: number, payload: EditPricingModelRequest, authToken?: string) =>
     request<Record<string, unknown>>(`pricing/${id}/update`, {
       method: 'PATCH',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(editPricingRequestToBody(payload)),
       authToken,
     }).then(mapPricingResponse),
 };

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   adminApi,
   type EditPricingModelRequest,
@@ -25,6 +25,8 @@ export default function PricingPage() {
   const [editForm, setEditForm] = useState<EditPricingModelRequest>({})
   /** Pending enable/disable: only applied when Save is clicked. null = no change. */
   const [pendingEnable, setPendingEnable] = useState<boolean | null>(null)
+  /** Latest duration from create form input (avoids stale state when user types then submits before re-render). */
+  const createDurationRef = useRef<number | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -43,15 +45,31 @@ export default function PricingPage() {
     load()
   }, [])
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     try {
-      const created = await adminApi.createPricingModel(form)
+      const duration =
+        createDurationRef.current !== null && Number.isFinite(createDurationRef.current)
+          ? createDurationRef.current
+          : form.duration
+      const payload: PricingModelRequest = {
+        ...form,
+        duration,
+      }
+      createDurationRef.current = null
+      const created = await adminApi.createPricingModel(payload)
       setModels((prev) => [created, ...prev])
       setForm(initialCreateForm)
+      createDurationRef.current = null
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to create pricing model')
+      const msg = e instanceof Error ? e.message : 'Failed to create pricing model'
+      const isRangeExists = /range already exists/i.test(msg)
+      setError(
+        isRangeExists
+          ? 'A pricing model with this platform (or related platform), range, and duration already exists. Try a range that does not overlap existing models for WhatsApp/WhatsApp Utility, or a different duration.'
+          : msg
+      )
     }
   }
 
@@ -183,11 +201,14 @@ export default function PricingPage() {
                 Duration (days)
               </label>
               <input
+                name="create-duration"
                 type="number"
                 value={form.duration}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, duration: Number(e.target.value) }))
-                }
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  createDurationRef.current = Number.isFinite(n) ? n : null
+                  setForm((f) => ({ ...f, duration: n }))
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
