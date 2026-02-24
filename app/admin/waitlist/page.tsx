@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface WaitlistEntry {
   id: string
@@ -24,9 +25,11 @@ interface WaitlistResponse {
 type StatusFilter = 'all' | 'pending' | 'contacted' | 'completed'
 
 export default function WaitlistDashboard() {
+  const router = useRouter()
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [exportingFormat, setExportingFormat] = useState<'csv' | 'pdf' | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [pagination, setPagination] = useState({
@@ -89,6 +92,38 @@ export default function WaitlistDashboard() {
     { id: 'completed' as StatusFilter, label: 'Completed' },
   ]
 
+  const handleExport = useCallback(
+    async (format: 'csv' | 'pdf') => {
+      setExportingFormat(format)
+      try {
+        const res = await fetch(`/api/admin/waitlist/export?format=${format}`, { credentials: 'include' })
+        if (res.status === 401) {
+          router.push('/admin/login')
+          return
+        }
+        if (!res.ok) {
+          setError('Export failed. Please try again.')
+          return
+        }
+        const blob = await res.blob()
+        const disposition = res.headers.get('Content-Disposition')
+        const match = disposition?.match(/filename="([^"]+)"/)
+        const filename = match?.[1] ?? `waitlist-${new Date().toISOString().slice(0, 10)}.${format}`
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        a.click()
+        URL.revokeObjectURL(url)
+      } catch {
+        setError('Export failed. Please try again.')
+      } finally {
+        setExportingFormat(null)
+      }
+    },
+    [router]
+  )
+
   const renderPaginationNumbers = () => {
     const pages = []
     const totalPages = pagination.totalPages
@@ -121,11 +156,27 @@ export default function WaitlistDashboard() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="flex-1 overflow-auto p-6">
+        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 mb-6">
+          <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-800">Waitlist</h1>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleExport('csv')}
+                disabled={!!exportingFormat}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportingFormat === 'csv' ? 'Exporting…' : 'Export CSV'}
+              </button>
+              <button
+                onClick={() => handleExport('pdf')}
+                disabled={!!exportingFormat}
+                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportingFormat === 'pdf' ? 'Exporting…' : 'Export PDF'}
+              </button>
+            </div>
             <button className="relative">
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -338,6 +389,7 @@ export default function WaitlistDashboard() {
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
