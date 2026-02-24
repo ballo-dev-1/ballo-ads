@@ -16,24 +16,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'pre-fix',
-        hypothesisId: 'H4',
-        location: 'app/api/admin/login/route.ts:POST:before',
-        message: 'admin login POST incoming (prisma)',
-        data: {
-          hasEmail: !!email,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
-
     // Local Prisma-based admin user lookup
     const user = await prisma.user.findUnique({
       where: { email },
@@ -59,25 +41,6 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('Login error:', error)
 
-    // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'pre-fix',
-        hypothesisId: 'H5',
-        location: 'app/api/admin/login/route.ts:POST:catch',
-        message: 'admin login POST error (prisma)',
-        data: {
-          errorMessage:
-            error instanceof Error ? error.message : 'unknown',
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
-
     return NextResponse.json(
       { error: 'Login failed' },
       { status: 500 }
@@ -90,43 +53,11 @@ export async function GET() {
   const authCookie = cookieStore.get(ADMIN_AUTH_COOKIE)?.value
 
   if (authCookie === 'authenticated') {
-    // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'pre-fix',
-        hypothesisId: 'H6',
-        location: 'app/api/admin/login/route.ts:GET:authenticated',
-        message: 'admin login GET authenticated (prisma)',
-        data: {},
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
-
     return NextResponse.json(
       { authenticated: true },
       { status: 200 }
     )
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'pre-fix',
-      hypothesisId: 'H7',
-      location: 'app/api/admin/login/route.ts:GET:unauthenticated',
-      message: 'admin login GET unauthenticated (prisma)',
-      data: {},
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {})
-  // #endregion
 
   return NextResponse.json(
     { authenticated: false },
