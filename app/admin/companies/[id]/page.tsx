@@ -4,9 +4,18 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { adminApi, type CompanyLeanResponse } from '@/lib/adminApi'
 
-function SenderIdStatusBadge({ company }: { company: CompanyLeanResponse }) {
+const NOT_IMPLEMENTED_MESSAGE = 'This action is not yet implemented on the backend.'
+
+function SenderIdStatusBadge({
+  company,
+  rejectedInSession,
+}: {
+  company: CompanyLeanResponse
+  rejectedInSession?: boolean
+}) {
   if (!company.senderId) {
     return (
       <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200/80">
@@ -18,6 +27,13 @@ function SenderIdStatusBadge({ company }: { company: CompanyLeanResponse }) {
     return (
       <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
         Approved
+      </span>
+    )
+  }
+  if (rejectedInSession) {
+    return (
+      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200/80">
+        Rejected
       </span>
     )
   }
@@ -85,6 +101,8 @@ export default function CompanyDetailsPage() {
   const [company, setCompany] = useState<CompanyLeanResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [senderIdActionLoading, setSenderIdActionLoading] = useState(false)
+  const [rejectedSenderId, setRejectedSenderId] = useState(false)
 
   const numericId = id != null ? Number(id) : NaN
   const invalidId = typeof id !== 'string' || id === '' || Number.isNaN(numericId)
@@ -115,6 +133,39 @@ export default function CompanyDetailsPage() {
       cancelled = true
     }
   }, [numericId, invalidId])
+
+  const handleApproveSenderId = async (
+    approve: boolean,
+    opts?: { intent?: 'approve' | 'reject' | 'pending' }
+  ) => {
+    if (!company) return
+    setSenderIdActionLoading(true)
+    try {
+      const updated = await adminApi.approveCompanySenderId(company.id, approve)
+      setCompany((prev) => (prev ? { ...prev, ...updated } : null))
+      if (opts?.intent === 'pending') {
+        setRejectedSenderId(false)
+      } else {
+        setRejectedSenderId(!approve)
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to approve/reject sender ID')
+    } finally {
+      setSenderIdActionLoading(false)
+    }
+  }
+
+  const handleSetSenderIdPending = () => {
+    if (company?.isApprovedSenderId) {
+      handleApproveSenderId(false, { intent: 'pending' })
+    } else {
+      setRejectedSenderId(false)
+    }
+  }
+
+  const handleProfileVerificationClick = () => {
+    toast.error(NOT_IMPLEMENTED_MESSAGE)
+  }
 
   const backLink = (
     <Link
@@ -206,25 +257,72 @@ export default function CompanyDetailsPage() {
             <div className="space-y-0">
               <div className="py-3 border-b border-gray-100">
                 <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Company verified</dt>
-                <dd className="text-sm">
+                <dd className="text-sm flex items-center gap-2 flex-wrap">
                   {company.isCompanyVerified ? (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                      Verified
-                    </span>
+                    <>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                        Verified
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleProfileVerificationClick}
+                        className="px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        Unverify
+                      </button>
+                    </>
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/80">
-                      Pending
-                    </span>
+                    <button
+                      type="button"
+                      onClick={handleProfileVerificationClick}
+                      className="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors"
+                    >
+                      Verify
+                    </button>
                   )}
                 </dd>
               </div>
               <DetailRow label="Sender ID" value={company.senderId} />
-              <div className="py-3 border-b border-gray-100 last:border-0 last:pb-0">
+              <div className="py-3 border-b border-gray-100">
                 <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Sender ID status</dt>
                 <dd className="text-sm pt-0.5">
-                  <SenderIdStatusBadge company={company} />
+                  <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
                 </dd>
               </div>
+              {company.senderId && (
+                <div className="py-3 border-b border-gray-100 last:border-0 last:pb-0">
+                  <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions</dt>
+                  <dd className="text-sm flex flex-wrap items-center gap-1.5">
+                    {senderIdActionLoading && (
+                      <span className="text-gray-500 text-xs mr-1">Updating…</span>
+                    )}
+                    <button
+                      type="button"
+                      disabled={senderIdActionLoading}
+                      onClick={() => handleApproveSenderId(true)}
+                      className="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-200/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={senderIdActionLoading}
+                      onClick={handleSetSenderIdPending}
+                      className="px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Pending
+                    </button>
+                    <button
+                      type="button"
+                      disabled={senderIdActionLoading}
+                      onClick={() => handleApproveSenderId(false)}
+                      className="px-2.5 py-1 rounded-md text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 border border-red-200/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Reject
+                    </button>
+                  </dd>
+                </div>
+              )}
             </div>
           </SectionCard>
           <SectionCard title="Links & social">
