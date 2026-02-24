@@ -67,6 +67,29 @@ export type EditPricingModelRequest = Partial<{
   duration: number;
 }>;
 
+/** Normalize company response from backend (PascalCase or camelCase) to CompanyLeanResponse */
+function mapCompanyLeanResponse(r: Record<string, unknown>): CompanyLeanResponse {
+  return {
+    id: (r.Id ?? r.id) as number,
+    name: (r.Name ?? r.name) as string | undefined,
+    description: (r.Description ?? r.description) as string | undefined,
+    email: (r.Email ?? r.email) as string | undefined,
+    phoneNumber: (r.PhoneNumber ?? r.phoneNumber) as string | undefined,
+    physicalAddress: (r.PhysicalAddress ?? r.physicalAddress) as string | undefined,
+    industry: (r.Industry ?? r.industry) as string,
+    isCompanyVerified: (r.IsCompanyVerified ?? r.isCompanyVerified) as boolean,
+    websiteUrl: (r.WebsiteUrl ?? r.websiteUrl) as string | undefined,
+    facebookUrl: (r.FacebookUrl ?? r.facebookUrl) as string | undefined,
+    twitterUrl: (r.TwitterUrl ?? r.twitterUrl) as string | undefined,
+    linkedInUrl: (r.LinkedInUrl ?? r.linkedInUrl) as string | undefined,
+    instagramUrl: (r.InstagramUrl ?? r.instagramUrl) as string | undefined,
+    youtubeUrl: (r.YoutubeUrl ?? r.youtubeUrl) as string | undefined,
+    senderId: (r.SenderId ?? r.senderId) as string | undefined,
+    profileImageUrl: (r.ProfileImageUrl ?? r.profileImageUrl) as string | undefined,
+    isApprovedSenderId: (r.IsApprovedSenderId ?? r.isApprovedSenderId) as boolean,
+  };
+}
+
 /** Normalize pricing response from backend (PascalCase) to camelCase for the app */
 function mapPricingResponse(r: Record<string, unknown>): PricingModelResponse {
   return {
@@ -98,25 +121,6 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${options.authToken}`;
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'pre-fix',
-      hypothesisId: 'H1',
-      location: 'lib/adminApi.ts:request:before',
-      message: 'adminApi request start',
-      data: {
-        url,
-        method: options.method ?? 'GET',
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   const res = await fetch(url, {
     ...options,
     headers,
@@ -131,48 +135,8 @@ async function request<T>(
       (d && (typeof d.message === 'string' ? d.message : typeof d.detail === 'string' ? d.detail : typeof d.title === 'string' ? d.title : null)) ||
       'Request failed';
 
-    // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: 'debug-session',
-        runId: 'pre-fix',
-        hypothesisId: 'H2',
-        location: 'lib/adminApi.ts:request:error',
-        message: 'adminApi request error',
-        data: {
-          url,
-          status: res.status,
-          statusText: res.statusText,
-          parsedBody: data,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-
     throw new Error(message);
   }
-
-  // #region agent log
-  fetch('http://127.0.0.1:7245/ingest/d06724d6-1c98-4e9f-af90-8e5018ac5160', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sessionId: 'debug-session',
-      runId: 'pre-fix',
-      hypothesisId: 'H3',
-      location: 'lib/adminApi.ts:request:success',
-      message: 'adminApi request success',
-      data: {
-        url,
-        status: res.status,
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
 
   return data as T;
 }
@@ -202,14 +166,21 @@ export const adminApi = {
     const qs = search.toString();
     const path = qs ? `companies?${qs}` : 'companies';
 
-    return request<CompanyLeanResponse[]>(path, { authToken });
+    return request<Record<string, unknown>[]>(path, { authToken }).then((list) =>
+      list.map((r) => mapCompanyLeanResponse(r))
+    );
   },
 
+  getCompanyById: (id: number, authToken?: string) =>
+    request<Record<string, unknown>>(`v1/companies/${id}`, { authToken }).then(
+      mapCompanyLeanResponse
+    ),
+
   approveCompanySenderId: (companyId: number, approve: boolean, authToken?: string) =>
-    request<CompanyLeanResponse>(`companies/${companyId}?approve=${approve}`, {
+    request<Record<string, unknown>>(`companies/${companyId}?approve=${approve}`, {
       method: 'PATCH',
       authToken,
-    }),
+    }).then(mapCompanyLeanResponse),
 
   approveCampaign: (
     companyId: number,
