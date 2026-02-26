@@ -1,11 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { adminApi, type CompanyLeanResponse } from '@/lib/adminApi'
+import {
+  adminApi,
+  type AdsCampaignResponse,
+  type CampaignLogResponse,
+  type CompanyLeanResponse,
+} from '@/lib/adminApi'
+import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 
 const NOT_IMPLEMENTED_MESSAGE = 'This action is not yet implemented on the backend.'
 
@@ -97,12 +103,19 @@ function SectionCard({
 
 export default function CompanyDetailsPage() {
   const params = useParams()
+  const { env } = useApiEnv()
   const id = params.id
   const [company, setCompany] = useState<CompanyLeanResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [senderIdActionLoading, setSenderIdActionLoading] = useState(false)
   const [rejectedSenderId, setRejectedSenderId] = useState(false)
+  const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
+  const [campaignsLoading, setCampaignsLoading] = useState(false)
+  const [campaignActionLoading, setCampaignActionLoading] = useState<number | null>(null)
+  const [logsByCampaignId, setLogsByCampaignId] = useState<Record<number, CampaignLogResponse[]>>({})
+  const [logsLoadingCampaignId, setLogsLoadingCampaignId] = useState<number | null>(null)
+  const [expandedLogsCampaignId, setExpandedLogsCampaignId] = useState<number | null>(null)
 
   const numericId = id != null ? Number(id) : NaN
   const invalidId = typeof id !== 'string' || id === '' || Number.isNaN(numericId)
@@ -132,7 +145,70 @@ export default function CompanyDetailsPage() {
     return () => {
       cancelled = true
     }
-  }, [numericId, invalidId])
+  }, [numericId, invalidId, env])
+
+  useEffect(() => {
+    if (invalidId || !company) return
+    let cancelled = false
+    const companyId = company.id
+    const loadCampaigns = async () => {
+      setCampaignsLoading(true)
+      try {
+        const data = await adminApi.getCompanyCampaignsAll(companyId)
+        if (!cancelled) setCampaigns(data)
+      } catch {
+        if (!cancelled) setCampaigns([])
+      } finally {
+        if (!cancelled) setCampaignsLoading(false)
+      }
+    }
+    loadCampaigns()
+    return () => {
+      cancelled = true
+    }
+  }, [company?.id, invalidId, env])
+
+  const loadCampaignLogs = async (campaignId: number) => {
+    if (!company) return
+    setLogsLoadingCampaignId(campaignId)
+    try {
+      const list = await adminApi.getCampaignLogs(company.id, campaignId)
+      setLogsByCampaignId((prev) => ({ ...prev, [campaignId]: list }))
+      setExpandedLogsCampaignId(campaignId)
+    } catch {
+      setLogsByCampaignId((prev) => ({ ...prev, [campaignId]: [] }))
+    } finally {
+      setLogsLoadingCampaignId(null)
+    }
+  }
+
+  const handleActivateCampaign = async (campaignId: number) => {
+    if (!company) return
+    setCampaignActionLoading(campaignId)
+    try {
+      const updated = await adminApi.activateCampaign(company.id, campaignId)
+      setCampaigns((prev) => prev.map((c) => (c.id === campaignId ? updated : c)))
+      toast.success('Campaign activated')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to activate campaign')
+    } finally {
+      setCampaignActionLoading(null)
+    }
+  }
+
+  const handleCancelCampaign = async (campaignId: number) => {
+    if (!company) return
+    setCampaignActionLoading(campaignId)
+    try {
+      const updated = await adminApi.cancelCampaign(company.id, campaignId)
+      setCampaigns((prev) => prev.map((c) => (c.id === campaignId ? updated : c)))
+      toast.success('Campaign cancelled')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to cancel campaign')
+    } finally {
+      setCampaignActionLoading(null)
+    }
+  }
 
   const handleApproveSenderId = async (
     approve: boolean,
@@ -334,6 +410,118 @@ export default function CompanyDetailsPage() {
               <DetailRow label="Instagram" value={company.instagramUrl} href={company.instagramUrl} />
               <DetailRow label="YouTube" value={company.youtubeUrl} href={company.youtubeUrl} />
             </div>
+          </SectionCard>
+
+          <SectionCard title="Campaigns">
+            {campaignsLoading ? (
+              <div className="flex items-center justify-center py-12 gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+                <span className="text-sm text-gray-500">Loading campaigns…</span>
+              </div>
+            ) : campaigns.length === 0 ? (
+              <p className="text-sm text-gray-500 py-4">No campaigns</p>
+            ) : (
+              <div className="overflow-x-auto -mx-1">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      <th className="py-2.5 px-2">Name</th>
+                      <th className="py-2.5 px-2">Purpose</th>
+                      <th className="py-2.5 px-2">Channel</th>
+                      <th className="py-2.5 px-2">Status</th>
+                      <th className="py-2.5 px-2">Approved</th>
+                      <th className="py-2.5 px-2">Dates</th>
+                      <th className="py-2.5 px-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaigns.map((c) => (
+                      <React.Fragment key={c.id}>
+                        <tr className="border-b border-gray-100 hover:bg-gray-50/50">
+                          <td className="py-2.5 px-2 text-gray-800 font-medium">{c.name}</td>
+                          <td className="py-2.5 px-2 text-gray-700">{c.campaignPurpose}</td>
+                          <td className="py-2.5 px-2 text-gray-700">{c.campaignChannel}</td>
+                          <td className="py-2.5 px-2">
+                            <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                              {c.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-2">
+                            {c.isApproved ? (
+                              <span className="text-emerald-600 text-xs font-medium">Yes</span>
+                            ) : (
+                              <span className="text-amber-600 text-xs font-medium">No</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-gray-600 text-xs">
+                            {c.startDate && c.endDate
+                              ? `${new Date(c.startDate).toLocaleDateString()} – ${new Date(c.endDate).toLocaleDateString()}`
+                              : '—'}
+                          </td>
+                          <td className="py-2.5 px-2">
+                            <div className="flex flex-wrap items-center gap-1">
+                              <button
+                                type="button"
+                                disabled={campaignActionLoading === c.id}
+                                onClick={() => handleActivateCampaign(c.id)}
+                                className="px-2 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 disabled:opacity-50"
+                              >
+                                Activate
+                              </button>
+                              <button
+                                type="button"
+                                disabled={campaignActionLoading === c.id}
+                                onClick={() => handleCancelCampaign(c.id)}
+                                className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  logsByCampaignId[c.id]
+                                    ? setExpandedLogsCampaignId(expandedLogsCampaignId === c.id ? null : c.id)
+                                    : loadCampaignLogs(c.id)
+                                }
+                                disabled={logsLoadingCampaignId === c.id}
+                                className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+                              >
+                                {logsLoadingCampaignId === c.id
+                                  ? '…'
+                                  : expandedLogsCampaignId === c.id
+                                    ? 'Hide logs'
+                                    : 'View logs'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expandedLogsCampaignId === c.id && (
+                          <tr className="bg-gray-50/80">
+                            <td colSpan={7} className="py-3 px-2">
+                              {logsLoadingCampaignId === c.id ? (
+                                <span className="text-xs text-gray-500">Loading logs…</span>
+                              ) : (logsByCampaignId[c.id]?.length ?? 0) === 0 ? (
+                                <span className="text-xs text-gray-500">No logs</span>
+                              ) : (
+                                <ul className="space-y-1 text-xs">
+                                  {(logsByCampaignId[c.id] ?? []).map((log) => (
+                                    <li key={log.id} className="text-gray-700">
+                                      {log.initialStatus ?? '—'} → {log.finalStatus ?? '—'}
+                                      {(log.actorFirstName || log.actorLastName) &&
+                                        ` (${[log.actorFirstName, log.actorLastName].filter(Boolean).join(' ')})`}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </SectionCard>
         </div>
       </div>

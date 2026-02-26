@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MoreVertical } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminApi, type CompanyLeanResponse } from '@/lib/adminApi'
+import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 
 const NOT_IMPLEMENTED_MESSAGE = 'This action is not yet implemented on the backend.'
 
@@ -57,6 +58,7 @@ function SenderIdStatusBadge({
 
 export default function CompaniesPage() {
   const router = useRouter()
+  const { env } = useApiEnv()
   const [companies, setCompanies] = useState<CompanyLeanResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -79,7 +81,7 @@ export default function CompaniesPage() {
     }
 
     load()
-  }, [])
+  }, [env])
 
   useEffect(() => {
     if (openDropdownId === null) return

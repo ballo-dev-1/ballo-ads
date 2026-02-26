@@ -1,12 +1,17 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   adminApi,
   type EditPricingModelRequest,
   type PricingModelRequest,
   type PricingModelResponse,
 } from '@/lib/adminApi'
+import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Filter } from 'lucide-react'
+
+type SortKey = 'platform' | 'range' | 'amountPerMessage' | 'duration' | 'status' | 'createdAt'
+type SortDir = 'asc' | 'desc'
 
 const initialCreateForm: PricingModelRequest = {
   platform: 'Sms',
@@ -17,6 +22,7 @@ const initialCreateForm: PricingModelRequest = {
 }
 
 export default function PricingPage() {
+  const { env } = useApiEnv()
   const [models, setModels] = useState<PricingModelResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -27,6 +33,14 @@ export default function PricingPage() {
   const [pendingEnable, setPendingEnable] = useState<boolean | null>(null)
   /** Latest duration from create form input (avoids stale state when user types then submits before re-render). */
   const createDurationRef = useRef<number | null>(null)
+  /** Table sort and filter */
+  const [sortBy, setSortBy] = useState<SortKey>('platform')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [platformFilter, setPlatformFilter] = useState<string>('')
+  const [filterEnabled, setFilterEnabled] = useState<boolean>(true)
+  const [filterDisabled, setFilterDisabled] = useState<boolean>(false)
+  const [filtersPopoverOpen, setFiltersPopoverOpen] = useState(false)
+  const filtersPopoverRef = useRef<HTMLDivElement>(null)
 
   const load = async () => {
     setLoading(true)
@@ -43,7 +57,19 @@ export default function PricingPage() {
 
   useEffect(() => {
     load()
-  }, [])
+  }, [env])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filtersPopoverRef.current && !filtersPopoverRef.current.contains(e.target as Node)) {
+        setFiltersPopoverOpen(false)
+      }
+    }
+    if (filtersPopoverOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [filtersPopoverOpen])
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -113,6 +139,64 @@ export default function PricingPage() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to update pricing model')
     }
+  }
+
+  const uniquePlatforms = useMemo(() => {
+    const set = new Set(models.map((m) => m.platform))
+    return Array.from(set).sort()
+  }, [models])
+
+  const filteredAndSortedModels = useMemo(() => {
+    let list = models.filter((m) => {
+      if (platformFilter && m.platform !== platformFilter) return false
+      const noStatusFilter = !filterEnabled && !filterDisabled
+      if (noStatusFilter) return true
+      if (filterEnabled && m.isEnabled) return true
+      if (filterDisabled && !m.isEnabled) return true
+      return false
+    })
+    list = [...list].sort((a, b) => {
+      let cmp = 0
+      switch (sortBy) {
+        case 'platform':
+          cmp = a.platform.localeCompare(b.platform)
+          break
+        case 'range':
+          cmp = a.thresholdStart !== b.thresholdStart ? a.thresholdStart - b.thresholdStart : a.thresholdEnd - b.thresholdEnd
+          break
+        case 'amountPerMessage':
+          cmp = a.amountPerMessage - b.amountPerMessage
+          break
+        case 'duration':
+          cmp = a.duration - b.duration
+          break
+        case 'status':
+          cmp = (a.isEnabled ? 1 : 0) - (b.isEnabled ? 1 : 0)
+          break
+        case 'createdAt':
+          cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          break
+      }
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return list
+  }, [models, platformFilter, filterEnabled, filterDisabled, sortBy, sortDir])
+
+  const handleSort = (key: SortKey) => {
+    if (sortBy === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortBy(key)
+      setSortDir('asc')
+    }
+  }
+
+  const SortIcon = ({ column }: { column: SortKey }) => {
+    if (sortBy !== column) return <ChevronsUpDown className="w-4 h-4 inline-block ml-1 opacity-50" aria-hidden />
+    return sortDir === 'asc' ? (
+      <ChevronUp className="w-4 h-4 inline-block ml-1" aria-hidden />
+    ) : (
+      <ChevronDown className="w-4 h-4 inline-block ml-1" aria-hidden />
+    )
   }
 
   return (
@@ -227,66 +311,202 @@ export default function PricingPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Platform
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Range
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Amount / Msg
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Duration
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {models.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-8 text-gray-500">
-                      No pricing models found
-                    </td>
+            <>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-5 py-4 border-b border-gray-200 bg-gray-50">
+                <div className="relative" ref={filtersPopoverRef}>
+                  <button
+                    type="button"
+                    onClick={() => setFiltersPopoverOpen((o) => !o)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] ${
+                      filtersPopoverOpen
+                        ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                        : 'text-gray-700 hover:bg-gray-200'
+                    }`}
+                    aria-label="Filters"
+                    aria-expanded={filtersPopoverOpen}
+                    aria-haspopup="true"
+                  >
+                    <Filter className="w-4 h-4" />
+                    <span>Filters</span>
+                    {(platformFilter || !filterEnabled || !filterDisabled) && (
+                      <span className="flex h-2 w-2 rounded-full bg-[var(--brand-color-2)]" aria-hidden />
+                    )}
+                  </button>
+                  {filtersPopoverOpen && (
+                    <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white py-3 px-4 shadow-lg">
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="filter-platform" className="block text-sm font-medium text-gray-700 mb-1.5">
+                            Platform
+                          </label>
+                          <select
+                            id="filter-platform"
+                            value={platformFilter}
+                            onChange={(e) => setPlatformFilter(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                          >
+                            <option value="">All</option>
+                            {uniquePlatforms.map((p) => (
+                              <option key={p} value={p}>
+                                {p}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <span className="block text-sm font-medium text-gray-700 mb-2">Status</span>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={filterEnabled}
+                                onChange={(e) => setFilterEnabled(e.target.checked)}
+                                className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                              />
+                              <span className="text-sm text-gray-700">Enabled</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={filterDisabled}
+                                onChange={(e) => setFilterDisabled(e.target.checked)}
+                                className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                              />
+                              <span className="text-sm text-gray-700">Disabled</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="h-8 w-px bg-gray-200 shrink-0" aria-hidden />
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Sort</span>
+                  <label htmlFor="sort-by" className="sr-only">Sort by</label>
+                  <select
+                    id="sort-by"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortKey)}
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                  >
+                    <option value="platform">Platform</option>
+                    <option value="range">Range</option>
+                    <option value="amountPerMessage">Amount / Msg</option>
+                    <option value="duration">Duration</option>
+                    <option value="status">Status</option>
+                    <option value="createdAt">Creation date</option>
+                  </select>
+                  <select
+                    aria-label="Sort direction"
+                    value={sortDir}
+                    onChange={(e) => setSortDir(e.target.value as SortDir)}
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </div>
+                <span className="text-sm text-gray-500 ml-auto shrink-0">
+                  Showing {filteredAndSortedModels.length} of {models.length}
+                </span>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('platform')}
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      >
+                        Platform
+                        <SortIcon column="platform" />
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('range')}
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      >
+                        Range
+                        <SortIcon column="range" />
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('amountPerMessage')}
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      >
+                        Amount / Msg
+                        <SortIcon column="amountPerMessage" />
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('duration')}
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      >
+                        Duration
+                        <SortIcon column="duration" />
+                      </button>
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => handleSort('status')}
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      >
+                        Status
+                        <SortIcon column="status" />
+                      </button>
+                    </th>
                   </tr>
-                ) : (
-                  models.map((m) => (
-                    <tr
-                      key={m.id}
-                      onClick={() => startEdit(m)}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                    >
-                      <td className="py-3 px-4 text-sm text-gray-800">{m.platform}</td>
-                      <td className="py-3 px-4 text-sm text-gray-800">
-                        {m.thresholdStart} - {m.thresholdEnd}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-800">
-                        {m.amountPerMessage}
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-800">
-                        {m.duration} days
-                      </td>
-                      <td className="py-3 px-4 text-sm">
-                        {m.isEnabled ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                            Enabled
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            Disabled
-                          </span>
-                        )}
+                </thead>
+                <tbody>
+                  {filteredAndSortedModels.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-8 text-gray-500">
+                        {models.length === 0 ? 'No pricing models found' : 'No models match the current filters'}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredAndSortedModels.map((m) => (
+                      <tr
+                        key={m.id}
+                        onClick={() => startEdit(m)}
+                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        <td className="py-3 px-4 text-sm text-gray-800">{m.platform}</td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          {m.thresholdStart} - {m.thresholdEnd}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          {m.amountPerMessage}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-800">
+                          {m.duration} days
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          {m.isEnabled ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                              Enabled
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                              Disabled
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </>
           )}
         </div>
       </div>
@@ -394,20 +614,25 @@ export default function PricingPage() {
                   const effectiveEnabled = pendingEnable !== null ? pendingEnable : editingModel.isEnabled
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
+                      <label className="block text-sm font-medium text-gray-700 my-1 pl-1">
+                        Enabled
                       </label>
-                      <div>
+                      <div className="flex items-center pl-1">
                         <button
                           type="button"
+                          role="switch"
+                          aria-checked={effectiveEnabled}
+                          aria-label="Status"
                           onClick={() => setPendingEnable(!effectiveEnabled)}
-                          className={`px-3 py-1.5 text-sm font-medium rounded-lg ${
-                            effectiveEnabled
-                              ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                              : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                          className={`relative inline-flex h-6 w-14 shrink-0 cursor-pointer rounded-full border-0 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] focus:ring-offset-2 ${
+                            effectiveEnabled ? 'bg-emerald-600' : 'bg-gray-300'
                           }`}
                         >
-                          {effectiveEnabled ? 'Disable' : 'Enable'}
+                          <span
+                            className={`pointer-events-none absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                              effectiveEnabled ? 'translate-x-8' : 'translate-x-0.5'
+                            }`}
+                          />
                         </button>
                       </div>
                     </div>

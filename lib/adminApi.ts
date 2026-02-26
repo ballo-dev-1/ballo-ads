@@ -1,5 +1,18 @@
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://api.balloads.com';
+export const DEV_API_BASE = 'https://api.balloads.com';
+export const PROD_API_BASE = 'https://prod.balloads.com';
+
+let currentBaseUrl =
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
+    ? process.env.NEXT_PUBLIC_API_BASE_URL
+    : DEV_API_BASE;
+
+export function getApiBaseUrl(): string {
+  return currentBaseUrl;
+}
+
+export function setApiBaseUrl(url: string): void {
+  currentBaseUrl = url.replace(/\/+$/, '');
+}
 
 export type AuthResponse = {
   token: string;
@@ -39,6 +52,15 @@ export type AdsCampaignResponse = {
   status: string;
   mediaFileUrl?: string;
   isApproved: boolean;
+};
+
+export type CampaignLogResponse = {
+  id: number;
+  campaignId: number;
+  actorFirstName?: string;
+  actorLastName?: string;
+  initialStatus?: string;
+  finalStatus?: string;
 };
 
 export type PricingModelResponse = {
@@ -90,6 +112,36 @@ function mapCompanyLeanResponse(r: Record<string, unknown>): CompanyLeanResponse
   };
 }
 
+/** Normalize campaign response (PascalCase or camelCase) to AdsCampaignResponse */
+function mapAdsCampaignResponse(r: Record<string, unknown>): AdsCampaignResponse {
+  return {
+    id: (r.Id ?? r.id) as number,
+    name: (r.Name ?? r.name) as string,
+    campaignMessage: (r.CampaignMessage ?? r.campaignMessage) as string,
+    campaignPurpose: (r.CampaignPurpose ?? r.campaignPurpose) as string,
+    campaignChannel: (r.CampaignChannel ?? r.campaignChannel) as string,
+    companyId: (r.CompanyId ?? r.companyId) as number,
+    creatorId: (r.CreatorId ?? r.creatorId) as number,
+    startDate: (r.StartDate ?? r.startDate) as string,
+    endDate: (r.EndDate ?? r.endDate) as string,
+    status: (r.Status ?? r.status) as string,
+    mediaFileUrl: (r.MediaFileUrl ?? r.mediaFileUrl) as string | undefined,
+    isApproved: (r.IsApproved ?? r.isApproved) as boolean,
+  };
+}
+
+/** Normalize campaign log (PascalCase or camelCase) to CampaignLogResponse */
+function mapCampaignLogResponse(r: Record<string, unknown>): CampaignLogResponse {
+  return {
+    id: (r.Id ?? r.id) as number,
+    campaignId: (r.CampaignId ?? r.campaignId) as number,
+    actorFirstName: (r.ActorFirstName ?? r.actorFirstName) as string | undefined,
+    actorLastName: (r.ActorLastName ?? r.actorLastName) as string | undefined,
+    initialStatus: (r.InitialStatus ?? r.initialStatus) as string | undefined,
+    finalStatus: (r.FinalStatus ?? r.finalStatus) as string | undefined,
+  };
+}
+
 /** Backend expects PascalCase; POST /pricing uses query params (see Swagger). */
 function pricingRequestToBody(p: PricingModelRequest): Record<string, unknown> {
   return {
@@ -110,12 +162,13 @@ function pricingCreateQuery(p: PricingModelRequest): string {
   return params.toString();
 }
 
+/** PATCH /pricing/{id}/update expects camelCase body per Swagger EditPricingModelRequest. */
 function editPricingRequestToBody(p: EditPricingModelRequest): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (p.thresholdStart !== undefined) out.ThresholdStart = p.thresholdStart;
-  if (p.thresholdEnd !== undefined) out.ThresholdEnd = p.thresholdEnd;
-  if (p.amountPerMessage !== undefined) out.AmountPerMessage = p.amountPerMessage;
-  if (p.duration !== undefined) out.Duration = p.duration;
+  if (p.thresholdStart !== undefined) out.thresholdStart = p.thresholdStart;
+  if (p.thresholdEnd !== undefined) out.thresholdEnd = p.thresholdEnd;
+  if (p.amountPerMessage !== undefined) out.amountPerMessage = p.amountPerMessage;
+  if (p.duration !== undefined) out.duration = p.duration;
   return out;
 }
 
@@ -137,7 +190,7 @@ async function request<T>(
   path: string,
   options: RequestInit & { authToken?: string } = {}
 ): Promise<T> {
-  const url = `${BASE_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+  const url = `${getApiBaseUrl()}/${path.replace(/^\/+/, '')}`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -217,13 +270,50 @@ export const adminApi = {
     approve: boolean,
     authToken?: string
   ) =>
-    request<AdsCampaignResponse>(
+    request<Record<string, unknown>>(
       `companies/${companyId}/campaigns/${campaignId}?approve=${approve}`,
       {
         method: 'PATCH',
         authToken,
       }
-    ),
+    ).then(mapAdsCampaignResponse),
+
+  /** GET /v1/companies/{id}/campaigns/all - list all campaigns for a company */
+  getCompanyCampaignsAll: (
+    companyId: number,
+    params?: { pageSize?: number; pageNumber?: number },
+    authToken?: string
+  ) => {
+    const search = new URLSearchParams();
+    if (params?.pageSize != null) search.set('PageSize', String(params.pageSize));
+    if (params?.pageNumber != null) search.set('PageNumber', String(params.pageNumber));
+    const qs = search.toString();
+    const path = qs ? `v1/companies/${companyId}/campaigns/all?${qs}` : `v1/companies/${companyId}/campaigns/all`;
+    return request<Record<string, unknown>[]>(path, { authToken }).then((list) =>
+      list.map(mapAdsCampaignResponse)
+    );
+  },
+
+  /** PATCH /v1/companies/{id}/campaigns/{campaignId}/activate */
+  activateCampaign: (companyId: number, campaignId: number, authToken?: string) =>
+    request<Record<string, unknown>>(
+      `v1/companies/${companyId}/campaigns/${campaignId}/activate`,
+      { method: 'PATCH', authToken }
+    ).then(mapAdsCampaignResponse),
+
+  /** PATCH /v1/companies/{id}/campaigns/{campaignId}/cancel */
+  cancelCampaign: (companyId: number, campaignId: number, authToken?: string) =>
+    request<Record<string, unknown>>(
+      `v1/companies/${companyId}/campaigns/${campaignId}/cancel`,
+      { method: 'PATCH', authToken }
+    ).then(mapAdsCampaignResponse),
+
+  /** GET /v1/companies/{id}/campaigns/{campaignId}/logs */
+  getCampaignLogs: (companyId: number, campaignId: number, authToken?: string) =>
+    request<Record<string, unknown>[]>(
+      `v1/companies/${companyId}/campaigns/${campaignId}/logs`,
+      { authToken }
+    ).then((list) => list.map(mapCampaignLogResponse)),
 
   getPricingModels: (authToken?: string) =>
     request<Record<string, unknown>[]>('pricing', { authToken }).then((list) =>
