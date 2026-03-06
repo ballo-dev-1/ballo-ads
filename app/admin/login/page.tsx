@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')
@@ -9,9 +10,9 @@ export default function AdminLogin() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { env, setEnv, baseUrl } = useApiEnv()
 
   useEffect(() => {
-    // Check if already authenticated
     fetch('/api/admin/login')
       .then(res => res.json())
       .then(data => {
@@ -32,7 +33,7 @@ export default function AdminLogin() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, apiBase: baseUrl }),
       })
 
       const data = await response.json()
@@ -52,8 +53,39 @@ export default function AdminLogin() {
   return (
     <div className=" fixed top-0 left-0 w-screen min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0e0e39] via-[#1a1a4e] to-[#0e0e39] px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-[#0e0e39] mb-2">Admin Login</h1>
-        <p className="text-gray-600 mb-6">Enter your credentials to access the dashboard</p>
+        <h1 className="text-3xl font-bold text-[#0e0e39] mb-2">Backoffice Login</h1>
+        <p className="text-gray-600 mb-4">Enter your credentials to access the dashboard</p>
+
+        <div className="mb-6">
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Environment</div>
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setEnv('dev')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                env === 'dev'
+                  ? 'bg-[#0e0e39] text-white'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Dev
+            </button>
+            <button
+              type="button"
+              onClick={() => setEnv('prod')}
+              className={`flex-1 px-4 py-2.5 text-sm font-medium transition-colors ${
+                env === 'prod'
+                  ? 'bg-[#0e0e39] text-white'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Prod
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">
+            {env === 'dev' ? 'Local or dev API' : 'Production API'}
+          </p>
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

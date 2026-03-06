@@ -1,39 +1,36 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-const ADMIN_AUTH_COOKIE = 'admin-auth'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { ADMIN_TOKEN_COOKIE } from "@/lib/adminAuth";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const authCookie = request.cookies.get(ADMIN_AUTH_COOKIE)?.value
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
 
   // Allow access to login page
-  if (pathname === '/admin/login') {
-    // If already authenticated, redirect to dashboard
-    if (authCookie === 'authenticated') {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+  if (pathname === "/admin/login") {
+    if (token) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
-    return NextResponse.next()
+    return NextResponse.next();
   }
 
   // Redirect /admin to /admin/dashboard for authenticated users
-  if (pathname === '/admin') {
-    if (authCookie === 'authenticated') {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+  if (pathname === "/admin") {
+    if (token) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
   }
 
   // Protect all other /admin routes
-  if (pathname.startsWith('/admin')) {
-    if (authCookie !== 'authenticated') {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+  if (pathname.startsWith("/admin")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: '/admin/:path*',
-}
-
+  matcher: "/admin/:path*",
+};

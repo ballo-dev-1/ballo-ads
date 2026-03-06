@@ -1,9 +1,21 @@
-export const DEV_API_BASE = 'https://api.balloads.com';
-export const PROD_API_BASE = 'https://prod.balloads.com';
+/** Dev = local or dev server; Prod = production API. Backoffice uses Backoffice/* on both. */
+export const DEV_API_BASE =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_DEV_API_URL
+    ? process.env.NEXT_PUBLIC_DEV_API_URL
+    : "http://localhost:5238";
+export const PROD_API_BASE =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_PROD_API_URL
+    ? process.env.NEXT_PUBLIC_PROD_API_URL
+    : "https://api.balloads.com";
+
+const BACKOFFICE = "Backoffice";
 
 let currentBaseUrl =
-  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
-    ? process.env.NEXT_PUBLIC_API_BASE_URL
+  typeof window !== "undefined"
+    ? (() => {
+        const stored = localStorage.getItem("ballo-ads-api-env");
+        return stored === "prod" ? PROD_API_BASE : DEV_API_BASE;
+      })()
     : DEV_API_BASE;
 
 export function getApiBaseUrl(): string {
@@ -11,12 +23,70 @@ export function getApiBaseUrl(): string {
 }
 
 export function setApiBaseUrl(url: string): void {
-  currentBaseUrl = url.replace(/\/+$/, '');
+  currentBaseUrl = url.replace(/\/+$/, "");
 }
 
 export type AuthResponse = {
   token: string;
   refreshToken: string;
+};
+
+export type BackofficeRoleResponse = {
+  id: number;
+  name: string;
+  permissions: string[];
+};
+
+export type BackofficeUserResponse = {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  roles: string[];
+};
+
+export type PurchaseOrderResponse = {
+  id?: number;
+  company?: CompanyLeanResponse;
+  actor?: { id?: number; user?: Record<string, unknown> };
+  smsCount?: number;
+  emailCount?: number;
+  whatsAppCount?: number;
+  billedAccount?: string;
+  purchaseOrderStatus?: string;
+  expirationAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type TransactionResponse = {
+  id: number;
+  transactionId: string;
+  externalId?: string;
+  amount: number;
+  currency?: string;
+  status: string;
+  paymentMethod?: string;
+  createdAt: string;
+};
+
+export type AdsClientResponse = {
+  id: number;
+  email?: string;
+  phoneNumber?: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  gender?: string;
+  country?: string;
+  province?: string;
+  city?: string;
+  town?: string;
+  status?: string;
+  optInSMS?: boolean;
+  optInEmail?: boolean;
+  optInWhatsApp?: boolean;
+  companyName?: string;
 };
 
 export type CompanyLeanResponse = {
@@ -89,15 +159,29 @@ export type EditPricingModelRequest = Partial<{
   duration: number;
 }>;
 
+export type MtnWhitelistedSenderIdResponse = {
+  id: number;
+  senderId: string;
+  createdAt: string;
+};
+
+export type MtnWhitelistedSenderIdRequest = {
+  senderId: string;
+};
+
 /** Normalize company response from backend (PascalCase or camelCase) to CompanyLeanResponse */
-function mapCompanyLeanResponse(r: Record<string, unknown>): CompanyLeanResponse {
+function mapCompanyLeanResponse(
+  r: Record<string, unknown>,
+): CompanyLeanResponse {
   return {
     id: (r.Id ?? r.id) as number,
     name: (r.Name ?? r.name) as string | undefined,
     description: (r.Description ?? r.description) as string | undefined,
     email: (r.Email ?? r.email) as string | undefined,
     phoneNumber: (r.PhoneNumber ?? r.phoneNumber) as string | undefined,
-    physicalAddress: (r.PhysicalAddress ?? r.physicalAddress) as string | undefined,
+    physicalAddress: (r.PhysicalAddress ?? r.physicalAddress) as
+      | string
+      | undefined,
     industry: (r.Industry ?? r.industry) as string,
     isCompanyVerified: (r.IsCompanyVerified ?? r.isCompanyVerified) as boolean,
     websiteUrl: (r.WebsiteUrl ?? r.websiteUrl) as string | undefined,
@@ -107,13 +191,40 @@ function mapCompanyLeanResponse(r: Record<string, unknown>): CompanyLeanResponse
     instagramUrl: (r.InstagramUrl ?? r.instagramUrl) as string | undefined,
     youtubeUrl: (r.YoutubeUrl ?? r.youtubeUrl) as string | undefined,
     senderId: (r.SenderId ?? r.senderId) as string | undefined,
-    profileImageUrl: (r.ProfileImageUrl ?? r.profileImageUrl) as string | undefined,
-    isApprovedSenderId: (r.IsApprovedSenderId ?? r.isApprovedSenderId) as boolean,
+    profileImageUrl: (r.ProfileImageUrl ?? r.profileImageUrl) as
+      | string
+      | undefined,
+    isApprovedSenderId: (r.IsApprovedSenderId ??
+      r.isApprovedSenderId) as boolean,
+  };
+}
+
+/** Normalize ads client response (PascalCase or camelCase) to AdsClientResponse */
+function mapAdsClientResponse(r: Record<string, unknown>): AdsClientResponse {
+  return {
+    id: (r.Id ?? r.id) as number,
+    email: (r.Email ?? r.email) as string | undefined,
+    phoneNumber: (r.PhoneNumber ?? r.phoneNumber) as string | undefined,
+    firstName: (r.FirstName ?? r.firstName) as string,
+    lastName: (r.LastName ?? r.lastName) as string,
+    dateOfBirth: (r.DateOfBirth ?? r.dateOfBirth) as string | undefined,
+    gender: (r.Gender ?? r.gender) as string | undefined,
+    country: (r.Country ?? r.country) as string | undefined,
+    province: (r.Province ?? r.province) as string | undefined,
+    city: (r.City ?? r.city) as string | undefined,
+    town: (r.Town ?? r.town) as string | undefined,
+    status: (r.Status ?? r.status) as string | undefined,
+    optInSMS: (r.OptInSMS ?? r.optInSMS) as boolean | undefined,
+    optInEmail: (r.OptInEmail ?? r.optInEmail) as boolean | undefined,
+    optInWhatsApp: (r.OptInWhatsApp ?? r.optInWhatsApp) as boolean | undefined,
+    companyName: (r.CompanyName ?? r.companyName) as string | undefined,
   };
 }
 
 /** Normalize campaign response (PascalCase or camelCase) to AdsCampaignResponse */
-function mapAdsCampaignResponse(r: Record<string, unknown>): AdsCampaignResponse {
+function mapAdsCampaignResponse(
+  r: Record<string, unknown>,
+): AdsCampaignResponse {
   return {
     id: (r.Id ?? r.id) as number,
     name: (r.Name ?? r.name) as string,
@@ -131,43 +242,30 @@ function mapAdsCampaignResponse(r: Record<string, unknown>): AdsCampaignResponse
 }
 
 /** Normalize campaign log (PascalCase or camelCase) to CampaignLogResponse */
-function mapCampaignLogResponse(r: Record<string, unknown>): CampaignLogResponse {
+function mapCampaignLogResponse(
+  r: Record<string, unknown>,
+): CampaignLogResponse {
   return {
     id: (r.Id ?? r.id) as number,
     campaignId: (r.CampaignId ?? r.campaignId) as number,
-    actorFirstName: (r.ActorFirstName ?? r.actorFirstName) as string | undefined,
+    actorFirstName: (r.ActorFirstName ?? r.actorFirstName) as
+      | string
+      | undefined,
     actorLastName: (r.ActorLastName ?? r.actorLastName) as string | undefined,
     initialStatus: (r.InitialStatus ?? r.initialStatus) as string | undefined,
     finalStatus: (r.FinalStatus ?? r.finalStatus) as string | undefined,
   };
 }
 
-/** Backend expects PascalCase; POST /pricing uses query params (see Swagger). */
-function pricingRequestToBody(p: PricingModelRequest): Record<string, unknown> {
-  return {
-    Platform: p.platform,
-    ThresholdStart: p.thresholdStart,
-    ThresholdEnd: p.thresholdEnd,
-    AmountPerMessage: p.amountPerMessage,
-    Duration: p.duration,
-  };
-}
-
-function pricingCreateQuery(p: PricingModelRequest): string {
-  const q = pricingRequestToBody(p) as Record<string, string | number>;
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(q)) {
-    params.set(k, String(v));
-  }
-  return params.toString();
-}
-
 /** PATCH /pricing/{id}/update expects camelCase body per Swagger EditPricingModelRequest. */
-function editPricingRequestToBody(p: EditPricingModelRequest): Record<string, unknown> {
+function editPricingRequestToBody(
+  p: EditPricingModelRequest,
+): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (p.thresholdStart !== undefined) out.thresholdStart = p.thresholdStart;
   if (p.thresholdEnd !== undefined) out.thresholdEnd = p.thresholdEnd;
-  if (p.amountPerMessage !== undefined) out.amountPerMessage = p.amountPerMessage;
+  if (p.amountPerMessage !== undefined)
+    out.amountPerMessage = p.amountPerMessage;
   if (p.duration !== undefined) out.duration = p.duration;
   return out;
 }
@@ -183,24 +281,45 @@ function mapPricingResponse(r: Record<string, unknown>): PricingModelResponse {
     duration: (r.Duration ?? r.duration) as number,
     isEnabled: (r.IsEnabled ?? r.isEnabled) as boolean,
     createdAt: (r.CreatedAt ?? r.createdAt) as string,
-  }
+  };
+}
+
+/** Normalize MTN whitelisted sender ID response (PascalCase) to camelCase */
+function mapMtnWhitelistedSenderIdResponse(
+  r: Record<string, unknown>,
+): MtnWhitelistedSenderIdResponse {
+  return {
+    id: (r.Id ?? r.id) as number,
+    senderId: (r.SenderId ?? r.senderId) as string,
+    createdAt: (r.CreatedAt ?? r.createdAt) as string,
+  };
 }
 
 async function request<T>(
   path: string,
-  options: RequestInit & { authToken?: string } = {}
+  options: RequestInit & { authToken?: string } = {},
 ): Promise<T> {
-  const url = `${getApiBaseUrl()}/${path.replace(/^\/+/, '')}`;
+  const isClient = typeof window !== "undefined";
+  const pathNormalized = path.replace(/^\/+/, "");
 
+  let url: string;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(typeof options.headers === 'object' && options.headers !== null && !(options.headers instanceof Headers)
+    "Content-Type": "application/json",
+    ...(typeof options.headers === "object" &&
+    options.headers !== null &&
+    !(options.headers instanceof Headers)
       ? (options.headers as Record<string, string>)
       : {}),
   };
 
-  if (options.authToken) {
-    headers['Authorization'] = `Bearer ${options.authToken}`;
+  if (isClient) {
+    url = `/api/admin/proxy/${pathNormalized}`;
+    headers["X-Api-Base"] = getApiBaseUrl();
+  } else {
+    url = `${getApiBaseUrl()}/${pathNormalized}`;
+    if (options.authToken) {
+      headers["Authorization"] = `Bearer ${options.authToken}`;
+    }
   }
 
   const res = await fetch(url, {
@@ -212,10 +331,20 @@ async function request<T>(
   const data = text ? (JSON.parse(text) as unknown) : null;
 
   if (!res.ok) {
-    const d = data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
+    const d =
+      data && typeof data === "object"
+        ? (data as Record<string, unknown>)
+        : null;
     const message =
-      (d && (typeof d.message === 'string' ? d.message : typeof d.detail === 'string' ? d.detail : typeof d.title === 'string' ? d.title : null)) ||
-      'Request failed';
+      (d &&
+        (typeof d.message === "string"
+          ? d.message
+          : typeof d.detail === "string"
+            ? d.detail
+            : typeof d.title === "string"
+              ? d.title
+              : null)) ||
+      "Request failed";
 
     throw new Error(message);
   }
@@ -225,8 +354,8 @@ async function request<T>(
 
 export const adminApi = {
   login: (username: string, password: string) =>
-    request<AuthResponse>('v1/auth/login', {
-      method: 'POST',
+    request<AuthResponse>("v1/auth/login", {
+      method: "POST",
       body: JSON.stringify({ username, password }),
     }),
 
@@ -239,114 +368,466 @@ export const adminApi = {
   }) => {
     const { authToken, ...filters } = params || {};
     const search = new URLSearchParams();
-    if (filters.id != null) search.set('Id', String(filters.id));
-    if (filters.industry) search.set('Industry', filters.industry);
+    if (filters.id != null) search.set("Id", String(filters.id));
+    if (filters.industry) search.set("Industry", filters.industry);
     if (filters.isCompanyVerified != null)
-      search.set('IsCompanyVerified', String(filters.isCompanyVerified));
-    if (filters.query) search.set('Query', filters.query);
+      search.set("IsCompanyVerified", String(filters.isCompanyVerified));
+    if (filters.query) search.set("Query", filters.query);
 
     const qs = search.toString();
-    const path = qs ? `companies?${qs}` : 'companies';
+    const path = qs ? `${BACKOFFICE}/companies?${qs}` : `${BACKOFFICE}/companies`;
 
-    return request<Record<string, unknown>[]>(path, { authToken }).then((list) =>
-      list.map((r) => mapCompanyLeanResponse(r))
+    return request<Record<string, unknown>[]>(path, { authToken }).then(
+      (list) => list.map((r) => mapCompanyLeanResponse(r)),
     );
   },
 
   getCompanyById: (id: number, authToken?: string) =>
-    request<Record<string, unknown>>(`v1/companies/${id}`, { authToken }).then(
-      mapCompanyLeanResponse
-    ),
-
-  approveCompanySenderId: (companyId: number, approve: boolean, authToken?: string) =>
-    request<Record<string, unknown>>(`companies/${companyId}?approve=${approve}`, {
-      method: 'PATCH',
+    request<Record<string, unknown>>(`${BACKOFFICE}/companies/${id}`, {
       authToken,
     }).then(mapCompanyLeanResponse),
+
+  createCompany: (payload: Record<string, unknown>, authToken?: string) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/companies`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }).then(mapCompanyLeanResponse),
+
+  updateCompany: (
+    id: number,
+    payload: Record<string, unknown>,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/companies/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      authToken,
+    }).then(mapCompanyLeanResponse),
+
+  deleteCompany: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/companies/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  verifyCompany: (id: number, verify: boolean, authToken?: string) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${id}/verify?verify=${verify}`,
+      { method: "PATCH", authToken },
+    ).then(mapCompanyLeanResponse),
+
+  approveCompanySenderId: (
+    companyId: number,
+    approve: boolean,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/approve-sender-id?approve=${approve}`,
+      {
+        method: "PATCH",
+        authToken,
+      },
+    ).then(mapCompanyLeanResponse),
+
+  updateCompanySenderId: (
+    companyId: number,
+    senderId: string,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/sender-id`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ senderId }),
+        authToken,
+      },
+    ).then(mapCompanyLeanResponse),
 
   approveCampaign: (
     companyId: number,
     campaignId: number,
     approve: boolean,
-    authToken?: string
+    authToken?: string,
   ) =>
     request<Record<string, unknown>>(
-      `companies/${companyId}/campaigns/${campaignId}?approve=${approve}`,
+      `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/approve?approve=${approve}`,
       {
-        method: 'PATCH',
+        method: "PATCH",
         authToken,
-      }
+      },
     ).then(mapAdsCampaignResponse),
 
-  /** GET /v1/companies/{id}/campaigns/all - list all campaigns for a company */
   getCompanyCampaignsAll: (
     companyId: number,
     params?: { pageSize?: number; pageNumber?: number },
-    authToken?: string
+    authToken?: string,
   ) => {
     const search = new URLSearchParams();
-    if (params?.pageSize != null) search.set('PageSize', String(params.pageSize));
-    if (params?.pageNumber != null) search.set('PageNumber', String(params.pageNumber));
+    if (params?.pageSize != null)
+      search.set("PageSize", String(params.pageSize));
+    if (params?.pageNumber != null)
+      search.set("PageNumber", String(params.pageNumber));
     const qs = search.toString();
-    const path = qs ? `v1/companies/${companyId}/campaigns/all?${qs}` : `v1/companies/${companyId}/campaigns/all`;
-    return request<Record<string, unknown>[]>(path, { authToken }).then((list) =>
-      list.map(mapAdsCampaignResponse)
+    const path = qs
+      ? `${BACKOFFICE}/companies/${companyId}/campaigns?${qs}`
+      : `${BACKOFFICE}/companies/${companyId}/campaigns`;
+    return request<Record<string, unknown>[]>(path, { authToken }).then(
+      (list) => list.map(mapAdsCampaignResponse),
     );
   },
 
-  /** PATCH /v1/companies/{id}/campaigns/{campaignId}/activate */
-  activateCampaign: (companyId: number, campaignId: number, authToken?: string) =>
+  createCampaignOnBehalf: (
+    companyId: number,
+    payload: Record<string, unknown>,
+    authToken?: string,
+  ) =>
     request<Record<string, unknown>>(
-      `v1/companies/${companyId}/campaigns/${campaignId}/activate`,
-      { method: 'PATCH', authToken }
+      `${BACKOFFICE}/companies/${companyId}/campaigns`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        authToken,
+      },
     ).then(mapAdsCampaignResponse),
 
-  /** PATCH /v1/companies/{id}/campaigns/{campaignId}/cancel */
-  cancelCampaign: (companyId: number, campaignId: number, authToken?: string) =>
+  activateCampaign: (
+    companyId: number,
+    campaignId: number,
+    authToken?: string,
+  ) =>
     request<Record<string, unknown>>(
-      `v1/companies/${companyId}/campaigns/${campaignId}/cancel`,
-      { method: 'PATCH', authToken }
+      `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/activate`,
+      { method: "PATCH", authToken },
     ).then(mapAdsCampaignResponse),
 
-  /** GET /v1/companies/{id}/campaigns/{campaignId}/logs */
-  getCampaignLogs: (companyId: number, campaignId: number, authToken?: string) =>
+  cancelCampaign: (
+    companyId: number,
+    campaignId: number,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/cancel`,
+      { method: "PATCH", authToken },
+    ).then(mapAdsCampaignResponse),
+
+  getCampaignLogs: (
+    companyId: number,
+    campaignId: number,
+    authToken?: string,
+  ) =>
     request<Record<string, unknown>[]>(
-      `v1/companies/${companyId}/campaigns/${campaignId}/logs`,
-      { authToken }
+      `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/logs`,
+      { authToken },
     ).then((list) => list.map(mapCampaignLogResponse)),
 
-  getPricingModels: (authToken?: string) =>
-    request<Record<string, unknown>[]>('pricing', { authToken }).then((list) =>
-      list.map(mapPricingResponse)
-    ),
+  getPermissions: (authToken?: string) =>
+    request<string[]>(`${BACKOFFICE}/permissions`, { authToken }),
 
-  createPricingModel: (payload: PricingModelRequest, authToken?: string) => {
-    const query = pricingCreateQuery(payload);
-    const path = query ? `pricing?${query}` : 'pricing';
-    return request<Record<string, unknown>>(path, {
-      method: 'POST',
+  getRoles: (authToken?: string) =>
+    request<BackofficeRoleResponse[]>(`${BACKOFFICE}/roles`, { authToken }),
+
+  getRoleById: (id: number, authToken?: string) =>
+    request<BackofficeRoleResponse>(`${BACKOFFICE}/roles/${id}`, {
       authToken,
-    }).then(mapPricingResponse);
+    }),
+
+  createRole: (
+    payload: { name: string; permissions?: string[] },
+    authToken?: string,
+  ) =>
+    request<BackofficeRoleResponse>(`${BACKOFFICE}/roles`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  updateRole: (
+    id: number,
+    payload: { name?: string },
+    authToken?: string,
+  ) =>
+    request<BackofficeRoleResponse>(`${BACKOFFICE}/roles/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  setRolePermissions: (
+    id: number,
+    permissions: string[],
+    authToken?: string,
+  ) =>
+    request<BackofficeRoleResponse>(`${BACKOFFICE}/roles/${id}/permissions`, {
+      method: "PUT",
+      body: JSON.stringify(permissions),
+      authToken,
+    }),
+
+  deleteRole: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/roles/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  getUsers: (authToken?: string) =>
+    request<BackofficeUserResponse[]>(`${BACKOFFICE}/users`, { authToken }),
+
+  getUserById: (id: number, authToken?: string) =>
+    request<BackofficeUserResponse>(`${BACKOFFICE}/users/${id}`, {
+      authToken,
+    }),
+
+  createUser: (
+    payload: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      password: string;
+      roles?: string[];
+    },
+    authToken?: string,
+  ) =>
+    request<BackofficeUserResponse>(`${BACKOFFICE}/users`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  updateUser: (
+    id: number,
+    payload: { firstName?: string; lastName?: string; email?: string },
+    authToken?: string,
+  ) =>
+    request<BackofficeUserResponse>(`${BACKOFFICE}/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  setUserRoles: (
+    id: number,
+    roles: string[],
+    authToken?: string,
+  ) =>
+    request<BackofficeUserResponse>(`${BACKOFFICE}/users/${id}/roles`, {
+      method: "PUT",
+      body: JSON.stringify(roles),
+      authToken,
+    }),
+
+  deleteUser: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/users/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  getClients: (
+    companyId: number,
+    params?: Record<string, string | number | undefined>,
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params)
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== "") search.set(k, String(v));
+      });
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/companies/${companyId}/clients?${qs}`
+      : `${BACKOFFICE}/companies/${companyId}/clients`;
+    return request<Record<string, unknown>[]>(path, { authToken }).then(
+      (list) => list.map((r) => mapAdsClientResponse(r)),
+    );
   },
 
-  enablePricingModel: (id: number, authToken?: string) =>
-    request<Record<string, unknown>>(`pricing/${id}/enable`, {
-      method: 'PATCH',
+  createClient: (
+    companyId: number,
+    payload: Record<string, unknown>,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/clients`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        authToken,
+      },
+    ).then((r) => mapAdsClientResponse(r)),
+
+  updateClient: (
+    companyId: number,
+    clientId: number,
+    payload: Record<string, unknown>,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/clients/${clientId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        authToken,
+      },
+    ).then((r) => mapAdsClientResponse(r)),
+
+  deleteClient: (
+    companyId: number,
+    clientId: number,
+    authToken?: string,
+  ) =>
+    request<void>(
+      `${BACKOFFICE}/companies/${companyId}/clients/${clientId}`,
+      {
+        method: "DELETE",
+        authToken,
+      },
+    ),
+
+  getPricingModels: (authToken?: string) =>
+    request<Record<string, unknown>[]>(`${BACKOFFICE}/pricing`, {
+      authToken,
+    }).then((list) => list.map(mapPricingResponse)),
+
+  createPricingModel: (payload: PricingModelRequest, authToken?: string) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/pricing`, {
+      method: "POST",
+      body: JSON.stringify({
+        platform: payload.platform,
+        thresholdStart: payload.thresholdStart,
+        thresholdEnd: payload.thresholdEnd,
+        amountPerMessage: payload.amountPerMessage,
+        duration: payload.duration,
+      }),
       authToken,
     }).then(mapPricingResponse),
+
+  enablePricingModel: (id: number, authToken?: string) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/pricing/${id}/enable`,
+      {
+        method: "PATCH",
+        authToken,
+      },
+    ).then(mapPricingResponse),
 
   disablePricingModel: (id: number, authToken?: string) =>
-    request<Record<string, unknown>>(`pricing/${id}/disable`, {
-      method: 'PATCH',
-      authToken,
-    }).then(mapPricingResponse),
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/pricing/${id}/disable`,
+      {
+        method: "PATCH",
+        authToken,
+      },
+    ).then(mapPricingResponse),
 
-  updatePricingModel: (id: number, payload: EditPricingModelRequest, authToken?: string) =>
-    request<Record<string, unknown>>(`pricing/${id}/update`, {
-      method: 'PATCH',
+  updatePricingModel: (
+    id: number,
+    payload: EditPricingModelRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/pricing/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(editPricingRequestToBody(payload)),
       authToken,
     }).then(mapPricingResponse),
+
+  deletePricingModel: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/pricing/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  getAllPurchaseOrders: (
+    params?: { pageNumber?: number; pageSize?: number },
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params?.pageNumber != null)
+      search.set("PageNumber", String(params.pageNumber));
+    if (params?.pageSize != null)
+      search.set("PageSize", String(params.pageSize));
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/purchase-orders?${qs}`
+      : `${BACKOFFICE}/purchase-orders`;
+    return request<PurchaseOrderResponse[]>(path, { authToken });
+  },
+
+  getCompanyPurchaseOrders: (
+    companyId: number,
+    params?: { pageNumber?: number; pageSize?: number },
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params?.pageNumber != null)
+      search.set("PageNumber", String(params.pageNumber));
+    if (params?.pageSize != null)
+      search.set("PageSize", String(params.pageSize));
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/companies/${companyId}/purchase-orders?${qs}`
+      : `${BACKOFFICE}/companies/${companyId}/purchase-orders`;
+    return request<PurchaseOrderResponse[]>(path, { authToken });
+  },
+
+  updatePurchaseOrderStatus: (
+    id: number,
+    status: string,
+    authToken?: string,
+  ) =>
+    request<PurchaseOrderResponse>(
+      `${BACKOFFICE}/purchase-orders/${id}/status`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+        authToken,
+      },
+    ),
+
+  getTransactions: (
+    params?: { pageNumber?: number; pageSize?: number },
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params?.pageNumber != null)
+      search.set("PageNumber", String(params.pageNumber));
+    if (params?.pageSize != null)
+      search.set("PageSize", String(params.pageSize));
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/transactions?${qs}`
+      : `${BACKOFFICE}/transactions`;
+    return request<TransactionResponse[]>(path, { authToken });
+  },
+
+  getMtnWhitelistedSenderIds: (authToken?: string) =>
+    request<Record<string, unknown>[]>(`${BACKOFFICE}/mtn-whitelisted-sender-ids`, {
+      authToken,
+    }).then((list) => list.map(mapMtnWhitelistedSenderIdResponse)),
+
+  addMtnWhitelistedSenderId: (
+    payload: MtnWhitelistedSenderIdRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/mtn-whitelisted-sender-ids`, {
+      method: "POST",
+      body: JSON.stringify({ SenderId: payload.senderId }),
+      authToken,
+    }).then(mapMtnWhitelistedSenderIdResponse),
+
+  updateMtnWhitelistedSenderId: (
+    id: number,
+    payload: MtnWhitelistedSenderIdRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/mtn-whitelisted-sender-ids/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ SenderId: payload.senderId }),
+      authToken,
+    }).then(mapMtnWhitelistedSenderIdResponse),
+
+  removeMtnWhitelistedSenderId: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/mtn-whitelisted-sender-ids/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
 };
-
-
