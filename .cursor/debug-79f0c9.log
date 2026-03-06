@@ -1,0 +1,3 @@
+{"sessionId":"79f0c9","location":"proxy/route.ts:proxy:response","message":"Backend response","data":{"status":403,"path":"v1/admin/companies","url":"https://api.balloads.com/v1/admin/companies"},"timestamp":1772548481380,"hypothesisId":"path-fix"}
+{"sessionId":"79f0c9","location":"proxy/route.ts:proxy:response","message":"Backend response","data":{"status":403,"path":"v1/admin/companies","url":"https://api.balloads.com/v1/admin/companies"},"timestamp":1772548481653,"hypothesisId":"path-fix"}
+{"sessionId":"79f0c9","location":"proxy/route.ts:proxy:response","message":"Backend response","data":{"status":200,"path":"companies","url":"https://prod.balloads.com/companies"},"timestamp":1772548485895,"hypothesisId":"path-fix"}

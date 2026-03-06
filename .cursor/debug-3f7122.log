@@ -1,0 +1,25 @@
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"dev"},"timestamp":1772075382955}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"prod"},"timestamp":1772075384590}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"dev"},"timestamp":1772075386246}
+{"sessionId":"3f7122","runId":"companies-load","hypothesisId":"H1","location":"app/admin/companies/page.tsx:loadEffect","message":"Companies load effect ran","data":{"env":"dev"},"timestamp":1772075392638}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://prod.balloads.com","path":"companies"},"timestamp":1772075392639}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"dev"},"timestamp":1772075396809}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"prod"},"timestamp":1772075398212}
+{"sessionId":"3f7122","runId":"companies-load","hypothesisId":"H1","location":"app/admin/companies/page.tsx:loadEffect","message":"Companies load effect ran","data":{"env":"prod"},"timestamp":1772075398223}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://prod.balloads.com","path":"companies"},"timestamp":1772075398224}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"dev"},"timestamp":1772075399740}
+{"sessionId":"3f7122","runId":"companies-load","hypothesisId":"H1","location":"app/admin/companies/page.tsx:loadEffect","message":"Companies load effect ran","data":{"env":"dev"},"timestamp":1772075399751}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://api.balloads.com","path":"companies"},"timestamp":1772075399752}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"prod"},"timestamp":1772075401946}
+{"sessionId":"3f7122","runId":"companies-load","hypothesisId":"H1","location":"app/admin/companies/page.tsx:loadEffect","message":"Companies load effect ran","data":{"env":"prod"},"timestamp":1772075401982}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://prod.balloads.com","path":"companies"},"timestamp":1772075401982}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"dev"},"timestamp":1772075403629}
+{"sessionId":"3f7122","runId":"companies-load","hypothesisId":"H1","location":"app/admin/companies/page.tsx:loadEffect","message":"Companies load effect ran","data":{"env":"dev"},"timestamp":1772075403639}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://api.balloads.com","path":"companies"},"timestamp":1772075403640}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://api.balloads.com","path":"pricing"},"timestamp":1772075405552}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://api.balloads.com","path":"pricing"},"timestamp":1772075405552}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"prod"},"timestamp":1772075407221}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://prod.balloads.com","path":"pricing"},"timestamp":1772075407233}
+{"sessionId":"3f7122","runId":"setEnv","hypothesisId":"H2","location":"app/admin/contexts/ApiEnvContext.tsx:setEnv","message":"setEnv called","data":{"newEnv":"dev"},"timestamp":1772075408735}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://api.balloads.com","path":"pricing"},"timestamp":1772075408743}
+{"sessionId":"3f7122","runId":"request","hypothesisId":"H3","location":"lib/adminApi.ts:request","message":"adminApi request","data":{"baseUrl":"https://prod.balloads.com","path":"pricing"},"timestamp":1772075450399}
