@@ -117,6 +117,23 @@ export default function PricingPage() {
     setPendingEnable(null)
   }
 
+  const handleDeletePricing = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm('Delete this pricing model? This cannot be undone.')) return
+    setError('')
+    try {
+      await adminApi.deletePricingModel(id)
+      setModels((prev) => prev.filter((m) => m.id !== id))
+      if (editingId === id) {
+        setEditingId(null)
+        setEditForm({})
+        setPendingEnable(null)
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to delete pricing model')
+    }
+  }
+
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (editingId == null) return
@@ -464,12 +481,13 @@ export default function PricingPage() {
                         <SortIcon column="status" />
                       </button>
                     </th>
+                    <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 w-20">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAndSortedModels.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-gray-500">
+                      <td colSpan={6} className="text-center py-8 text-gray-500">
                         {models.length === 0 ? 'No pricing models found' : 'No models match the current filters'}
                       </td>
                     </tr>
@@ -500,6 +518,15 @@ export default function PricingPage() {
                               Disabled
                             </span>
                           )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeletePricing(m.id, e)}
+                            className="text-sm text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))

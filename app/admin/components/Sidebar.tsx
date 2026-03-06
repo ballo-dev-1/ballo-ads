@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutDashboard, Users, Building2, Tags } from 'lucide-react'
+import { LayoutDashboard, Users, Building2, Tags, ShieldCheck, UserCog, KeyRound, ShoppingCart, Receipt } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
@@ -81,6 +81,61 @@ export default function Sidebar() {
           >
             <Users className="w-5 h-5" />
             <span>Waitlist</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/roles')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/roles')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <KeyRound className="w-5 h-5" />
+            <span>Roles</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/backoffice-users')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/backoffice-users')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <UserCog className="w-5 h-5" />
+            <span>Backoffice Users</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/purchase-orders')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/purchase-orders')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span>Purchase Orders</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/transactions')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/transactions')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <Receipt className="w-5 h-5" />
+            <span>Transactions</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/whitelisted-sender-ids')}
+            className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              pathname.startsWith('/admin/whitelisted-sender-ids')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <ShieldCheck className="w-5 h-5" />
+            <span>Whitelisted IDs</span>
           </button>
         </div>
       </nav>
