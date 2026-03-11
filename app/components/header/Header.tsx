@@ -40,6 +40,7 @@ const navItems: NavItem[] = [
     href: "/resources",
     links: [
       { label: "Guides", href: "/resources#guides" },
+      { label: "API Docs", href: "/resources/api" },
       { label: "FAQs", href: "/resources#faqs" },
       { label: "Professional Services", href: "/resources#services" },
       { label: "Blog", href: "/blog" },
