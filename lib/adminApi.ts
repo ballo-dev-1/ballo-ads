@@ -18,7 +18,17 @@ let currentBaseUrl =
       })()
     : DEV_API_BASE;
 
+/** When set by ApiEnvProvider, requests use this to get the current base URL from React state (avoids stale module variable when switching dev/prod). */
+let baseUrlGetter: (() => string) | null = null;
+
+export function registerBaseUrlGetter(getter: () => string): void {
+  baseUrlGetter = getter;
+}
+
 export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined" && baseUrlGetter) {
+    return baseUrlGetter().replace(/\/+$/, "");
+  }
   return currentBaseUrl;
 }
 
@@ -52,11 +62,140 @@ export type PurchaseOrderResponse = {
   smsCount?: number;
   emailCount?: number;
   whatsAppCount?: number;
+  whatsAppUtilityCount?: number;
   billedAccount?: string;
   purchaseOrderStatus?: string;
   expirationAt?: string;
   createdAt?: string;
   updatedAt?: string;
+  purchaseOrderType?: string;
+};
+
+export type ApiClientResponse = {
+  id: number;
+  companyId: number;
+  name: string;
+  keyPrefix: string;
+  apiKey?: string;
+  isTestKey: boolean;
+  isRevoked: boolean;
+  requestsPerMinuteLimit?: number;
+  allowedChannels: string[];
+  createdAt: string;
+};
+
+export type ApiClientCreateResponse = ApiClientResponse & {
+  apiKey: string;
+};
+
+export type CreateApiClientRequest = {
+  name: string;
+  allowedChannels: string[];
+  requestsPerMinuteLimit?: number;
+  isTestKey?: boolean;
+};
+
+export type ManualCreditAllocationRequest = {
+  smsCount: number;
+  emailCount: number;
+  whatsAppCount: number;
+  whatsAppUtilityCount: number;
+  notes?: string;
+  durationDays?: number;
+};
+
+export type ApiCreditBalanceResponse = {
+  smsCount: number;
+  emailCount: number;
+  whatsAppCount: number;
+  whatsAppUtilityCount: number;
+};
+
+export type ApiUsageSummary = {
+  total: number;
+  successCount: number;
+  failureCount: number;
+  byChannel: Record<string, number>;
+};
+
+export type ApmReadinessItem = {
+  provider: string;
+  isConfigured: boolean;
+};
+
+export type ApmOverviewResponse = {
+  providerVerificationMode: string;
+  currentEnvironment: string;
+  generatedAt: string;
+  localMetrics: {
+    environment: string;
+    uptimeSeconds: number;
+    database: {
+      canConnect: boolean;
+      connectivityLatencyMs: number;
+      sampleQueryLatencyMs: number;
+    };
+    scheduler: {
+      storageType: string;
+      recurringJobsCount: number;
+      enqueuedCount: number;
+      processingCount: number;
+      failedCount: number;
+      scheduledCount: number;
+    };
+    operationalKpis: {
+      activeCampaigns: number;
+      pendingCampaigns: number;
+      completedCampaignsLast24Hours: number;
+      activePurchaseOrders: number;
+      failedPurchaseOrdersLast24Hours: number;
+      apiUsageFailuresLast24Hours: number;
+      smsBalance: number;
+      emailBalance: number;
+      whatsAppBalance: number;
+      whatsAppUtilityBalance: number;
+    };
+    thirdPartyReadiness: {
+      sms: ApmReadinessItem;
+      whatsApp: ApmReadinessItem;
+      email: ApmReadinessItem;
+      payments: ApmReadinessItem;
+    };
+  };
+  environmentProbes: Array<{
+    environment: string;
+    baseUrl: string;
+    isReachable: boolean;
+    statusCode: number | null;
+    latencyMs: number;
+  }>;
+};
+
+export type ApmChannelHealthResponse = {
+  generatedAt: string;
+  channels: Array<{
+    channel: string;
+    pendingRecipients: number;
+    dispatchedLast24Hours: number;
+    failedApiUsagesLast24Hours: number;
+  }>;
+};
+
+export type ApmLinksResponse = {
+  production: {
+    environment: string;
+    apiBaseUrl: string;
+    hangfireDashboardUrl: string;
+    seqUrl: string;
+    grafanaUrl?: string;
+  };
+  staging: {
+    environment: string;
+    apiBaseUrl: string;
+    hangfireDashboardUrl: string;
+    seqUrl: string;
+    grafanaUrl?: string;
+  };
 };
 
 export type TransactionResponse = {
@@ -292,6 +431,228 @@ function mapMtnWhitelistedSenderIdResponse(
     id: (r.Id ?? r.id) as number,
     senderId: (r.SenderId ?? r.senderId) as string,
     createdAt: (r.CreatedAt ?? r.createdAt) as string,
+  };
+}
+
+function mapApiClientResponse(r: Record<string, unknown>): ApiClientResponse {
+  const channelsRaw = (r.AllowedChannels ?? r.allowedChannels) as unknown;
+  return {
+    id: (r.Id ?? r.id) as number,
+    companyId: (r.CompanyId ?? r.companyId) as number,
+    name: (r.Name ?? r.name) as string,
+    keyPrefix: (r.KeyPrefix ?? r.keyPrefix) as string,
+    apiKey: (r.ApiKey ?? r.apiKey) as string | undefined,
+    isTestKey: Boolean(r.IsTestKey ?? r.isTestKey ?? false),
+    isRevoked: (r.IsRevoked ?? r.isRevoked) as boolean,
+    requestsPerMinuteLimit: (r.RequestsPerMinuteLimit ??
+      r.requestsPerMinuteLimit) as number | undefined,
+    allowedChannels: Array.isArray(channelsRaw)
+      ? channelsRaw.map((x) => String(x))
+      : [],
+    createdAt: (r.CreatedAt ?? r.createdAt) as string,
+  };
+}
+
+function mapApiClientCreateResponse(
+  r: Record<string, unknown>,
+): ApiClientCreateResponse {
+  return {
+    ...mapApiClientResponse(r),
+    apiKey: (r.ApiKey ?? r.apiKey) as string,
+  };
+}
+
+function mapApiUsageSummary(r: Record<string, unknown>): ApiUsageSummary {
+  return {
+    total: Number(r.Total ?? r.total ?? 0),
+    successCount: Number(r.SuccessCount ?? r.successCount ?? 0),
+    failureCount: Number(r.FailureCount ?? r.failureCount ?? 0),
+    byChannel: ((r.ByChannel ?? r.byChannel) as Record<string, number>) ?? {},
+  };
+}
+
+function mapApiCreditBalanceResponse(
+  r: Record<string, unknown>,
+): ApiCreditBalanceResponse {
+  return {
+    smsCount: Number(r.SmsCount ?? r.smsCount ?? 0),
+    emailCount: Number(r.EmailCount ?? r.emailCount ?? 0),
+    whatsAppCount: Number(r.WhatsAppCount ?? r.whatsAppCount ?? 0),
+    whatsAppUtilityCount: Number(r.WhatsAppUtilityCount ?? r.whatsAppUtilityCount ?? 0),
+  };
+}
+
+function mapApmReadinessItem(r: Record<string, unknown>): ApmReadinessItem {
+  return {
+    provider: String(r.Provider ?? r.provider ?? "Unknown"),
+    isConfigured: Boolean(r.IsConfigured ?? r.isConfigured),
+  };
+}
+
+function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse {
+  const localMetricsRaw = ((r.LocalMetrics ?? r.localMetrics) ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const databaseRaw = ((localMetricsRaw.Database ?? localMetricsRaw.database) ??
+    {}) as Record<string, unknown>;
+  const schedulerRaw = ((localMetricsRaw.Scheduler ?? localMetricsRaw.scheduler) ??
+    {}) as Record<string, unknown>;
+  const kpisRaw = ((localMetricsRaw.OperationalKpis ??
+    localMetricsRaw.operationalKpis) ??
+    {}) as Record<string, unknown>;
+  const thirdPartyRaw = ((localMetricsRaw.ThirdPartyReadiness ??
+    localMetricsRaw.thirdPartyReadiness) ??
+    {}) as Record<string, unknown>;
+  const probesRaw = (r.EnvironmentProbes ?? r.environmentProbes) as unknown;
+
+  return {
+    providerVerificationMode: String(
+      r.ProviderVerificationMode ?? r.providerVerificationMode ?? "unknown",
+    ),
+    currentEnvironment: String(
+      r.CurrentEnvironment ?? r.currentEnvironment ?? "unknown",
+    ),
+    generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    localMetrics: {
+      environment: String(
+        localMetricsRaw.Environment ?? localMetricsRaw.environment ?? "unknown",
+      ),
+      uptimeSeconds: Number(
+        localMetricsRaw.UptimeSeconds ?? localMetricsRaw.uptimeSeconds ?? 0,
+      ),
+      database: {
+        canConnect: Boolean(databaseRaw.CanConnect ?? databaseRaw.canConnect),
+        connectivityLatencyMs: Number(
+          databaseRaw.ConnectivityLatencyMs ??
+            databaseRaw.connectivityLatencyMs ??
+            0,
+        ),
+        sampleQueryLatencyMs: Number(
+          databaseRaw.SampleQueryLatencyMs ?? databaseRaw.sampleQueryLatencyMs ?? 0,
+        ),
+      },
+      scheduler: {
+        storageType: String(
+          schedulerRaw.StorageType ?? schedulerRaw.storageType ?? "unknown",
+        ),
+        recurringJobsCount: Number(
+          schedulerRaw.RecurringJobsCount ?? schedulerRaw.recurringJobsCount ?? 0,
+        ),
+        enqueuedCount: Number(
+          schedulerRaw.EnqueuedCount ?? schedulerRaw.enqueuedCount ?? 0,
+        ),
+        processingCount: Number(
+          schedulerRaw.ProcessingCount ?? schedulerRaw.processingCount ?? 0,
+        ),
+        failedCount: Number(schedulerRaw.FailedCount ?? schedulerRaw.failedCount ?? 0),
+        scheduledCount: Number(
+          schedulerRaw.ScheduledCount ?? schedulerRaw.scheduledCount ?? 0,
+        ),
+      },
+      operationalKpis: {
+        activeCampaigns: Number(kpisRaw.ActiveCampaigns ?? kpisRaw.activeCampaigns ?? 0),
+        pendingCampaigns: Number(
+          kpisRaw.PendingCampaigns ?? kpisRaw.pendingCampaigns ?? 0,
+        ),
+        completedCampaignsLast24Hours: Number(
+          kpisRaw.CompletedCampaignsLast24Hours ??
+            kpisRaw.completedCampaignsLast24Hours ??
+            0,
+        ),
+        activePurchaseOrders: Number(
+          kpisRaw.ActivePurchaseOrders ?? kpisRaw.activePurchaseOrders ?? 0,
+        ),
+        failedPurchaseOrdersLast24Hours: Number(
+          kpisRaw.FailedPurchaseOrdersLast24Hours ??
+            kpisRaw.failedPurchaseOrdersLast24Hours ??
+            0,
+        ),
+        apiUsageFailuresLast24Hours: Number(
+          kpisRaw.ApiUsageFailuresLast24Hours ??
+            kpisRaw.apiUsageFailuresLast24Hours ??
+            0,
+        ),
+        smsBalance: Number(kpisRaw.SmsBalance ?? kpisRaw.smsBalance ?? 0),
+        emailBalance: Number(kpisRaw.EmailBalance ?? kpisRaw.emailBalance ?? 0),
+        whatsAppBalance: Number(kpisRaw.WhatsAppBalance ?? kpisRaw.whatsAppBalance ?? 0),
+        whatsAppUtilityBalance: Number(
+          kpisRaw.WhatsAppUtilityBalance ?? kpisRaw.whatsAppUtilityBalance ?? 0,
+        ),
+      },
+      thirdPartyReadiness: {
+        sms: mapApmReadinessItem(((thirdPartyRaw.Sms ?? thirdPartyRaw.sms) ??
+          {}) as Record<string, unknown>),
+        whatsApp: mapApmReadinessItem(
+          ((thirdPartyRaw.WhatsApp ?? thirdPartyRaw.whatsApp) ??
+            {}) as Record<string, unknown>,
+        ),
+        email: mapApmReadinessItem(
+          ((thirdPartyRaw.Email ?? thirdPartyRaw.email) ??
+            {}) as Record<string, unknown>,
+        ),
+        payments: mapApmReadinessItem(
+          ((thirdPartyRaw.Payments ?? thirdPartyRaw.payments) ??
+            {}) as Record<string, unknown>,
+        ),
+      },
+    },
+    environmentProbes: Array.isArray(probesRaw)
+      ? probesRaw.map((probe) => {
+          const p = (probe ?? {}) as Record<string, unknown>;
+          return {
+            environment: String(p.Environment ?? p.environment ?? "unknown"),
+            baseUrl: String(p.BaseUrl ?? p.baseUrl ?? ""),
+            isReachable: Boolean(p.IsReachable ?? p.isReachable),
+            statusCode: (p.StatusCode ?? p.statusCode ?? null) as number | null,
+            latencyMs: Number(p.LatencyMs ?? p.latencyMs ?? 0),
+          };
+        })
+      : [],
+  };
+}
+
+function mapApmChannelHealthResponse(
+  r: Record<string, unknown>,
+): ApmChannelHealthResponse {
+  const channelsRaw = (r.Channels ?? r.channels) as unknown;
+  return {
+    generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    channels: Array.isArray(channelsRaw)
+      ? channelsRaw.map((item) => {
+          const c = (item ?? {}) as Record<string, unknown>;
+          return {
+            channel: String(c.Channel ?? c.channel ?? "Unknown"),
+            pendingRecipients: Number(c.PendingRecipients ?? c.pendingRecipients ?? 0),
+            dispatchedLast24Hours: Number(
+              c.DispatchedLast24Hours ?? c.dispatchedLast24Hours ?? 0,
+            ),
+            failedApiUsagesLast24Hours: Number(
+              c.FailedApiUsagesLast24Hours ?? c.failedApiUsagesLast24Hours ?? 0,
+            ),
+          };
+        })
+      : [],
+  };
+}
+
+function mapApmLinksResponse(r: Record<string, unknown>): ApmLinksResponse {
+  const mapLinks = (input: unknown): ApmLinksResponse["production"] => {
+    const v = (input ?? {}) as Record<string, unknown>;
+    return {
+      environment: String(v.Environment ?? v.environment ?? "unknown"),
+      apiBaseUrl: String(v.ApiBaseUrl ?? v.apiBaseUrl ?? ""),
+      hangfireDashboardUrl: String(
+        v.HangfireDashboardUrl ?? v.hangfireDashboardUrl ?? "",
+      ),
+      seqUrl: String(v.SeqUrl ?? v.seqUrl ?? ""),
+      grafanaUrl: (v.GrafanaUrl ?? v.grafanaUrl) as string | undefined,
+    };
+  };
+
+  return {
+    production: mapLinks(r.Production ?? r.production),
+    staging: mapLinks(r.Staging ?? r.staging),
   };
 }
 
@@ -830,4 +1191,107 @@ export const adminApi = {
       method: "DELETE",
       authToken,
     }),
+
+  getCompanyApiClients: (companyId: number, authToken?: string) =>
+    request<Record<string, unknown>[]>(
+      `${BACKOFFICE}/companies/${companyId}/api-clients`,
+      {
+        authToken,
+      },
+    ).then((list) => list.map(mapApiClientResponse)),
+
+  createCompanyApiClient: (
+    companyId: number,
+    payload: CreateApiClientRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/api-clients`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name: payload.name,
+          allowedChannels: payload.allowedChannels,
+          requestsPerMinuteLimit: payload.requestsPerMinuteLimit,
+          isTestKey: payload.isTestKey ?? false,
+        }),
+        authToken,
+      },
+    ).then(mapApiClientCreateResponse),
+
+  rotateCompanyApiClientKey: (
+    companyId: number,
+    apiClientId: number,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/api-clients/${apiClientId}/rotate`,
+      {
+        method: "PATCH",
+        authToken,
+      },
+    ).then(mapApiClientCreateResponse),
+
+  revokeCompanyApiClient: (
+    companyId: number,
+    apiClientId: number,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/api-clients/${apiClientId}/revoke`,
+      {
+        method: "PATCH",
+        authToken,
+      },
+    ).then(mapApiClientResponse),
+
+  allocateCompanyApiCredits: (
+    companyId: number,
+    payload: ManualCreditAllocationRequest,
+    authToken?: string,
+  ) =>
+    request<PurchaseOrderResponse>(
+      `${BACKOFFICE}/companies/${companyId}/api-credits/allocate`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        authToken,
+      },
+    ),
+
+  getCompanyApiCreditBalance: (companyId: number, authToken?: string) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/api-credits/balance`,
+      { authToken },
+    ).then(mapApiCreditBalanceResponse),
+
+  getCompanyApiUsage: (
+    companyId: number,
+    apiClientId?: number,
+    authToken?: string,
+  ) => {
+    const qs =
+      apiClientId != null
+        ? `?apiClientId=${encodeURIComponent(String(apiClientId))}`
+        : "";
+    return request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/api-usage${qs}`,
+      { authToken },
+    ).then(mapApiUsageSummary);
+  },
+
+  getApmOverview: (authToken?: string) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/apm/overview`, {
+      authToken,
+    }).then(mapApmOverviewResponse),
+
+  getApmChannels: (authToken?: string) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/apm/channels`, {
+      authToken,
+    }).then(mapApmChannelHealthResponse),
+
+  getApmLinks: (authToken?: string) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/apm/links`, {
+      authToken,
+    }).then(mapApmLinksResponse),
 };

@@ -5,13 +5,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from 'react'
 import {
   DEV_API_BASE,
   PROD_API_BASE,
-  getApiBaseUrl,
+  registerBaseUrlGetter,
   setApiBaseUrl,
 } from '@/lib/adminApi'
 
@@ -37,23 +38,30 @@ export function useApiEnv(): ApiEnvContextValue {
   return ctx
 }
 
+function getInitialEnv(): ApiEnv {
+  if (typeof window === 'undefined') return 'dev'
+  const stored = localStorage.getItem(API_ENV_STORAGE_KEY) as ApiEnv | null
+  if (stored === 'dev' || stored === 'prod') return stored
+  const isProductionSite =
+    window.location.hostname === 'www.balloads.com' ||
+    window.location.hostname === 'balloads.com'
+  return isProductionSite ? 'prod' : 'dev'
+}
+
 export function ApiEnvProvider({ children }: { children: ReactNode }) {
-  const [env, setEnvState] = useState<ApiEnv>('dev')
+  const [env, setEnvState] = useState<ApiEnv>(getInitialEnv)
 
   const baseUrl = env === 'prod' ? PROD_API_BASE : DEV_API_BASE
 
-  useEffect(() => {
+  // Update getter and module variable synchronously before children run (so refetch after env switch uses correct URL)
+  useLayoutEffect(() => {
+    registerBaseUrlGetter(() => baseUrl)
     setApiBaseUrl(baseUrl)
   }, [baseUrl])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const stored = localStorage.getItem(API_ENV_STORAGE_KEY) as ApiEnv | null
-    if (stored === 'dev' || stored === 'prod') {
-      setEnvState(stored)
-    } else {
-      setEnvState(inferEnvFromUrl(getApiBaseUrl()))
-    }
+    setEnvState(getInitialEnv())
   }, [])
 
   const setEnv = useCallback((newEnv: ApiEnv) => {

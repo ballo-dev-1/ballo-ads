@@ -81,11 +81,19 @@ async function proxy(
     Authorization: `Bearer ${token}`,
   };
 
-  const res = await fetch(url, {
-    method: request.method,
-    headers,
-    ...(body !== undefined && body !== "" && { body }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: request.method,
+      headers,
+      ...(body !== undefined && body !== "" && { body }),
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Backend unreachable", details: err instanceof Error ? err.message : "Unknown error" },
+      { status: 502 },
+    );
+  }
 
   const text = await res.text();
   try {
