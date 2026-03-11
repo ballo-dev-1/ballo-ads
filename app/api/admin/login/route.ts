@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
+  ADMIN_ENV_COOKIE,
   ADMIN_TOKEN_COOKIE,
   ADMIN_REFRESH_TOKEN_COOKIE,
 } from "@/lib/adminAuth";
@@ -45,6 +46,8 @@ export async function POST(request: NextRequest) {
       baseFromBody && ALLOWED_BASES.includes(baseFromBody)
         ? baseFromBody
         : getDefaultApiBaseUrl().replace(/\/+$/, "");
+    const selectedEnv =
+      baseUrl === PROD_API_BASE.replace(/\/+$/, "") ? "prod" : "dev";
     const res = await fetch(`${baseUrl}/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,6 +87,13 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
     }
+    cookieStore.set(ADMIN_ENV_COOKIE, selectedEnv, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: COOKIE_MAX_AGE,
+      path: "/",
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: unknown) {

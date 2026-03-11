@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { adminApi, type CompanyLeanResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
@@ -56,6 +56,8 @@ function SenderIdStatusBadge({
 
 export default function CompaniesPage() {
   const router = useRouter()
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const { env } = useApiEnv()
   const [companies, setCompanies] = useState<CompanyLeanResponse[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,7 +118,7 @@ export default function CompaniesPage() {
       setCreateOpen(false)
       setCreateForm({ name: '', companyId: '', description: 'Description not set', industry: 'Technology', email: '', phoneNumber: '', physicalAddress: '', websiteUrl: '', senderId: '' })
       toast.success('Company created')
-      router.push(`/admin/companies/${created.id}`)
+      router.push(`${basePath}/companies/${created.id}`)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to create company')
     } finally {
@@ -299,11 +301,11 @@ export default function CompaniesPage() {
                       key={company.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => router.push(`/admin/companies/${company.id}`)}
+                      onClick={() => router.push(`${basePath}/companies/${company.id}`)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault()
-                          router.push(`/admin/companies/${company.id}`)
+                          router.push(`${basePath}/companies/${company.id}`)
                         }
                       }}
                       className="border-b border-gray-100 hover:bg-[var(--brand-color-2)]/5 transition-colors cursor-pointer group"

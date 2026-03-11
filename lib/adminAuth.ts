@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 
 export const ADMIN_TOKEN_COOKIE = "admin-token";
 export const ADMIN_REFRESH_TOKEN_COOKIE = "admin-refresh-token";
+export const ADMIN_ENV_COOKIE = "admin-env";
 
 /**
  * Require admin auth from cookie. Use in API route handlers.

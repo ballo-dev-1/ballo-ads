@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { adminApi, type PurchaseOrderResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import toast from 'react-hot-toast'
@@ -10,6 +11,8 @@ const STATUS_OPTIONS = ['Pending', 'Active', 'Failed', 'Depleted', 'Expired'] as
 
 export default function PurchaseOrdersPage() {
   const { env } = useApiEnv()
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const [orders, setOrders] = useState<PurchaseOrderResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -114,7 +117,7 @@ export default function PurchaseOrdersPage() {
                         <td className="py-3 px-5">
                           {po.company ? (
                             <Link
-                              href={`/admin/companies/${po.company.id}`}
+                              href={`${basePath}/companies/${po.company.id}`}
                               className="text-[var(--brand-color-2)] hover:underline"
                             >
                               {po.company.name ?? `Company #${po.company.id}`}

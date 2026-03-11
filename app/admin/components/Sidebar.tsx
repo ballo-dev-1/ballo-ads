@@ -5,13 +5,15 @@ import Image from 'next/image'
 import { LayoutDashboard, Users, Building2, Tags, ShieldCheck, UserCog, KeyRound, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
-import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 
 export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { env, setEnv } = useApiEnv()
-  const isLoginPage = pathname === '/admin/login'
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const isLoginPage = pathname === '/admin/login' || pathname === '/dev-admin/login'
+  const to = (suffix: string) => `${basePath}${suffix}`
+  const active = (suffix: string) => pathname === to(suffix)
+  const activeStartsWith = (suffix: string) => pathname?.startsWith(to(suffix))
 
   return (
     <div className="w-64 flex flex-col">
@@ -33,15 +35,15 @@ export default function Sidebar() {
         />
       </div>
 
-    <div className="bg-[#0e0e39] h-full flex flex-col justify-between rounded-tr-[7rem] pt-20">
+    <div className="bg-[#0e0e39] h-full flex flex-col justify-between rounded-tr-[7rem] pt-5">
 
       {/* Navigation */}
       <nav className="flex-1 px-4 text-white">
         <div className="space-y-1">
           <button
-            onClick={() => router.push('/admin/dashboard')}
+            onClick={() => router.push(to('/dashboard'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors  cursor-pointer ${
-              pathname === '/admin/dashboard' || pathname === '/admin'
+              active('/dashboard') || pathname === basePath
                 ? 'bg-[#1a5c9c] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -50,9 +52,9 @@ export default function Sidebar() {
             <span>Dashboard</span>
           </button>
           <button
-            onClick={() => router.push('/admin/companies')}
+            onClick={() => router.push(to('/companies'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/companies')
+              activeStartsWith('/companies')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -61,9 +63,9 @@ export default function Sidebar() {
             <span>Companies</span>
           </button>
           <button
-            onClick={() => router.push('/admin/pricing')}
+            onClick={() => router.push(to('/pricing'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/pricing')
+              activeStartsWith('/pricing')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -72,9 +74,9 @@ export default function Sidebar() {
             <span>Pricing</span>
           </button>
           <button
-            onClick={() => router.push('/admin/waitlist')}
+            onClick={() => router.push(to('/waitlist'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/waitlist')
+              activeStartsWith('/waitlist')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -83,9 +85,9 @@ export default function Sidebar() {
             <span>Waitlist</span>
           </button>
           <button
-            onClick={() => router.push('/admin/roles')}
+            onClick={() => router.push(to('/roles'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/roles')
+              activeStartsWith('/roles')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -94,9 +96,9 @@ export default function Sidebar() {
             <span>Roles</span>
           </button>
           <button
-            onClick={() => router.push('/admin/backoffice-users')}
+            onClick={() => router.push(to('/backoffice-users'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/backoffice-users')
+              activeStartsWith('/backoffice-users')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -105,9 +107,9 @@ export default function Sidebar() {
             <span>Backoffice Users</span>
           </button>
           <button
-            onClick={() => router.push('/admin/purchase-orders')}
+            onClick={() => router.push(to('/purchase-orders'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/purchase-orders')
+              activeStartsWith('/purchase-orders')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -116,9 +118,9 @@ export default function Sidebar() {
             <span>Purchase Orders</span>
           </button>
           <button
-            onClick={() => router.push('/admin/transactions')}
+            onClick={() => router.push(to('/transactions'))}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/transactions')
+              activeStartsWith('/transactions')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -127,9 +129,9 @@ export default function Sidebar() {
             <span>Transactions</span>
           </button>
           <button
-            onClick={() => router.push('/admin/whitelisted-sender-ids')}
+            onClick={() => router.push(to('/whitelisted-sender-ids'))}
             className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/whitelisted-sender-ids')
+              activeStartsWith('/whitelisted-sender-ids')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -138,9 +140,9 @@ export default function Sidebar() {
             <span>Whitelisted IDs</span>
           </button>
           <button
-            onClick={() => router.push('/admin/api-management')}
+            onClick={() => router.push(to('/api-management'))}
             className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/api-management')
+              activeStartsWith('/api-management')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -149,9 +151,9 @@ export default function Sidebar() {
             <span>API Management</span>
           </button>
           <button
-            onClick={() => router.push('/admin/apm')}
+            onClick={() => router.push(to('/apm'))}
             className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              pathname.startsWith('/admin/apm')
+              activeStartsWith('/apm')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
@@ -162,36 +164,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* API environment selector (when authenticated) */}
-      {!isLoginPage && (
-        <div className="px-4 pb-2 text-white">
-          <div className="text-xs font-medium text-white/80 mb-1.5">Environment</div>
-          <div className="flex rounded-lg border border-white/30 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setEnv('dev')}
-              className={`flex-1 px-3 py-2 text-sm transition-colors ${
-                env === 'dev'
-                  ? 'bg-[#1a5c9c] text-white'
-                  : 'bg-white/5 text-white/80 hover:bg-white/10'
-              }`}
-            >
-              Dev
-            </button>
-            <button
-              type="button"
-              onClick={() => setEnv('prod')}
-              className={`flex-1 px-3 py-2 text-sm transition-colors ${
-                env === 'prod'
-                  ? 'bg-[#1a5c9c] text-white'
-                  : 'bg-white/5 text-white/80 hover:bg-white/10'
-              }`}
-            >
-              Prod
-            </button>
-          </div>
-        </div>
-      )}
+      {!isLoginPage && <div className="px-4 pb-2" />}
     </div>
     </div>
   )

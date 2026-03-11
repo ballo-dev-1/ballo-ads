@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -178,7 +178,9 @@ function formatDateRange(startDate?: string, endDate?: string) {
 
 export default function CompanyDetailsPage() {
   const params = useParams()
+  const pathname = usePathname()
   const { env } = useApiEnv()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const id = params.id
   const [company, setCompany] = useState<CompanyLeanResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -419,7 +421,7 @@ export default function CompanyDetailsPage() {
 
   const backLink = (
     <Link
-      href="/admin/companies"
+      href={`${basePath}/companies`}
       className="inline-flex items-center gap-2 text-sm font-medium text-white/85 transition-colors hover:text-white"
     >
       <ArrowLeft className="h-4 w-4" />

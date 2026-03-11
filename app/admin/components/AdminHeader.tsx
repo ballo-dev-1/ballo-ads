@@ -1,12 +1,14 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { User, LogOut, ChevronDown } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 
 export default function AdminHeader() {
   const router = useRouter()
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const [open, setOpen] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -24,7 +26,7 @@ export default function AdminHeader() {
     try {
       await fetch('/api/admin/logout', { method: 'POST' })
       setOpen(false)
-      router.push('/admin/login')
+      router.push(`${basePath}/login`)
     } catch (err) {
       console.error('Logout error:', err)
     }

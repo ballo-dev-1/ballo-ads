@@ -2,13 +2,13 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
   useState,
   type ReactNode,
 } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   DEV_API_BASE,
   PROD_API_BASE,
@@ -28,10 +28,6 @@ type ApiEnvContextValue = {
 
 const ApiEnvContext = createContext<ApiEnvContextValue | null>(null)
 
-function inferEnvFromUrl(url: string): ApiEnv {
-  return url.replace(/\/+$/, '') === PROD_API_BASE ? 'prod' : 'dev'
-}
-
 export function useApiEnv(): ApiEnvContextValue {
   const ctx = useContext(ApiEnvContext)
   if (!ctx) throw new Error('useApiEnv must be used within ApiEnvProvider')
@@ -39,16 +35,12 @@ export function useApiEnv(): ApiEnvContextValue {
 }
 
 function getInitialEnv(): ApiEnv {
-  if (typeof window === 'undefined') return 'dev'
-  const stored = localStorage.getItem(API_ENV_STORAGE_KEY) as ApiEnv | null
-  if (stored === 'dev' || stored === 'prod') return stored
-  const isProductionSite =
-    window.location.hostname === 'www.balloads.com' ||
-    window.location.hostname === 'balloads.com'
-  return isProductionSite ? 'prod' : 'dev'
+  if (typeof window === 'undefined') return 'prod'
+  return window.location.pathname.startsWith('/dev-admin') ? 'dev' : 'prod'
 }
 
 export function ApiEnvProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [env, setEnvState] = useState<ApiEnv>(getInitialEnv)
 
   const baseUrl = env === 'prod' ? PROD_API_BASE : DEV_API_BASE
@@ -60,15 +52,13 @@ export function ApiEnvProvider({ children }: { children: ReactNode }) {
   }, [baseUrl])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    setEnvState(getInitialEnv())
-  }, [])
+    if (!pathname) return
+    setEnvState(pathname.startsWith('/dev-admin') ? 'dev' : 'prod')
+  }, [pathname])
 
-  const setEnv = useCallback((newEnv: ApiEnv) => {
-    localStorage.setItem(API_ENV_STORAGE_KEY, newEnv)
-    setApiBaseUrl(newEnv === 'prod' ? PROD_API_BASE : DEV_API_BASE)
-    setEnvState(newEnv)
-  }, [])
+  const setEnv = () => {
+    // Environment is derived from route namespace and is not directly mutable.
+  }
 
   return (
     <ApiEnvContext.Provider value={{ env, baseUrl, setEnv }}>

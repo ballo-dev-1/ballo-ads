@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { Eye, EyeOff } from 'lucide-react'
 
@@ -12,17 +12,19 @@ export default function AdminLogin() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const { baseUrl } = useApiEnv()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
 
   useEffect(() => {
     fetch('/api/admin/login')
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) {
-          router.push('/admin/dashboard')
+          router.push(`${basePath}/dashboard`)
         }
       })
-  }, [router])
+  }, [basePath, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,7 +43,7 @@ export default function AdminLogin() {
       const data = await response.json()
 
       if (response.ok) {
-        router.push('/admin/dashboard')
+        router.push(`${basePath}/dashboard`)
       } else {
         setError(data.error || 'Invalid email or password')
       }

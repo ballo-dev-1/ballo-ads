@@ -2,7 +2,7 @@
 export const DEV_API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_DEV_API_URL
     ? process.env.NEXT_PUBLIC_DEV_API_URL
-    : "http://localhost:5238";
+    : "https://dev-api.balloads.com";
 export const PROD_API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_PROD_API_URL
     ? process.env.NEXT_PUBLIC_PROD_API_URL
@@ -10,13 +10,18 @@ export const PROD_API_BASE =
 
 const BACKOFFICE = "Backoffice";
 
+function inferEnvFromPathname(pathname: string | null | undefined): "dev" | "prod" {
+  return pathname?.startsWith("/dev-admin") ? "dev" : "prod";
+}
+
+function inferBaseUrlFromLocationPathname(pathname: string | null | undefined): string {
+  return inferEnvFromPathname(pathname) === "dev" ? DEV_API_BASE : PROD_API_BASE;
+}
+
 let currentBaseUrl =
   typeof window !== "undefined"
-    ? (() => {
-        const stored = localStorage.getItem("ballo-ads-api-env");
-        return stored === "prod" ? PROD_API_BASE : DEV_API_BASE;
-      })()
-    : DEV_API_BASE;
+    ? inferBaseUrlFromLocationPathname(window.location.pathname)
+    : PROD_API_BASE;
 
 /** When set by ApiEnvProvider, requests use this to get the current base URL from React state (avoids stale module variable when switching dev/prod). */
 let baseUrlGetter: (() => string) | null = null;
@@ -28,6 +33,9 @@ export function registerBaseUrlGetter(getter: () => string): void {
 export function getApiBaseUrl(): string {
   if (typeof window !== "undefined" && baseUrlGetter) {
     return baseUrlGetter().replace(/\/+$/, "");
+  }
+  if (typeof window !== "undefined") {
+    return inferBaseUrlFromLocationPathname(window.location.pathname).replace(/\/+$/, "");
   }
   return currentBaseUrl;
 }

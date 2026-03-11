@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { adminApi, type PurchaseOrderResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import Link from 'next/link'
@@ -34,6 +34,8 @@ export default function Dashboard() {
   const [activeCount, setActiveCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -140,7 +142,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button
-                  onClick={() => router.push('/admin/waitlist')}
+                  onClick={() => router.push(`${basePath}/waitlist`)}
                   className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -154,7 +156,7 @@ export default function Dashboard() {
                   </div>
                 </button>
                 <button
-                  onClick={() => router.push('/admin/purchase-orders')}
+                  onClick={() => router.push(`${basePath}/purchase-orders`)}
                   className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -168,7 +170,7 @@ export default function Dashboard() {
                   </div>
                 </button>
                 <button
-                  onClick={() => router.push('/admin/transactions')}
+                  onClick={() => router.push(`${basePath}/transactions`)}
                   className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -189,7 +191,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-800">Recent Purchase Orders</h2>
                 <Link
-                  href="/admin/purchase-orders"
+                  href={`${basePath}/purchase-orders`}
                   className="text-sm text-[var(--brand-color-2)] hover:underline"
                 >
                   View all
@@ -221,7 +223,7 @@ export default function Dashboard() {
                           <td className="py-3 px-5">
                             {po.company ? (
                               <Link
-                                href={`/admin/companies/${po.company.id}`}
+                                href={`${basePath}/companies/${po.company.id}`}
                                 className="text-[var(--brand-color-2)] hover:underline"
                               >
                                 {po.company.name ?? `Company #${po.company.id}`}

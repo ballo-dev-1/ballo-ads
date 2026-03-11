@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 interface WaitlistEntry {
   id: string
@@ -26,6 +26,8 @@ type StatusFilter = 'all' | 'pending' | 'contacted' | 'completed'
 
 export default function WaitlistDashboard() {
   const router = useRouter()
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -98,7 +100,7 @@ export default function WaitlistDashboard() {
       try {
         const res = await fetch(`/api/admin/waitlist/export?format=${format}`, { credentials: 'include' })
         if (res.status === 401) {
-          router.push('/admin/login')
+          router.push(`${basePath}/login`)
           return
         }
         if (!res.ok) {
@@ -121,7 +123,7 @@ export default function WaitlistDashboard() {
         setExportingFormat(null)
       }
     },
-    [router]
+    [basePath, router]
   )
 
   const renderPaginationNumbers = () => {
