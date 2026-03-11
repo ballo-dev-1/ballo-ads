@@ -105,9 +105,14 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value;
+  const tokenEnv = cookieStore.get(ADMIN_ENV_COOKIE)?.value;
 
+  // If namespace cookie is missing, middleware will self-heal it on next admin route hit.
   if (token) {
-    return NextResponse.json({ authenticated: true }, { status: 200 });
+    return NextResponse.json(
+      { authenticated: true, env: tokenEnv ?? null },
+      { status: 200 },
+    );
   }
 
   return NextResponse.json({ authenticated: false }, { status: 401 });

@@ -14,10 +14,23 @@ export function middleware(request: NextRequest) {
   const isAdmin = pathname.startsWith("/admin");
   const basePath = isDevAdmin ? "/dev-admin" : "/admin";
   const expectedEnv = isDevAdmin ? "dev" : "prod";
-  const hasMatchingEnv = tokenEnv === expectedEnv;
+  const hasMatchingEnv = !tokenEnv || tokenEnv === expectedEnv;
   const isAuthenticatedForNamespace = Boolean(token) && hasMatchingEnv;
   const loginPath = `${basePath}/login`;
   const dashboardPath = `${basePath}/dashboard`;
+
+  // Self-heal legacy sessions that have token but no namespace cookie.
+  if (token && !tokenEnv && (isAdmin || isDevAdmin)) {
+    const response = NextResponse.next();
+    response.cookies.set(ADMIN_ENV_COOKIE, expectedEnv, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+    return response;
+  }
 
   // Allow access to login pages
   if (pathname === "/admin/login" || pathname === "/dev-admin/login") {
@@ -26,7 +39,7 @@ export function middleware(request: NextRequest) {
     }
 
     // Clear stale cross-namespace auth cookies so the user can log in cleanly.
-    if (token && !hasMatchingEnv) {
+    if (token && tokenEnv && !hasMatchingEnv) {
       const response = NextResponse.next();
       response.cookies.delete(ADMIN_TOKEN_COOKIE);
       response.cookies.delete(ADMIN_REFRESH_TOKEN_COOKIE);
