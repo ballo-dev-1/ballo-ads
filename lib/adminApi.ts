@@ -129,19 +129,30 @@ export type ApiUsageSummary = {
 export type ApmReadinessItem = {
   provider: string;
   isConfigured: boolean;
+  severity: ApmSeverity;
 };
+
+export type ApmSeverity = "ok" | "warning" | "critical";
 
 export type ApmOverviewResponse = {
   providerVerificationMode: string;
   currentEnvironment: string;
   generatedAt: string;
+  severity: ApmSeverity;
+  heartbeat: {
+    instanceId: string;
+    startedAt: string;
+    lastSeenAt: string;
+  };
   localMetrics: {
     environment: string;
     uptimeSeconds: number;
+    severity: ApmSeverity;
     database: {
       canConnect: boolean;
       connectivityLatencyMs: number;
       sampleQueryLatencyMs: number;
+      severity: ApmSeverity;
     };
     scheduler: {
       storageType: string;
@@ -150,6 +161,7 @@ export type ApmOverviewResponse = {
       processingCount: number;
       failedCount: number;
       scheduledCount: number;
+      severity: ApmSeverity;
     };
     operationalKpis: {
       activeCampaigns: number;
@@ -176,16 +188,19 @@ export type ApmOverviewResponse = {
     isReachable: boolean;
     statusCode: number | null;
     latencyMs: number;
+    severity: ApmSeverity;
   }>;
 };
 
 export type ApmChannelHealthResponse = {
   generatedAt: string;
+  severity: ApmSeverity;
   channels: Array<{
     channel: string;
     pendingRecipients: number;
     dispatchedLast24Hours: number;
     failedApiUsagesLast24Hours: number;
+    severity: ApmSeverity;
   }>;
 };
 
@@ -494,6 +509,7 @@ function mapApmReadinessItem(r: Record<string, unknown>): ApmReadinessItem {
   return {
     provider: String(r.Provider ?? r.provider ?? "Unknown"),
     isConfigured: Boolean(r.IsConfigured ?? r.isConfigured),
+    severity: String(r.Severity ?? r.severity ?? "ok") as ApmSeverity,
   };
 }
 
@@ -513,6 +529,7 @@ function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse
     localMetricsRaw.thirdPartyReadiness) ??
     {}) as Record<string, unknown>;
   const probesRaw = (r.EnvironmentProbes ?? r.environmentProbes) as unknown;
+  const heartbeatRaw = ((r.Heartbeat ?? r.heartbeat) ?? {}) as Record<string, unknown>;
 
   return {
     providerVerificationMode: String(
@@ -522,6 +539,12 @@ function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse
       r.CurrentEnvironment ?? r.currentEnvironment ?? "unknown",
     ),
     generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    severity: String(r.Severity ?? r.severity ?? "ok") as ApmSeverity,
+    heartbeat: {
+      instanceId: String(heartbeatRaw.InstanceId ?? heartbeatRaw.instanceId ?? ""),
+      startedAt: String(heartbeatRaw.StartedAt ?? heartbeatRaw.startedAt ?? ""),
+      lastSeenAt: String(heartbeatRaw.LastSeenAt ?? heartbeatRaw.lastSeenAt ?? ""),
+    },
     localMetrics: {
       environment: String(
         localMetricsRaw.Environment ?? localMetricsRaw.environment ?? "unknown",
@@ -529,6 +552,7 @@ function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse
       uptimeSeconds: Number(
         localMetricsRaw.UptimeSeconds ?? localMetricsRaw.uptimeSeconds ?? 0,
       ),
+      severity: String(localMetricsRaw.Severity ?? localMetricsRaw.severity ?? "ok") as ApmSeverity,
       database: {
         canConnect: Boolean(databaseRaw.CanConnect ?? databaseRaw.canConnect),
         connectivityLatencyMs: Number(
@@ -539,6 +563,7 @@ function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse
         sampleQueryLatencyMs: Number(
           databaseRaw.SampleQueryLatencyMs ?? databaseRaw.sampleQueryLatencyMs ?? 0,
         ),
+        severity: String(databaseRaw.Severity ?? databaseRaw.severity ?? "ok") as ApmSeverity,
       },
       scheduler: {
         storageType: String(
@@ -557,6 +582,7 @@ function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse
         scheduledCount: Number(
           schedulerRaw.ScheduledCount ?? schedulerRaw.scheduledCount ?? 0,
         ),
+        severity: String(schedulerRaw.Severity ?? schedulerRaw.severity ?? "ok") as ApmSeverity,
       },
       operationalKpis: {
         activeCampaigns: Number(kpisRaw.ActiveCampaigns ?? kpisRaw.activeCampaigns ?? 0),
@@ -614,6 +640,7 @@ function mapApmOverviewResponse(r: Record<string, unknown>): ApmOverviewResponse
             isReachable: Boolean(p.IsReachable ?? p.isReachable),
             statusCode: (p.StatusCode ?? p.statusCode ?? null) as number | null,
             latencyMs: Number(p.LatencyMs ?? p.latencyMs ?? 0),
+            severity: String(p.Severity ?? p.severity ?? "ok") as ApmSeverity,
           };
         })
       : [],
@@ -626,6 +653,7 @@ function mapApmChannelHealthResponse(
   const channelsRaw = (r.Channels ?? r.channels) as unknown;
   return {
     generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    severity: String(r.Severity ?? r.severity ?? "ok") as ApmSeverity,
     channels: Array.isArray(channelsRaw)
       ? channelsRaw.map((item) => {
           const c = (item ?? {}) as Record<string, unknown>;
@@ -638,6 +666,7 @@ function mapApmChannelHealthResponse(
             failedApiUsagesLast24Hours: Number(
               c.FailedApiUsagesLast24Hours ?? c.failedApiUsagesLast24Hours ?? 0,
             ),
+            severity: String(c.Severity ?? c.severity ?? "ok") as ApmSeverity,
           };
         })
       : [],
@@ -666,7 +695,7 @@ function mapApmLinksResponse(r: Record<string, unknown>): ApmLinksResponse {
 
 async function request<T>(
   path: string,
-  options: RequestInit & { authToken?: string } = {},
+  options: RequestInit & { authToken?: string; baseUrlOverride?: string } = {},
 ): Promise<T> {
   const isClient = typeof window !== "undefined";
   const pathNormalized = path.replace(/^\/+/, "");
@@ -683,9 +712,11 @@ async function request<T>(
 
   if (isClient) {
     url = `/api/admin/proxy/${pathNormalized}`;
-    headers["X-Api-Base"] = getApiBaseUrl();
+    headers["X-Api-Base"] = (
+      options.baseUrlOverride || getApiBaseUrl()
+    ).replace(/\/+$/, "");
   } else {
-    url = `${getApiBaseUrl()}/${pathNormalized}`;
+    url = `${(options.baseUrlOverride || getApiBaseUrl()).replace(/\/+$/, "")}/${pathNormalized}`;
     if (options.authToken) {
       headers["Authorization"] = `Bearer ${options.authToken}`;
     }
@@ -715,10 +746,20 @@ async function request<T>(
               : null)) ||
       "Request failed";
 
-    throw new Error(message);
+    const err = new Error(message) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
 
   return data as T;
+}
+
+function shouldFallbackApmToProd(err: unknown): boolean {
+  if (getApiBaseUrl().replace(/\/+$/, "") !== DEV_API_BASE.replace(/\/+$/, "")) {
+    return false;
+  }
+  if (!(err instanceof Error)) return false;
+  return (err as Error & { status?: number }).status === 404;
 }
 
 export const adminApi = {
@@ -829,14 +870,16 @@ export const adminApi = {
 
   getCompanyCampaignsAll: (
     companyId: number,
-    params?: { pageSize?: number; pageNumber?: number },
+    params?: { id?: number; pageSize?: number; pageNumber?: number; query?: string },
     authToken?: string,
   ) => {
     const search = new URLSearchParams();
+    if (params?.id != null) search.set("Id", String(params.id));
     if (params?.pageSize != null)
       search.set("PageSize", String(params.pageSize));
     if (params?.pageNumber != null)
       search.set("PageNumber", String(params.pageNumber));
+    if (params?.query) search.set("Query", params.query);
     const qs = search.toString();
     const path = qs
       ? `${BACKOFFICE}/companies/${companyId}/campaigns?${qs}`
@@ -844,6 +887,21 @@ export const adminApi = {
     return request<Record<string, unknown>[]>(path, { authToken }).then(
       (list) => list.map(mapAdsCampaignResponse),
     );
+  },
+
+  getCampaignById: async (
+    companyId: number,
+    campaignId: number,
+    authToken?: string,
+  ) => {
+    const list = await adminApi.getCompanyCampaignsAll(
+      companyId,
+      { id: campaignId, pageSize: 1, pageNumber: 1 },
+      authToken,
+    );
+    const campaign = list.find((item) => item.id === campaignId);
+    if (!campaign) throw new Error("Campaign not found");
+    return campaign;
   },
 
   createCampaignOnBehalf: (
@@ -877,6 +935,16 @@ export const adminApi = {
   ) =>
     request<Record<string, unknown>>(
       `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/cancel`,
+      { method: "PATCH", authToken },
+    ).then(mapAdsCampaignResponse),
+
+  resendCampaign: (
+    companyId: number,
+    campaignId: number,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/resend`,
       { method: "PATCH", authToken },
     ).then(mapAdsCampaignResponse),
 
@@ -1288,18 +1356,54 @@ export const adminApi = {
     ).then(mapApiUsageSummary);
   },
 
-  getApmOverview: (authToken?: string) =>
-    request<Record<string, unknown>>(`${BACKOFFICE}/apm/overview`, {
-      authToken,
-    }).then(mapApmOverviewResponse),
+  getApmOverview: async (authToken?: string) => {
+    try {
+      const result = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/overview`,
+        { authToken },
+      );
+      return mapApmOverviewResponse(result);
+    } catch (err) {
+      if (!shouldFallbackApmToProd(err)) throw err;
+      const fallback = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/overview`,
+        { authToken, baseUrlOverride: PROD_API_BASE },
+      );
+      return mapApmOverviewResponse(fallback);
+    }
+  },
 
-  getApmChannels: (authToken?: string) =>
-    request<Record<string, unknown>>(`${BACKOFFICE}/apm/channels`, {
-      authToken,
-    }).then(mapApmChannelHealthResponse),
+  getApmChannels: async (authToken?: string) => {
+    try {
+      const result = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/channels`,
+        { authToken },
+      );
+      return mapApmChannelHealthResponse(result);
+    } catch (err) {
+      if (!shouldFallbackApmToProd(err)) throw err;
+      const fallback = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/channels`,
+        { authToken, baseUrlOverride: PROD_API_BASE },
+      );
+      return mapApmChannelHealthResponse(fallback);
+    }
+  },
 
-  getApmLinks: (authToken?: string) =>
-    request<Record<string, unknown>>(`${BACKOFFICE}/apm/links`, {
-      authToken,
-    }).then(mapApmLinksResponse),
+  getApmLinks: async (authToken?: string) => {
+    try {
+      const result = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/links`,
+        { authToken },
+      );
+      return mapApmLinksResponse(result);
+    } catch (err) {
+      if (!shouldFallbackApmToProd(err)) throw err;
+      const fallback = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/links`,
+        { authToken, baseUrlOverride: PROD_API_BASE },
+      );
+      return mapApmLinksResponse(fallback);
+    }
+  },
 };

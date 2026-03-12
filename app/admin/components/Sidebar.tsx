@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutDashboard, Users, Building2, Tags, ShieldCheck, UserCog, KeyRound, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
+import { LayoutDashboard, Users, Building2, Megaphone, Tags, ShieldCheck, UserCog, KeyRound, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
 
@@ -42,7 +42,7 @@ export default function Sidebar() {
         <div className="space-y-1">
           <button
             onClick={() => router.push(to('/dashboard'))}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors  cursor-pointer ${
+            className={`first:w-[85%] w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors  cursor-pointer ${
               active('/dashboard') || pathname === basePath
                 ? 'bg-[#1a5c9c] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
@@ -61,6 +61,17 @@ export default function Sidebar() {
           >
             <Building2 className="w-5 h-5" />
             <span>Companies</span>
+          </button>
+          <button
+            onClick={() => router.push(to('/campaigns'))}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
+              activeStartsWith('/campaigns')
+                ? 'bg-[var(--brand-color-3)] text-white'
+                : 'hover:bg-[var(--brand-color-2)]/50'
+            }`}
+          >
+            <Megaphone className="w-5 h-5" />
+            <span>Campaigns</span>
           </button>
           <button
             onClick={() => router.push(to('/pricing'))}

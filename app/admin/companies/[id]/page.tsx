@@ -23,10 +23,10 @@ import toast from 'react-hot-toast'
 import {
   adminApi,
   type AdsCampaignResponse,
-  type CampaignLogResponse,
   type CompanyLeanResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -145,37 +145,6 @@ function SectionCard({
   )
 }
 
-function getCampaignStatusClasses(status: string) {
-  const lower = status.toLowerCase()
-
-  if (lower.includes('active')) {
-    return 'bg-emerald-50 text-emerald-700 border-emerald-300/70'
-  }
-  if (lower.includes('cancel') || lower.includes('reject') || lower.includes('fail')) {
-    return 'bg-red-50 text-red-700 border-red-300/70'
-  }
-  if (lower.includes('pending') || lower.includes('draft') || lower.includes('review')) {
-    return 'bg-amber-50 text-amber-700 border-amber-300/70'
-  }
-
-  return 'bg-slate-100 text-slate-700 border-slate-300/70'
-}
-
-function formatDateRange(startDate?: string, endDate?: string) {
-  if (!startDate || !endDate) {
-    return '—'
-  }
-
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return '—'
-  }
-
-  return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
-}
-
 export default function CompanyDetailsPage() {
   const params = useParams()
   const pathname = usePathname()
@@ -192,10 +161,6 @@ export default function CompanyDetailsPage() {
   const [senderIdUpdateLoading, setSenderIdUpdateLoading] = useState(false)
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
-  const [campaignActionLoading, setCampaignActionLoading] = useState<number | null>(null)
-  const [logsByCampaignId, setLogsByCampaignId] = useState<Record<number, CampaignLogResponse[]>>({})
-  const [logsLoadingCampaignId, setLogsLoadingCampaignId] = useState<number | null>(null)
-  const [expandedLogsCampaignId, setExpandedLogsCampaignId] = useState<number | null>(null)
 
   const numericId = id != null ? Number(id) : NaN
   const invalidId = typeof id !== 'string' || id === '' || Number.isNaN(numericId)
@@ -267,60 +232,6 @@ export default function CompanyDetailsPage() {
       cancelled = true
     }
   }, [company, invalidId, env])
-
-  const loadCampaignLogs = async (campaignId: number) => {
-    if (!company) {
-      return
-    }
-
-    setLogsLoadingCampaignId(campaignId)
-
-    try {
-      const list = await adminApi.getCampaignLogs(company.id, campaignId)
-      setLogsByCampaignId((prev) => ({ ...prev, [campaignId]: list }))
-      setExpandedLogsCampaignId(campaignId)
-    } catch {
-      setLogsByCampaignId((prev) => ({ ...prev, [campaignId]: [] }))
-    } finally {
-      setLogsLoadingCampaignId(null)
-    }
-  }
-
-  const handleActivateCampaign = async (campaignId: number) => {
-    if (!company) {
-      return
-    }
-
-    setCampaignActionLoading(campaignId)
-
-    try {
-      const updated = await adminApi.activateCampaign(company.id, campaignId)
-      setCampaigns((prev) => prev.map((campaign) => (campaign.id === campaignId ? updated : campaign)))
-      toast.success('Campaign activated')
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to activate campaign')
-    } finally {
-      setCampaignActionLoading(null)
-    }
-  }
-
-  const handleCancelCampaign = async (campaignId: number) => {
-    if (!company) {
-      return
-    }
-
-    setCampaignActionLoading(campaignId)
-
-    try {
-      const updated = await adminApi.cancelCampaign(company.id, campaignId)
-      setCampaigns((prev) => prev.map((campaign) => (campaign.id === campaignId ? updated : campaign)))
-      toast.success('Campaign cancelled')
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to cancel campaign')
-    } finally {
-      setCampaignActionLoading(null)
-    }
-  }
 
   const handleApproveSenderId = async (
     approve: boolean,
@@ -731,126 +642,54 @@ export default function CompanyDetailsPage() {
                     <th className="whitespace-nowrap px-3 py-3">Status</th>
                     <th className="whitespace-nowrap px-3 py-3">Approved</th>
                     <th className="whitespace-nowrap px-3 py-3">Dates</th>
-                    <th className="whitespace-nowrap px-3 py-3">Actions</th>
+                    <th className="whitespace-nowrap px-3 py-3">Details</th>
                   </tr>
                 </thead>
                 <tbody>
                   {campaigns.map((campaign) => (
-                    <React.Fragment key={campaign.id}>
-                      <tr className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
-                        <td className="px-3 py-3 text-slate-800">
-                          <div className="font-medium">{campaign.name}</div>
-                        </td>
-                        <td className="px-3 py-3 text-slate-700">{campaign.campaignPurpose}</td>
-                        <td className="px-3 py-3 text-slate-700">{campaign.campaignChannel}</td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={classNames(
-                              'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
-                              getCampaignStatusClasses(campaign.status),
-                            )}
-                          >
-                            {campaign.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span
-                            className={classNames(
-                              'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
-                              campaign.isApproved
-                                ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
-                                : 'border-amber-300/80 bg-amber-50 text-amber-700',
-                            )}
-                          >
-                            {campaign.isApproved ? 'Yes' : 'No'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 text-xs text-slate-600">
-                          <div className="inline-flex items-center gap-1.5">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            {formatDateRange(campaign.startDate, campaign.endDate)}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <button
-                              type="button"
-                              disabled={campaignActionLoading === campaign.id}
-                              onClick={() => handleActivateCampaign(campaign.id)}
-                              className={classNames(
-                                buttonBase,
-                                'border border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-200',
-                              )}
-                            >
-                              Activate
-                            </button>
-                            <button
-                              type="button"
-                              disabled={campaignActionLoading === campaign.id}
-                              onClick={() => handleCancelCampaign(campaign.id)}
-                              className={classNames(
-                                buttonBase,
-                                'border border-red-300 bg-red-100 text-red-800 hover:bg-red-200',
-                              )}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                logsByCampaignId[campaign.id]
-                                  ? setExpandedLogsCampaignId(
-                                      expandedLogsCampaignId === campaign.id ? null : campaign.id,
-                                    )
-                                  : loadCampaignLogs(campaign.id)
-                              }
-                              disabled={logsLoadingCampaignId === campaign.id}
-                              className={classNames(
-                                buttonBase,
-                                'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-                              )}
-                            >
-                              {logsLoadingCampaignId === campaign.id
-                                ? '...'
-                                : expandedLogsCampaignId === campaign.id
-                                  ? 'Hide logs'
-                                  : 'View logs'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      {expandedLogsCampaignId === campaign.id ? (
-                        <tr className="border-t border-slate-100 bg-slate-50/80">
-                          <td colSpan={7} className="px-3 py-3">
-                            {logsLoadingCampaignId === campaign.id ? (
-                              <span className="text-xs text-slate-500">Loading logs...</span>
-                            ) : (logsByCampaignId[campaign.id]?.length ?? 0) === 0 ? (
-                              <span className="text-xs text-slate-500">No logs</span>
-                            ) : (
-                              <ul className="space-y-1.5 text-xs">
-                                {(logsByCampaignId[campaign.id] ?? []).map((log) => (
-                                  <li
-                                    key={log.id}
-                                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700"
-                                  >
-                                    <span className="font-medium">{log.initialStatus ?? '—'}</span>
-                                    {' -> '}
-                                    <span className="font-medium">{log.finalStatus ?? '—'}</span>
-                                    {(log.actorFirstName || log.actorLastName) ? (
-                                      <span className="text-slate-500">
-                                        {' '}
-                                        ({[log.actorFirstName, log.actorLastName].filter(Boolean).join(' ')})
-                                      </span>
-                                    ) : null}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </td>
-                        </tr>
-                      ) : null}
-                    </React.Fragment>
+                    <tr key={campaign.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
+                      <td className="px-3 py-3 text-slate-800">
+                        <div className="font-medium">{campaign.name}</div>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">{campaign.campaignPurpose}</td>
+                      <td className="px-3 py-3 text-slate-700">{campaign.campaignChannel}</td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={classNames(
+                            'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                            getCampaignStatusClasses(campaign.status),
+                          )}
+                        >
+                          {campaign.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={classNames(
+                            'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                            campaign.isApproved
+                              ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
+                              : 'border-amber-300/80 bg-amber-50 text-amber-700',
+                          )}
+                        >
+                          {campaign.isApproved ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-xs text-slate-600">
+                        <div className="inline-flex items-center gap-1.5">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {formatDateRange(campaign.startDate, campaign.endDate)}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <Link
+                          href={`${basePath}/companies/${company.id}/campaigns/${campaign.id}`}
+                          className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
+                        >
+                          Open details
+                        </Link>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>

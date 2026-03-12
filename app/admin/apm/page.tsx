@@ -1,13 +1,42 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { adminApi, type ApmChannelHealthResponse, type ApmLinksResponse, type ApmOverviewResponse } from '@/lib/adminApi'
+import { adminApi, type ApmChannelHealthResponse, type ApmLinksResponse, type ApmOverviewResponse, type ApmSeverity } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 
-function statusBadge(ok: boolean) {
-  return ok
-    ? 'bg-green-100 text-green-700 border border-green-200'
-    : 'bg-red-100 text-red-700 border border-red-200'
+function severityBadge(severity: ApmSeverity) {
+  if (severity === 'critical') {
+    return 'bg-red-100 text-red-700 border border-red-200'
+  }
+  if (severity === 'warning') {
+    return 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+  }
+  return 'bg-green-100 text-green-700 border border-green-200'
+}
+
+function severityText(severity: ApmSeverity) {
+  if (severity === 'critical') return 'Critical'
+  if (severity === 'warning') return 'Warning'
+  return 'Healthy'
+}
+
+function maxSeverity(a: ApmSeverity, b: ApmSeverity): ApmSeverity {
+  const rank: Record<ApmSeverity, number> = {
+    ok: 0,
+    warning: 1,
+    critical: 2,
+  }
+  return rank[a] >= rank[b] ? a : b
+}
+
+function incidentBannerStyle(severity: ApmSeverity) {
+  if (severity === 'critical') {
+    return 'rounded-xl bg-red-50 border border-red-200 text-red-800 px-5 py-4'
+  }
+  if (severity === 'warning') {
+    return 'rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4'
+  }
+  return 'rounded-xl bg-green-50 border border-green-200 text-green-800 px-5 py-4'
 }
 
 function formatDateTime(value?: string) {
@@ -19,6 +48,7 @@ function formatDateTime(value?: string) {
 export default function ApmPage() {
   const { env } = useApiEnv()
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [overview, setOverview] = useState<ApmOverviewResponse | null>(null)
   const [channels, setChannels] = useState<ApmChannelHealthResponse | null>(null)
@@ -26,9 +56,12 @@ export default function ApmPage() {
   const [overviewError, setOverviewError] = useState('')
   const [channelsError, setChannelsError] = useState('')
   const [linksError, setLinksError] = useState('')
+  const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true
+    if (!silent) setLoading(true)
+    if (silent) setRefreshing(true)
     setError('')
     setOverviewError('')
     setChannelsError('')
@@ -72,11 +105,22 @@ export default function ApmPage() {
       setError('Some APM sections are unavailable right now. Partial data is shown below.')
     }
 
-    setLoading(false)
+    setLastRefreshAt(new Date())
+    if (!silent) setLoading(false)
+    if (silent) setRefreshing(false)
   }, [])
 
   useEffect(() => {
     load()
+  }, [env, load])
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      void load({ silent: true })
+    }, 30000)
+
+    return () => window.clearInterval(id)
   }, [env, load])
 
   const readinessItems = useMemo(() => {
@@ -90,6 +134,25 @@ export default function ApmPage() {
     ]
   }, [overview])
 
+  const incidentSeverity = useMemo<ApmSeverity>(() => {
+    if (!overview && !channels) return 'warning'
+    let severity: ApmSeverity = 'ok'
+    if (overview) severity = maxSeverity(severity, overview.severity)
+    if (channels) severity = maxSeverity(severity, channels.severity)
+    if (error) severity = maxSeverity(severity, 'warning')
+    return severity
+  }, [channels, error, overview])
+
+  const incidentMessage = useMemo(() => {
+    if (incidentSeverity === 'critical') {
+      return 'Critical incident detected. One or more systems may be unavailable.'
+    }
+    if (incidentSeverity === 'warning') {
+      return 'Warning: some metrics indicate degraded performance or partial availability.'
+    }
+    return 'All monitored systems are healthy.'
+  }, [incidentSeverity])
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6 space-y-6">
@@ -102,13 +165,25 @@ export default function ApmPage() {
           </div>
           <button
             type="button"
-            onClick={load}
-            disabled={loading}
+            onClick={() => load()}
+            disabled={loading || refreshing}
             className="px-4 py-2 rounded-lg bg-[var(--brand-color-2)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Refreshing...' : 'Refresh'}
+            {loading || refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </header>
+
+        <div className={incidentBannerStyle(incidentSeverity)}>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-medium">{incidentMessage}</p>
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(incidentSeverity)}`}>
+              {severityText(incidentSeverity)}
+            </span>
+          </div>
+          <p className="text-xs mt-2">
+            Last refresh: {lastRefreshAt ? lastRefreshAt.toLocaleTimeString() : '—'} (auto-refresh every 30s)
+          </p>
+        </div>
 
         {error && (
           <div className="rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4">
@@ -116,14 +191,21 @@ export default function ApmPage() {
           </div>
         )}
 
-        {loading ? (
+        {loading && !overview && !channels && !links ? (
           <div className="flex items-center justify-center min-h-[220px]">
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
           </div>
         ) : (
           <>
             <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Overview</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Overview</h2>
+                {overview && (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(overview.severity)}`}>
+                    {severityText(overview.severity)}
+                  </span>
+                )}
+              </div>
               {overviewError ? (
                 <p className="text-sm text-red-600">{overviewError}</p>
               ) : overview ? (
@@ -139,20 +221,34 @@ export default function ApmPage() {
                     </div>
                     <div className="rounded-lg border border-gray-200 p-4">
                       <p className="text-xs uppercase tracking-wide text-gray-500">DB probe</p>
-                      <p className="text-base font-semibold text-gray-900 mt-1">
-                        {overview.localMetrics.database.canConnect ? 'Connected' : 'Unavailable'}
-                      </p>
+                      <div className="flex items-center justify-between mt-1 gap-2">
+                        <p className="text-base font-semibold text-gray-900">
+                          {overview.localMetrics.database.canConnect ? 'Connected' : 'Unavailable'}
+                        </p>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(overview.localMetrics.database.severity)}`}>
+                          {severityText(overview.localMetrics.database.severity)}
+                        </span>
+                      </div>
                       <p className="text-xs text-gray-500 mt-1">
                         {overview.localMetrics.database.connectivityLatencyMs}ms connect / {overview.localMetrics.database.sampleQueryLatencyMs}ms query
                       </p>
                     </div>
                     <div className="rounded-lg border border-gray-200 p-4">
                       <p className="text-xs uppercase tracking-wide text-gray-500">Scheduler</p>
-                      <p className="text-base font-semibold text-gray-900 mt-1">{overview.localMetrics.scheduler.storageType}</p>
+                      <div className="flex items-center justify-between mt-1 gap-2">
+                        <p className="text-base font-semibold text-gray-900">{overview.localMetrics.scheduler.storageType}</p>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(overview.localMetrics.scheduler.severity)}`}>
+                          {severityText(overview.localMetrics.scheduler.severity)}
+                        </span>
+                      </div>
                       <p className="text-xs text-gray-500 mt-1">
                         recurring {overview.localMetrics.scheduler.recurringJobsCount}, enqueued {overview.localMetrics.scheduler.enqueuedCount}
                       </p>
                     </div>
+                  </div>
+
+                  <div className="rounded-md border border-gray-200 p-3 text-sm text-gray-700">
+                    Instance: <span className="font-medium">{overview.heartbeat.instanceId}</span> · Started: {formatDateTime(overview.heartbeat.startedAt)} · Last seen: {formatDateTime(overview.heartbeat.lastSeenAt)}
                   </div>
 
                   <div>
@@ -178,8 +274,8 @@ export default function ApmPage() {
                         <div key={item.key} className="rounded-md border border-gray-200 p-3">
                           <p className="text-sm font-medium text-gray-900">{item.label}</p>
                           <p className="text-xs text-gray-500">{item.provider}</p>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-2 ${statusBadge(item.isConfigured)}`}>
-                            {item.isConfigured ? 'Configured' : 'Not configured'}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-2 ${severityBadge(item.severity)}`}>
+                            {item.isConfigured ? `Configured (${severityText(item.severity)})` : `Not configured (${severityText(item.severity)})`}
                           </span>
                         </div>
                       ))}
@@ -201,8 +297,8 @@ export default function ApmPage() {
                     <div key={probe.environment} className="rounded-lg border border-gray-200 p-4">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold text-gray-900 capitalize">{probe.environment}</p>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${statusBadge(probe.isReachable)}`}>
-                          {probe.isReachable ? 'Reachable' : 'Unreachable'}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(probe.severity)}`}>
+                          {probe.isReachable ? `Reachable (${severityText(probe.severity)})` : `Unreachable (${severityText(probe.severity)})`}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-2 break-all">{probe.baseUrl}</p>
@@ -217,7 +313,14 @@ export default function ApmPage() {
             </section>
 
             <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Channel health</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Channel health</h2>
+                {channels && (
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(channels.severity)}`}>
+                    {severityText(channels.severity)}
+                  </span>
+                )}
+              </div>
               {channelsError ? (
                 <p className="text-sm text-red-600">{channelsError}</p>
               ) : channels && channels.channels.length > 0 ? (
@@ -229,6 +332,7 @@ export default function ApmPage() {
                         <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Pending recipients</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Dispatched (24h)</th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Failed API usages (24h)</th>
+                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Severity</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -238,6 +342,11 @@ export default function ApmPage() {
                           <td className="py-3 px-4 text-gray-700">{item.pendingRecipients}</td>
                           <td className="py-3 px-4 text-gray-700">{item.dispatchedLast24Hours}</td>
                           <td className="py-3 px-4 text-gray-700">{item.failedApiUsagesLast24Hours}</td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(item.severity)}`}>
+                              {severityText(item.severity)}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
