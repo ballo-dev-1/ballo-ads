@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   mapDispatchControlResponse,
   mapApmAlertsResponse,
+  mapSchedulerRecurringJobsResponse,
   buildReliabilityNotificationPayload,
 } from "@/lib/adminApi";
 
@@ -67,4 +68,25 @@ test("buildReliabilityNotificationPayload creates stable dedupe key", () => {
   assert.equal(payload.type, "reliability_alert");
   assert.equal(payload.dedupeKey, "reliability:recipient-spike:26097");
   assert.match(payload.message, /production/i);
+});
+
+test("mapSchedulerRecurringJobsResponse maps recurring jobs payload", () => {
+  const mapped = mapSchedulerRecurringJobsResponse({
+    GeneratedAt: "2026-03-13T08:00:00Z",
+    Jobs: [
+      {
+        JobId: "Handle messages",
+        Cron: "*/5 * * * *",
+        Description: "Dispatch pending SMS messages",
+        Queue: "default",
+        LastJobState: "Succeeded",
+        IsScheduled: true,
+      },
+    ],
+  });
+
+  assert.equal(mapped.generatedAt, "2026-03-13T08:00:00Z");
+  assert.equal(mapped.jobs.length, 1);
+  assert.equal(mapped.jobs[0].jobId, "Handle messages");
+  assert.equal(mapped.jobs[0].isScheduled, true);
 });

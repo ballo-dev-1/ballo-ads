@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   adminApi,
   type ApmAlertsResponse,
@@ -9,6 +10,7 @@ import {
   type ApmOverviewResponse,
   type ApmSeverity,
   type DispatchControlResponse,
+  type SchedulerRecurringJobResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import {
@@ -26,7 +28,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { AlertCircle, AlertTriangle, CheckCircle2, Clock3, Database, Globe, ShieldCheck } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle2, Clock3, Database, Globe, ShieldCheck, X } from 'lucide-react'
 import {
   applyChannelPauseToggle,
   buildEmergencyControlMatrix,
@@ -106,8 +108,12 @@ function severityChartColor(severity: ApmSeverity) {
   return BRAND_COLORS.success
 }
 
+type OverviewCardKey = 'environment' | 'verification' | 'dbProbe' | 'scheduler'
+
 export default function ApmPage() {
+  const pathname = usePathname()
   const { env } = useApiEnv()
+  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -124,7 +130,36 @@ export default function ApmPage() {
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null)
   const [updatingGlobalPause, setUpdatingGlobalPause] = useState(false)
   const [updatingChannel, setUpdatingChannel] = useState<string | null>(null)
+  const [selectedOverviewCard, setSelectedOverviewCard] = useState<OverviewCardKey | null>(null)
+  const [schedulerJobs, setSchedulerJobs] = useState<SchedulerRecurringJobResponse[]>([])
+  const [schedulerJobsLoading, setSchedulerJobsLoading] = useState(false)
+  const [schedulerJobsError, setSchedulerJobsError] = useState('')
+  const [updatingSchedulerJobId, setUpdatingSchedulerJobId] = useState<string | null>(null)
   const { confirm, confirmDialog } = useConfirmDialog()
+
+  const closeOverviewPopup = useCallback(() => {
+    setSelectedOverviewCard(null)
+  }, [])
+
+  const openOverviewPopup = useCallback((card: OverviewCardKey) => {
+    setSelectedOverviewCard(card)
+  }, [])
+
+  const loadSchedulerJobs = useCallback(async () => {
+    setSchedulerJobsLoading(true)
+    setSchedulerJobsError('')
+    try {
+      const response = await adminApi.getSchedulerRecurringJobs()
+      setSchedulerJobs(response.jobs)
+    } catch (err) {
+      setSchedulerJobs([])
+      setSchedulerJobsError(
+        err instanceof Error ? err.message : 'Recurring job controls are unavailable in this environment.',
+      )
+    } finally {
+      setSchedulerJobsLoading(false)
+    }
+  }, [])
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent === true
@@ -216,6 +251,22 @@ export default function ApmPage() {
 
     return () => window.clearInterval(id)
   }, [env, load])
+
+  useEffect(() => {
+    if (!selectedOverviewCard) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeOverviewPopup()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [closeOverviewPopup, selectedOverviewCard])
+
+  useEffect(() => {
+    if (selectedOverviewCard !== 'scheduler') return
+    void loadSchedulerJobs()
+  }, [loadSchedulerJobs, selectedOverviewCard])
 
   const readinessItems = useMemo(() => {
     if (!overview) return []
@@ -382,6 +433,44 @@ export default function ApmPage() {
     }
   }
 
+  const handleSchedulerRecurringJobAction = async (
+    job: SchedulerRecurringJobResponse,
+    action: 'pause' | 'resume' | 'cancel',
+  ) => {
+    if (updatingSchedulerJobId) return
+    const actionLabel = action === 'pause' ? 'Pause' : action === 'resume' ? 'Resume' : 'Cancel'
+    const approved = await confirm({
+      title: `${actionLabel} recurring job`,
+      description:
+        action === 'resume'
+          ? `Resume recurring schedule for "${job.jobId}"?`
+          : `${actionLabel} recurring schedule for "${job.jobId}"?`,
+      confirmLabel: actionLabel,
+      tone: action === 'cancel' ? 'danger' : 'default',
+    })
+    if (!approved) return
+
+    setUpdatingSchedulerJobId(job.jobId)
+    setSchedulerJobsError('')
+    try {
+      if (action === 'pause') {
+        await adminApi.pauseSchedulerRecurringJob(job.jobId)
+      } else if (action === 'resume') {
+        await adminApi.resumeSchedulerRecurringJob(job.jobId)
+      } else {
+        await adminApi.cancelSchedulerRecurringJob(job.jobId)
+      }
+      await loadSchedulerJobs()
+      await load({ silent: true })
+    } catch (err) {
+      setSchedulerJobsError(
+        err instanceof Error ? err.message : `Failed to ${action} recurring job ${job.jobId}.`,
+      )
+    } finally {
+      setUpdatingSchedulerJobId(null)
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6 space-y-6">
@@ -445,7 +534,12 @@ export default function ApmPage() {
               ) : overview ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(140deg,#f2f6ff_0%,#ffffff_45%,#deebff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                    <button
+                      type="button"
+                      onClick={() => openOverviewPopup('environment')}
+                      className="relative w-full cursor-pointer overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(140deg,#f2f6ff_0%,#ffffff_45%,#deebff_100%)] p-6 min-h-[220px] text-left shadow-[0_16px_40px_rgba(14,14,57,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(14,14,57,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24539a]/50 focus-visible:ring-offset-2"
+                      aria-label="Open current environment details"
+                    >
                       <div className="absolute -top-8 -left-8 h-24 w-24 rounded-full bg-[#dbe8ff] blur-2xl opacity-80" />
                       <div className="absolute right-5 top-5 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
                         <Globe className="h-5 w-5 text-[#24539a]" />
@@ -453,8 +547,13 @@ export default function ApmPage() {
                       <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">Current environment</p>
                       <p className="mt-14 text-4xl font-semibold leading-none text-[#131a2c]">{overview.currentEnvironment}</p>
                       <p className="mt-3 text-sm text-gray-600">Active target for API and monitoring endpoints</p>
-                    </div>
-                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(145deg,#eef7ff_0%,#ffffff_42%,#d7f1ff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openOverviewPopup('verification')}
+                      className="relative w-full cursor-pointer overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(145deg,#eef7ff_0%,#ffffff_42%,#d7f1ff_100%)] p-6 min-h-[220px] text-left shadow-[0_16px_40px_rgba(14,14,57,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(14,14,57,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24539a]/50 focus-visible:ring-offset-2"
+                      aria-label="Open verification mode details"
+                    >
                       <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-[#cdf0ff] blur-2xl opacity-80" />
                       <div className="absolute right-5 top-5 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
                         <ShieldCheck className="h-5 w-5 text-[#1d5a9a]" />
@@ -462,8 +561,13 @@ export default function ApmPage() {
                       <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">Verification mode</p>
                       <p className="mt-14 text-4xl font-semibold leading-none text-[#131a2c]">{overview.providerVerificationMode}</p>
                       <p className="mt-3 text-sm text-gray-600">Provider validation strategy in this environment</p>
-                    </div>
-                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(145deg,#f3f7ff_0%,#ffffff_40%,#dbe7ff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openOverviewPopup('dbProbe')}
+                      className="relative w-full cursor-pointer overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(145deg,#f3f7ff_0%,#ffffff_40%,#dbe7ff_100%)] p-6 min-h-[220px] text-left shadow-[0_16px_40px_rgba(14,14,57,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(14,14,57,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24539a]/50 focus-visible:ring-offset-2"
+                      aria-label="Open database probe details"
+                    >
                       <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-[#dfe8ff] blur-2xl opacity-80" />
                       <div className="absolute right-5 top-5 z-10 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
                         <Database className="h-5 w-5 text-[#295ea8]" />
@@ -487,8 +591,13 @@ export default function ApmPage() {
                         text={severityText(overview.localMetrics.database.severity)}
                         className="absolute right-5 bottom-5 z-20"
                       />
-                    </div>
-                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(140deg,#f0f6ff_0%,#ffffff_42%,#d9e7ff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openOverviewPopup('scheduler')}
+                      className="relative w-full cursor-pointer overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(140deg,#f0f6ff_0%,#ffffff_42%,#d9e7ff_100%)] p-6 min-h-[220px] text-left shadow-[0_16px_40px_rgba(14,14,57,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_45px_rgba(14,14,57,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#24539a]/50 focus-visible:ring-offset-2"
+                      aria-label="Open scheduler details"
+                    >
                       <div className="absolute -top-10 right-2 h-24 w-24 rounded-full bg-[#d5e6ff] blur-2xl opacity-85" />
                       <div className="absolute right-5 top-5 z-10 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
                         <Clock3 className="h-5 w-5 text-[#2f63ad]" />
@@ -510,7 +619,7 @@ export default function ApmPage() {
                         text={severityText(overview.localMetrics.scheduler.severity)}
                         className="absolute right-5 bottom-5 z-20"
                       />
-                    </div>
+                    </button>
                   </div>
 
                   <div className="rounded-md border border-gray-200 p-3 text-sm text-gray-700">
@@ -864,6 +973,264 @@ export default function ApmPage() {
             </section>
           </>
         )}
+        {selectedOverviewCard && overview ? (
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[1px]"
+            onClick={closeOverviewPopup}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="overview-card-dialog-title"
+          >
+            <div
+              className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                  <h3 id="overview-card-dialog-title" className="text-base font-semibold text-slate-900">
+                    {selectedOverviewCard === 'environment' && 'Current environment details'}
+                    {selectedOverviewCard === 'verification' && 'Verification mode details'}
+                    {selectedOverviewCard === 'dbProbe' && 'DB probe details'}
+                    {selectedOverviewCard === 'scheduler' && 'Scheduler details'}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">APM overview quick details and actions.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeOverviewPopup}
+                  className="inline-flex rounded-lg border border-slate-200 p-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                  aria-label="Close overview details popup"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="space-y-4 px-5 py-4">
+                {selectedOverviewCard === 'environment' && (
+                  <>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Current environment</p>
+                      <p className="mt-1 text-2xl font-semibold text-slate-900">{overview.currentEnvironment}</p>
+                      <p className="mt-2 text-sm text-slate-700">
+                        Route namespace: <span className="font-medium">{basePath}</span> | API env: <span className="font-medium">{env}</span>
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <a
+                        href="/admin"
+                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
+                      >
+                        Production backoffice
+                        <p className="mt-1 text-xs text-slate-500">Open /admin</p>
+                      </a>
+                      <a
+                        href="https://dev-ballo-ads.web.app/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
+                      >
+                        Staging frontend
+                        <p className="mt-1 text-xs text-slate-500">Open dev-ballo-ads.web.app</p>
+                      </a>
+                      <a
+                        href={`${basePath}/apm`}
+                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
+                      >
+                        Current APM route
+                        <p className="mt-1 text-xs text-slate-500">Open {basePath}/apm</p>
+                      </a>
+                      <a
+                        href={basePath === '/admin' ? '/dev-admin/apm' : '/admin/apm'}
+                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
+                      >
+                        Alternate APM route
+                        <p className="mt-1 text-xs text-slate-500">
+                          Open {basePath === '/admin' ? '/dev-admin/apm' : '/admin/apm'}
+                        </p>
+                      </a>
+                    </div>
+                  </>
+                )}
+
+                {selectedOverviewCard === 'verification' && (
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Verification mode</p>
+                      <p className="mt-1 text-2xl font-semibold text-slate-900">{overview.providerVerificationMode}</p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                      <p className="font-medium text-slate-900">Operational impact</p>
+                      <p className="mt-1">
+                        {overview.providerVerificationMode.toLowerCase() === 'internal-only'
+                          ? 'Provider validation is restricted to internal traffic and controlled checks.'
+                          : `Provider validation uses "${overview.providerVerificationMode}" for this environment.`}
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Use this signal together with readiness and channel health when investigating dispatch anomalies.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedOverviewCard === 'dbProbe' && (
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">DB connectivity</p>
+                      <p className="mt-1 text-2xl font-semibold text-slate-900">
+                        {overview.localMetrics.database.canConnect ? 'Connected' : 'Unavailable'}
+                      </p>
+                      <div className="mt-2">
+                        <SeverityBadge
+                          severity={overview.localMetrics.database.severity}
+                          text={severityText(overview.localMetrics.database.severity)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <div className="rounded-lg border border-slate-200 px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Connect latency</p>
+                        <p className="mt-1 text-xl font-semibold text-slate-900">
+                          {overview.localMetrics.database.connectivityLatencyMs} ms
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 px-4 py-3">
+                        <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Sample query latency</p>
+                        <p className="mt-1 text-xl font-semibold text-slate-900">
+                          {overview.localMetrics.database.sampleQueryLatencyMs} ms
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedOverviewCard === 'scheduler' && (
+                  <div className="space-y-3">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Scheduler storage</p>
+                      <p className="mt-1 text-2xl font-semibold text-slate-900">{overview.localMetrics.scheduler.storageType}</p>
+                      <div className="mt-2">
+                        <SeverityBadge
+                          severity={overview.localMetrics.scheduler.severity}
+                          text={severityText(overview.localMetrics.scheduler.severity)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                      <div className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <p className="text-slate-500">Recurring</p>
+                        <p className="font-semibold text-slate-900">{overview.localMetrics.scheduler.recurringJobsCount}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <p className="text-slate-500">Enqueued</p>
+                        <p className="font-semibold text-slate-900">{overview.localMetrics.scheduler.enqueuedCount}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <p className="text-slate-500">Processing</p>
+                        <p className="font-semibold text-slate-900">{overview.localMetrics.scheduler.processingCount}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <p className="text-slate-500">Failed</p>
+                        <p className="font-semibold text-slate-900">{overview.localMetrics.scheduler.failedCount}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                        <p className="text-slate-500">Scheduled</p>
+                        <p className="font-semibold text-slate-900">{overview.localMetrics.scheduler.scheduledCount}</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-900">Recurring jobs</p>
+                        {schedulerJobsLoading && (
+                          <span className="text-xs text-slate-500">Refreshing jobs...</span>
+                        )}
+                      </div>
+                      {schedulerJobsError ? (
+                        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                          {schedulerJobsError}
+                        </div>
+                      ) : null}
+                      {schedulerJobs.length === 0 && !schedulerJobsLoading ? (
+                        <p className="mt-3 text-sm text-slate-500">
+                          No recurring jobs available for control.
+                        </p>
+                      ) : (
+                        <div className="mt-3 space-y-2">
+                          {schedulerJobs.map((job) => (
+                            <div
+                              key={job.jobId}
+                              className="rounded-md border border-slate-200 px-3 py-3 text-sm"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="font-medium text-slate-900">{job.jobId}</p>
+                                <span
+                                  className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                    job.isScheduled
+                                      ? 'bg-emerald-50 text-emerald-700'
+                                      : 'bg-amber-50 text-amber-700'
+                                  }`}
+                                >
+                                  {job.isScheduled ? 'Running' : 'Paused/Unscheduled'}
+                                </span>
+                              </div>
+                              <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-slate-600 md:grid-cols-2">
+                                <p>Cron: {job.cron || 'N/A'}</p>
+                                <p>Queue: {job.queue || 'default'}</p>
+                                <p>Last state: {job.lastJobState || 'N/A'}</p>
+                                <p>Next run: {job.nextExecution ? formatDateTime(job.nextExecution) : 'N/A'}</p>
+                              </div>
+                              {job.error ? (
+                                <p className="mt-2 text-xs text-red-600 break-all">Error: {job.error}</p>
+                              ) : null}
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {job.isScheduled ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSchedulerRecurringJobAction(job, 'pause')}
+                                      disabled={updatingSchedulerJobId === job.jobId}
+                                      className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                                    >
+                                      {updatingSchedulerJobId === job.jobId ? 'Updating...' : 'Pause'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSchedulerRecurringJobAction(job, 'cancel')}
+                                      disabled={updatingSchedulerJobId === job.jobId}
+                                      className="rounded-md border border-red-300 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                                    >
+                                      {updatingSchedulerJobId === job.jobId ? 'Updating...' : 'Cancel'}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSchedulerRecurringJobAction(job, 'resume')}
+                                    disabled={updatingSchedulerJobId === job.jobId}
+                                    className="rounded-md border border-emerald-300 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                                  >
+                                    {updatingSchedulerJobId === job.jobId ? 'Updating...' : 'Resume'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end border-t border-slate-100 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={closeOverviewPopup}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {confirmDialog}
       </div>
     </div>

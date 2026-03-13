@@ -233,6 +233,30 @@ export type DispatchControlResponse = {
   updatedAt: string;
 };
 
+export type SchedulerRecurringJobResponse = {
+  jobId: string;
+  cron: string;
+  description: string;
+  queue: string;
+  lastJobState?: string;
+  lastExecution?: string;
+  nextExecution?: string;
+  error?: string;
+  isScheduled: boolean;
+};
+
+export type SchedulerRecurringJobsResponse = {
+  generatedAt: string;
+  jobs: SchedulerRecurringJobResponse[];
+};
+
+export type SchedulerRecurringJobActionResponse = {
+  jobId: string;
+  action: "pause" | "resume" | "cancel";
+  isScheduled: boolean;
+  updatedAt: string;
+};
+
 export type ReliabilityAlertSeverity = "critical" | "high" | "medium" | "warning" | "ok";
 
 export type ReliabilityAlert = {
@@ -799,6 +823,45 @@ export function mapDispatchControlResponse(
           };
         })
       : [],
+    updatedAt: String(r.UpdatedAt ?? r.updatedAt ?? ""),
+  };
+}
+
+export function mapSchedulerRecurringJobsResponse(
+  r: Record<string, unknown>,
+): SchedulerRecurringJobsResponse {
+  const jobsRaw = (r.Jobs ?? r.jobs) as unknown;
+  return {
+    generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    jobs: Array.isArray(jobsRaw)
+      ? jobsRaw.map((item) => {
+          const j = (item ?? {}) as Record<string, unknown>;
+          return {
+            jobId: String(j.JobId ?? j.jobId ?? ""),
+            cron: String(j.Cron ?? j.cron ?? ""),
+            description: String(j.Description ?? j.description ?? ""),
+            queue: String(j.Queue ?? j.queue ?? "default"),
+            lastJobState: (j.LastJobState ?? j.lastJobState) as string | undefined,
+            lastExecution: (j.LastExecution ?? j.lastExecution) as string | undefined,
+            nextExecution: (j.NextExecution ?? j.nextExecution) as string | undefined,
+            error: (j.Error ?? j.error) as string | undefined,
+            isScheduled: Boolean(j.IsScheduled ?? j.isScheduled ?? false),
+          };
+        })
+      : [],
+  };
+}
+
+export function mapSchedulerRecurringJobActionResponse(
+  r: Record<string, unknown>,
+): SchedulerRecurringJobActionResponse {
+  return {
+    jobId: String(r.JobId ?? r.jobId ?? ""),
+    action: String(r.Action ?? r.action ?? "pause") as
+      | "pause"
+      | "resume"
+      | "cancel",
+    isScheduled: Boolean(r.IsScheduled ?? r.isScheduled ?? false),
     updatedAt: String(r.UpdatedAt ?? r.updatedAt ?? ""),
   };
 }
@@ -1689,6 +1752,59 @@ export const adminApi = {
       body: JSON.stringify({ environment, channel, isPaused }),
       authToken,
     }).then(mapDispatchControlResponse),
+
+  getSchedulerRecurringJobs: async (authToken?: string) => {
+    try {
+      const result = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/scheduler/recurring-jobs`,
+        { authToken },
+      );
+      return mapSchedulerRecurringJobsResponse(result);
+    } catch (err) {
+      if (!shouldFallbackApmToProd(err)) throw err;
+      const fallback = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/scheduler/recurring-jobs`,
+        { authToken, baseUrlOverride: PROD_API_BASE },
+      );
+      return mapSchedulerRecurringJobsResponse(fallback);
+    }
+  },
+
+  pauseSchedulerRecurringJob: (
+    jobId: string,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/scheduler/recurring-jobs/${encodeURIComponent(jobId)}/pause`,
+      {
+        method: "POST",
+        authToken,
+      },
+    ).then(mapSchedulerRecurringJobActionResponse),
+
+  resumeSchedulerRecurringJob: (
+    jobId: string,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/scheduler/recurring-jobs/${encodeURIComponent(jobId)}/resume`,
+      {
+        method: "POST",
+        authToken,
+      },
+    ).then(mapSchedulerRecurringJobActionResponse),
+
+  cancelSchedulerRecurringJob: (
+    jobId: string,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/scheduler/recurring-jobs/${encodeURIComponent(jobId)}/cancel`,
+      {
+        method: "POST",
+        authToken,
+      },
+    ).then(mapSchedulerRecurringJobActionResponse),
 
   getApmAlerts: async (authToken?: string) => {
     try {
