@@ -11,6 +11,8 @@ import {
   type CompanyLeanResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 const CHANNEL_OPTIONS = ['Sms', 'Email', 'WhatsApp', 'WhatsAppUtility'] as const
 
@@ -26,6 +28,7 @@ export default function ApiManagementPage() {
   const [allocating, setAllocating] = useState(false)
   const [rotatingId, setRotatingId] = useState<number | null>(null)
   const [revokingId, setRevokingId] = useState<number | null>(null)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const [apiClients, setApiClients] = useState<ApiClientResponse[]>([])
   const [usageSummary, setUsageSummary] = useState<ApiUsageSummary | null>(null)
@@ -182,7 +185,13 @@ export default function ApiManagementPage() {
 
   const handleRotate = async (apiClientId: number) => {
     if (!companyId) return
-    if (!window.confirm('Rotate API key for this client? The old key will stop working.')) {
+    const approved = await confirm({
+      title: 'Rotate API key',
+      description: 'Rotate API key for this client? The old key will stop working.',
+      confirmLabel: 'Rotate key',
+      tone: 'danger',
+    })
+    if (!approved) {
       return
     }
     setRotatingId(apiClientId)
@@ -201,7 +210,13 @@ export default function ApiManagementPage() {
 
   const handleRevoke = async (apiClientId: number) => {
     if (!companyId) return
-    if (!window.confirm('Revoke this API client? This cannot be undone from here.')) {
+    const approved = await confirm({
+      title: 'Revoke API client',
+      description: 'Revoke this API client? This cannot be undone from here.',
+      confirmLabel: 'Revoke',
+      tone: 'danger',
+    })
+    if (!approved) {
       return
     }
     setRevokingId(apiClientId)
@@ -244,6 +259,12 @@ export default function ApiManagementPage() {
       toast.error('Duration days must be a positive number')
       return
     }
+    const confirmed = await confirm({
+      title: 'Allocate API credits',
+      description: `Allocate credits to ${selectedCompany?.name ?? 'selected company'}?\n\nSMS: ${smsCount}\nEmail: ${emailCount}\nWhatsApp: ${whatsAppCount}\nWA Utility: ${whatsAppUtilityCount}`,
+      confirmLabel: 'Allocate',
+    })
+    if (!confirmed) return
 
     setAllocating(true)
     try {
@@ -281,17 +302,19 @@ export default function ApiManagementPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6 space-y-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">API Management</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Manage company API clients, manual message allocations, and usage.
-          </p>
-        </header>
+        <AdminHero
+          eyebrow="Developer platform"
+          title="API management"
+          description="Manage company API clients, manual message allocations, and usage."
+          variant="teal"
+        />
 
         <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select company</label>
           {loadingCompanies ? (
-            <p className="text-sm text-gray-500">Loading companies...</p>
+            <div className="flex items-center justify-center py-6">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            </div>
           ) : (
             <select
               value={companyId ?? ''}
@@ -532,11 +555,13 @@ export default function ApiManagementPage() {
             </button>
           </div>
           {loadingClients ? (
-            <p className="mt-4 text-sm text-gray-500">Loading API clients...</p>
+            <div className="mt-4 flex items-center justify-center py-6">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            </div>
           ) : apiClients.length === 0 ? (
             <p className="mt-4 text-sm text-gray-500">No API clients found.</p>
           ) : (
-            <div className="mt-4 overflow-x-auto border border-gray-200 rounded-lg">
+            <div className="mt-4 overflow-x-auto border border-gray-200 rounded-lg bg-transparent p-4">
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
@@ -663,7 +688,7 @@ export default function ApiManagementPage() {
                 <StatCard label="Success" value={String(usageSummary.successCount)} />
                 <StatCard label="Failure" value={String(usageSummary.failureCount)} />
               </div>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border border-gray-200 rounded-lg overflow-hidden bg-transparent p-4">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -690,12 +715,15 @@ export default function ApiManagementPage() {
                 </table>
               </div>
             </div>
+          ) : loadingUsage ? (
+            <div className="mt-4 flex items-center justify-center py-6">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            </div>
           ) : (
-            <p className="mt-4 text-sm text-gray-500">
-              {loadingUsage ? 'Loading usage...' : 'No usage data available.'}
-            </p>
+            <p className="mt-4 text-sm text-gray-500">No usage data available.</p>
           )}
         </section>
+        {confirmDialog}
       </div>
     </div>
   )

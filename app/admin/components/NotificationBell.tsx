@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { useNotifications } from '../contexts/NotificationsContext'
+import { useConfirmDialog } from './useConfirmDialog'
 
 function formatTime(createdAt: string) {
   const d = new Date(createdAt)
@@ -24,6 +25,7 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -64,7 +66,15 @@ export default function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 type="button"
-                onClick={() => markAllRead()}
+                onClick={async () => {
+                  const approved = await confirm({
+                    title: 'Mark all as read',
+                    description: 'Mark all notifications as read?',
+                    confirmLabel: 'Mark all read',
+                  })
+                  if (!approved) return
+                  markAllRead()
+                }}
                 className="text-sm text-blue-600 hover:text-blue-800"
               >
                 Mark all read
@@ -73,8 +83,8 @@ export default function NotificationBell() {
           </div>
           <div className="overflow-y-auto flex-1">
             {loading && notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                Loading...
+              <div className="flex items-center justify-center px-4 py-8">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-gray-500 text-sm">
@@ -91,7 +101,14 @@ export default function NotificationBell() {
                         !n.read ? 'bg-blue-50/50' : ''
                       }`}
                     >
-                      <p className="font-medium text-gray-900 text-sm">{n.title}</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-gray-900 text-sm">{n.title}</p>
+                        {n.type === 'reliability_alert' && (
+                          <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
+                            Reliability
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-600 text-xs mt-0.5 line-clamp-2">{n.message}</p>
                       <p className="text-gray-400 text-xs mt-1">{formatTime(n.createdAt)}</p>
                     </button>
@@ -102,6 +119,7 @@ export default function NotificationBell() {
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   )
 }

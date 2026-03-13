@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import AdminHero from '@/app/admin/components/AdminHero'
 
 interface WaitlistEntry {
   id: string
@@ -159,45 +160,31 @@ export default function WaitlistDashboard() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 mb-6">
-          <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-800">Waitlist</h1>
-          <div className="flex items-center gap-4">
+        <AdminHero
+          className="mb-6"
+          eyebrow="Audience pipeline"
+          title="Waitlist"
+          description="Review waitlist leads, filter by status, and export data."
+          variant="sky"
+          actions={
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleExport('csv')}
                 disabled={!!exportingFormat}
-                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-full border border-white/45 bg-white/95 px-4 py-2 text-sm font-semibold text-[#1e2153] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {exportingFormat === 'csv' ? 'Exporting…' : 'Export CSV'}
               </button>
               <button
                 onClick={() => handleExport('pdf')}
                 disabled={!!exportingFormat}
-                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-full bg-[#0f1222] px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {exportingFormat === 'pdf' ? 'Exporting…' : 'Export PDF'}
               </button>
             </div>
-            <button className="relative">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </header>
+          }
+        />
 
       {/* Filters and Search */}
       <div className="border-b border-gray-200 px-6 py-4">
@@ -265,7 +252,7 @@ export default function WaitlistDashboard() {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          <div className="px-6 py-4">
+          <div className="bg-transparent p-4">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">

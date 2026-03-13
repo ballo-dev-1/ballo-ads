@@ -6,6 +6,9 @@ import { adminApi, type PurchaseOrderResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { Pencil } from 'lucide-react'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 const STATUS_OPTIONS = ['Pending', 'Active', 'Failed', 'Depleted', 'Expired'] as const
 
@@ -21,6 +24,7 @@ export default function PurchaseOrdersPage() {
   const [modalOrder, setModalOrder] = useState<PurchaseOrderResponse | null>(null)
   const [statusValue, setStatusValue] = useState('')
   const [statusSaving, setStatusSaving] = useState(false)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -57,9 +61,19 @@ export default function PurchaseOrdersPage() {
 
   const handleUpdateStatus = async () => {
     if (!modalOrder?.id || !statusValue.trim()) return
+    const nextStatus = statusValue.trim()
+    const currentStatus = modalOrder.purchaseOrderStatus ?? 'Unknown'
+    const approved = await confirm({
+      title: 'Update order status',
+      description: `Update purchase order #${modalOrder.id} status from "${currentStatus}" to "${nextStatus}"?`,
+      confirmLabel: 'Update status',
+    })
+    if (!approved) {
+      return
+    }
     setStatusSaving(true)
     try {
-      await adminApi.updatePurchaseOrderStatus(modalOrder.id, statusValue.trim())
+      await adminApi.updatePurchaseOrderStatus(modalOrder.id, nextStatus)
       toast.success('Status updated')
       closeModal()
       load()
@@ -73,10 +87,13 @@ export default function PurchaseOrdersPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Purchase orders</h1>
-          <p className="text-sm text-gray-500 mt-1">View and update purchase order status</p>
-        </header>
+        <AdminHero
+          className="mb-6"
+          eyebrow="Orders"
+          title="Purchase orders"
+          description="View and update purchase order status."
+          variant="blue"
+        />
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-50/90 border border-red-200 text-red-700 px-5 py-4">
@@ -89,8 +106,8 @@ export default function PurchaseOrdersPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto bg-transparent p-4">
               <table className="w-full min-w-[800px]">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
@@ -100,7 +117,7 @@ export default function PurchaseOrdersPage() {
                     <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Status</th>
                     <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Billed account</th>
                     <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Dates</th>
-                    <th className="w-32 py-3 px-5 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                    <th className="w-32 py-3 px-5 text-right text-xs font-semibold text-gray-600 uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,9 +160,11 @@ export default function PurchaseOrdersPage() {
                           <button
                             type="button"
                             onClick={() => openModal(po)}
-                            className="text-sm text-[var(--brand-color-2)] hover:underline"
+                            className="inline-flex items-center justify-center rounded-md p-2 text-[var(--brand-color-2)] hover:bg-gray-100"
+                            aria-label="Update status"
+                            title="Update status"
                           >
-                            Update status
+                            <Pencil className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -235,6 +254,7 @@ export default function PurchaseOrdersPage() {
             </div>
           </div>
         )}
+        {confirmDialog}
       </div>
     </div>
   )

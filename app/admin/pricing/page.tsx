@@ -9,6 +9,8 @@ import {
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { ChevronDown, ChevronUp, ChevronsUpDown, Filter } from 'lucide-react'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 type SortKey = 'platform' | 'range' | 'amountPerMessage' | 'duration' | 'status' | 'createdAt'
 type SortDir = 'asc' | 'desc'
@@ -41,6 +43,7 @@ export default function PricingPage() {
   const [filterDisabled, setFilterDisabled] = useState<boolean>(false)
   const [filtersPopoverOpen, setFiltersPopoverOpen] = useState(false)
   const filtersPopoverRef = useRef<HTMLDivElement>(null)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const load = async () => {
     setLoading(true)
@@ -119,7 +122,13 @@ export default function PricingPage() {
 
   const handleDeletePricing = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('Delete this pricing model? This cannot be undone.')) return
+    const approved = await confirm({
+      title: 'Delete pricing model',
+      description: 'Delete this pricing model? This cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (!approved) return
     setError('')
     try {
       await adminApi.deletePricingModel(id)
@@ -141,6 +150,15 @@ export default function PricingPage() {
     try {
       let enableResponse: PricingModelResponse | null = null
       if (pendingEnable !== null) {
+        const approved = await confirm({
+          title: pendingEnable ? 'Enable pricing model' : 'Disable pricing model',
+          description: `${pendingEnable ? 'Enable' : 'Disable'} this pricing model?`,
+          confirmLabel: pendingEnable ? 'Enable' : 'Disable',
+          tone: pendingEnable ? 'default' : 'danger',
+        })
+        if (!approved) {
+          return
+        }
         enableResponse = pendingEnable
           ? await adminApi.enablePricingModel(editingId)
           : await adminApi.disablePricingModel(editingId)
@@ -219,9 +237,12 @@ export default function PricingPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6 space-y-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80">
-          <h1 className="text-2xl font-bold text-gray-800">Pricing Models</h1>
-        </header>
+        <AdminHero
+          eyebrow="Monetization"
+          title="Pricing models"
+          description="Configure message pricing thresholds, durations, and status."
+          variant="slate"
+        />
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             {error}
@@ -428,9 +449,10 @@ export default function PricingPage() {
                   Showing {filteredAndSortedModels.length} of {models.length}
                 </span>
               </div>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
+              <div className="overflow-x-auto bg-transparent p-4">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
                     <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                       <button
                         type="button"
@@ -482,57 +504,58 @@ export default function PricingPage() {
                       </button>
                     </th>
                     <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700 w-20">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAndSortedModels.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-gray-500">
-                        {models.length === 0 ? 'No pricing models found' : 'No models match the current filters'}
-                      </td>
                     </tr>
-                  ) : (
-                    filteredAndSortedModels.map((m) => (
-                      <tr
-                        key={m.id}
-                        onClick={() => startEdit(m)}
-                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                      >
-                        <td className="py-3 px-4 text-sm text-gray-800">{m.platform}</td>
-                        <td className="py-3 px-4 text-sm text-gray-800">
-                          {m.thresholdStart} - {m.thresholdEnd}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-800">
-                          {m.amountPerMessage}
-                        </td>
-                        <td className="py-3 px-4 text-sm text-gray-800">
-                          {m.duration} days
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          {m.isEnabled ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                              Enabled
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                              Disabled
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={(e) => handleDeletePricing(m.id, e)}
-                            className="text-sm text-red-600 hover:underline"
-                          >
-                            Delete
-                          </button>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedModels.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                          {models.length === 0 ? 'No pricing models found' : 'No models match the current filters'}
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      filteredAndSortedModels.map((m) => (
+                        <tr
+                          key={m.id}
+                          onClick={() => startEdit(m)}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <td className="py-3 px-4 text-sm text-gray-800">{m.platform}</td>
+                          <td className="py-3 px-4 text-sm text-gray-800">
+                            {m.thresholdStart} - {m.thresholdEnd}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-800">
+                            {m.amountPerMessage}
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-800">
+                            {m.duration} days
+                          </td>
+                          <td className="py-3 px-4 text-sm">
+                            {m.isEnabled ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                                Enabled
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                Disabled
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeletePricing(m.id, e)}
+                              className="text-sm text-red-600 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </div>
@@ -685,6 +708,7 @@ export default function PricingPage() {
           </div>
         )
       })()}
+      {confirmDialog}
     </div>
   )
 }

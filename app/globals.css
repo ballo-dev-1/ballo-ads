@@ -37,3 +37,55 @@ body {
     -1px 0 #ff3b30,
     1px 0 #00a3ff;
 }
+
+.admin-shell table {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.admin-shell thead tr {
+  background: transparent !important;
+}
+
+.admin-shell thead th {
+  border: 0 !important;
+  padding-top: 0.55rem !important;
+  padding-bottom: 0.55rem !important;
+  color: #64748b !important;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-shell tbody tr {
+  background: #ffffff;
+  transition: transform 120ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.admin-shell tbody tr:hover {
+  background: #fbfdff;
+  box-shadow: 0 6px 18px -14px rgba(15, 23, 42, 0.45);
+  transform: translateY(-1px);
+}
+
+.admin-shell tbody td {
+  border-top: 1px solid #edf2f7 !important;
+  border-bottom: 1px solid #edf2f7 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  padding-top: 0.95rem !important;
+  padding-bottom: 0.95rem !important;
+}
+
+.admin-shell tbody td:first-child {
+  border-left: 1px solid #edf2f7 !important;
+  border-top-left-radius: 0.95rem;
+  border-bottom-left-radius: 0.95rem;
+}
+
+.admin-shell tbody td:last-child {
+  border-right: 1px solid #edf2f7 !important;
+  border-top-right-radius: 0.95rem;
+  border-bottom-right-radius: 0.95rem;
+}

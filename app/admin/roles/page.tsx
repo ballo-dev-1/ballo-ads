@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { adminApi, type BackofficeRoleResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import toast from 'react-hot-toast'
+import { Pencil } from 'lucide-react'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 export default function RolesPage() {
   const { env } = useApiEnv()
@@ -18,6 +21,7 @@ export default function RolesPage() {
   const [editId, setEditId] = useState<number | null>(null)
   const [editPerms, setEditPerms] = useState<string[]>([])
   const [editLoading, setEditLoading] = useState(false)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const load = async () => {
     setLoading(true)
@@ -60,12 +64,19 @@ export default function RolesPage() {
   }
 
   const handleSetPermissions = async (id: number) => {
+    const approved = await confirm({
+      title: 'Apply permission changes',
+      description: 'Apply these permission changes to this role?',
+      confirmLabel: 'Apply',
+    })
+    if (!approved) return
     setEditLoading(true)
     setError('')
     try {
       await adminApi.setRolePermissions(id, editPerms)
       toast.success('Permissions updated')
       setEditId(null)
+      setEditPerms([])
       load()
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to update permissions')
@@ -75,7 +86,13 @@ export default function RolesPage() {
   }
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Delete role "${name}"?`)) return
+    const approved = await confirm({
+      title: 'Delete role',
+      description: `Delete role "${name}"?`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (!approved) return
     try {
       await adminApi.deleteRole(id)
       toast.success('Role deleted')
@@ -90,22 +107,36 @@ export default function RolesPage() {
     else setList([...list, perm])
   }
 
+  const startEditPermissions = (role: BackofficeRoleResponse) => {
+    setEditId(role.id)
+    setEditPerms(role.permissions ?? [])
+  }
+
+  const closeEditModal = () => {
+    if (editLoading) return
+    setEditId(null)
+    setEditPerms([])
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Roles</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage backoffice roles and permissions</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white text-sm font-medium hover:opacity-90"
-          >
-            Create role
-          </button>
-        </header>
+        <AdminHero
+          className="mb-6"
+          eyebrow="Permissions"
+          title="Roles"
+          description="Manage backoffice roles and permission sets."
+          variant="violet"
+          actions={
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
+            >
+              Create role
+            </button>
+          }
+        />
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-50/90 border border-red-200 text-red-700 px-5 py-4">
@@ -165,12 +196,51 @@ export default function RolesPage() {
           </div>
         )}
 
+        {editId !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit permissions</h2>
+              <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-2 space-y-1">
+                {permissions.map((p) => (
+                  <label key={p} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editPerms.includes(p)}
+                      onChange={() => togglePerm(editPerms, setEditPerms, p)}
+                      disabled={editLoading}
+                    />
+                    <span className="text-gray-700">{p}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-2 justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={editLoading}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetPermissions(editId)}
+                  disabled={editLoading}
+                  className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {editLoading ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center min-h-[200px]">
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
+          <div className="bg-transparent rounded-xl border border-gray-200/80 shadow-sm overflow-hidden p-4">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
@@ -191,73 +261,31 @@ export default function RolesPage() {
                     <tr key={role.id} className="border-b border-gray-100">
                       <td className="py-3 px-5 font-medium text-gray-900">{role.name}</td>
                       <td className="py-3 px-5 text-sm text-gray-600">
-                        {editId === role.id ? (
-                          <div className="space-y-2">
-                            <div className="max-h-32 overflow-y-auto flex flex-wrap gap-1">
-                              {permissions.map((p) => (
-                                <label key={p} className="inline-flex items-center gap-1 text-xs">
-                                  <input
-                                    type="checkbox"
-                                    checked={editPerms.includes(p)}
-                                    onChange={() =>
-                                      togglePerm(editPerms, setEditPerms, p)
-                                    }
-                                  />
-                                  {p}
-                                </label>
-                              ))}
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleSetPermissions(role.id)}
-                                disabled={editLoading}
-                                className="text-xs px-2 py-1 rounded bg-[#0e0e39] text-white"
-                              >
-                                Save
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditId(null)
-                                  setEditPerms([])
-                                }}
-                                className="text-xs px-2 py-1 rounded border border-gray-300"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-gray-600">
-                            {role.permissions?.length ?? 0} permission(s)
-                          </span>
-                        )}
+                        <span className="text-gray-600">
+                          {role.permissions?.length ?? 0} permission(s)
+                        </span>
                       </td>
                       <td className="py-3 px-5 text-right">
-                        {editId === role.id ? null : (
-                          <>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEditPermissions(role)}
+                            className="p-1.5 rounded text-gray-600 hover:bg-gray-200 hover:text-gray-800"
+                            aria-label="Edit permissions"
+                            title="Edit permissions"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          {role.name !== 'SuperAdmin' && (
                             <button
                               type="button"
-                              onClick={() => {
-                                setEditId(role.id)
-                                setEditPerms(role.permissions ?? [])
-                              }}
-                              className="text-sm text-[var(--brand-color-2)] hover:underline mr-2"
+                              onClick={() => handleDelete(role.id, role.name)}
+                              className="text-sm text-red-600 hover:underline"
                             >
-                              Edit permissions
+                              Delete
                             </button>
-                            {role.name !== 'SuperAdmin' && (
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(role.id, role.name)}
-                                className="text-sm text-red-600 hover:underline"
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -266,6 +294,7 @@ export default function RolesPage() {
             </table>
           </div>
         )}
+        {confirmDialog}
       </div>
     </div>
   )

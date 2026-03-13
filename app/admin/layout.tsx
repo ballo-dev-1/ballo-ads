@@ -11,7 +11,7 @@ export default function AdminLayout({
 }) {
   return (
     <ApiEnvProvider>
-      <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <div className="admin-shell flex h-screen bg-gray-50 overflow-hidden">
         <Toaster position="top-center" />
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden pl-10 pt-6">

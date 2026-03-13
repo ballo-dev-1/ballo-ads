@@ -219,7 +219,7 @@ export default function SubscriptionPage() {
         <main className="subscription-page">
           <div className="subscription-page__container">
             <div className="subscription-page__header" style={{ padding: "2rem", textAlign: "center" }}>
-              Loading…
+              <div className="inline-block h-12 w-12 animate-spin rounded-full border-b-2 border-[var(--primary-blue)]" />
             </div>
           </div>
         </main>

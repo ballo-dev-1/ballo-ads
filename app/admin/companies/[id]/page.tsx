@@ -1,22 +1,24 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { useParams, usePathname } from 'next/navigation'
+import { useParams, usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft,
   BadgeCheck,
   Building2,
   CalendarDays,
+  ChevronRight,
   CheckCircle2,
   CircleDashed,
   CircleX,
   Clock3,
   Link2,
   Mail,
+  Megaphone,
   Phone,
   ShieldCheck,
   ShieldX,
+  SignalHigh,
   X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -27,6 +29,8 @@ import {
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -129,7 +133,7 @@ function SectionCard({
   return (
     <section
       className={classNames(
-        'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)]',
+        'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_14px_35px_rgba(15,23,42,0.08)]',
         className,
       )}
     >
@@ -145,9 +149,33 @@ function SectionCard({
   )
 }
 
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string
+  value: React.ReactNode
+  hint?: string
+  icon: React.ReactNode
+}) {
+  return (
+    <article className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+        {icon}
+      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">{label}</p>
+      <p className="mt-1 text-base font-semibold text-slate-800">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+    </article>
+  )
+}
+
 export default function CompanyDetailsPage() {
   const params = useParams()
   const pathname = usePathname()
+  const router = useRouter()
   const { env } = useApiEnv()
   const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const id = params.id
@@ -161,6 +189,8 @@ export default function CompanyDetailsPage() {
   const [senderIdUpdateLoading, setSenderIdUpdateLoading] = useState(false)
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
+  const [lifecycleLoading, setLifecycleLoading] = useState(false)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const numericId = id != null ? Number(id) : NaN
   const invalidId = typeof id !== 'string' || id === '' || Number.isNaN(numericId)
@@ -240,6 +270,27 @@ export default function CompanyDetailsPage() {
     if (!company) {
       return
     }
+    if (!company.isActive) {
+      toast.error('Cannot change sender approval for a deactivated company')
+      return
+    }
+    const senderIdLabel = company.senderId?.trim() || 'this sender ID'
+    const intent = opts?.intent ?? (approve ? 'approve' : 'reject')
+    const confirmationMessage =
+      intent === 'pending'
+        ? `Set sender ID "${senderIdLabel}" to pending review?`
+        : intent === 'approve'
+          ? `Approve sender ID "${senderIdLabel}" for this company?`
+          : `Reject sender ID "${senderIdLabel}" for this company?`
+    const approved = await confirm({
+      title: 'Update sender status',
+      description: confirmationMessage,
+      confirmLabel: intent === 'approve' ? 'Approve' : intent === 'reject' ? 'Reject' : 'Set pending',
+      tone: intent === 'reject' ? 'danger' : 'default',
+    })
+    if (!approved) {
+      return
+    }
 
     setSenderIdActionLoading(true)
 
@@ -268,6 +319,10 @@ export default function CompanyDetailsPage() {
   }
 
   const startSenderIdEdit = () => {
+    if (company && !company.isActive) {
+      toast.error('Cannot edit sender ID for a deactivated company')
+      return
+    }
     setSenderIdInputValue(company?.senderId ?? '')
     setSenderIdModalOpen(true)
   }
@@ -281,8 +336,22 @@ export default function CompanyDetailsPage() {
     if (!company) {
       return
     }
+    if (!company.isActive) {
+      toast.error('Cannot update sender ID for a deactivated company')
+      return
+    }
 
     const value = senderIdInputValue.trim()
+    const currentValue = company.senderId?.trim() || '(empty)'
+    const nextValue = value || '(empty)'
+    const approved = await confirm({
+      title: 'Update sender ID',
+      description: `Update sender ID from "${currentValue}" to "${nextValue}"?`,
+      confirmLabel: 'Save changes',
+    })
+    if (!approved) {
+      return
+    }
 
     setSenderIdUpdateLoading(true)
 
@@ -303,6 +372,20 @@ export default function CompanyDetailsPage() {
 
   const handleProfileVerificationClick = async () => {
     if (!company) {
+      return
+    }
+    if (!company.isActive) {
+      toast.error('Cannot change verification for a deactivated company')
+      return
+    }
+    const nextAction = company.isCompanyVerified ? 'unverify' : 'verify'
+    const approved = await confirm({
+      title: nextAction === 'verify' ? 'Verify company' : 'Unverify company',
+      description: `${nextAction === 'verify' ? 'Verify' : 'Unverify'} this company profile?`,
+      confirmLabel: nextAction === 'verify' ? 'Verify' : 'Unverify',
+      tone: nextAction === 'verify' ? 'default' : 'danger',
+    })
+    if (!approved) {
       return
     }
 
@@ -330,18 +413,108 @@ export default function CompanyDetailsPage() {
     [campaigns],
   )
 
-  const backLink = (
-    <Link
-      href={`${basePath}/companies`}
-      className="inline-flex items-center gap-2 text-sm font-medium text-white/85 transition-colors hover:text-white"
-    >
-      <ArrowLeft className="h-4 w-4" />
-      Back to companies
-    </Link>
+  const senderStatusLabel = useMemo(() => {
+    if (!company?.senderId) {
+      return 'No sender ID'
+    }
+    if (company.isApprovedSenderId) {
+      return 'Approved'
+    }
+    if (rejectedSenderId) {
+      return 'Rejected'
+    }
+    return 'Pending'
+  }, [company, rejectedSenderId])
+
+  const approvedRate = useMemo(() => {
+    if (campaigns.length === 0) {
+      return '0%'
+    }
+    const ratio = Math.round((approvedCampaignsCount / campaigns.length) * 100)
+    return `${ratio}%`
+  }, [approvedCampaignsCount, campaigns.length])
+
+  const breadcrumb = (
+    <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
+      <Link href={`${basePath}/companies`} className="hover:text-white hover:underline">
+        Companies
+      </Link>
+      <ChevronRight className="h-3.5 w-3.5" />
+      <span>{company ? `Company ${company.id}` : `Company ${numericId}`}</span>
+    </div>
   )
 
   const buttonBase =
     'inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
+
+  const handleDeactivateCompany = async () => {
+    if (!company || !company.isActive) return
+    const confirmed = await confirm({
+      title: 'Deactivate company',
+      description: 'Deactivate this company? This blocks operational actions but keeps data.',
+      confirmLabel: 'Deactivate',
+      tone: 'danger',
+    })
+    if (!confirmed) return
+    const reason = window.prompt('Optional reason for deactivation') || undefined
+    setLifecycleLoading(true)
+    try {
+      const updated = await adminApi.deactivateCompany(company.id, reason)
+      setCompany((prev) => (prev ? { ...prev, ...updated } : null))
+      toast.success('Company deactivated')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to deactivate company')
+    } finally {
+      setLifecycleLoading(false)
+    }
+  }
+
+  const handlePurgeCompany = async () => {
+    if (!company) return
+    const confirmed = await confirm({
+      title: 'Purge company',
+      description: 'Purge this company? This is irreversible and removes operational data.',
+      confirmLabel: 'Continue',
+      tone: 'danger',
+    })
+    if (!confirmed) return
+    const typed = window.prompt('Type PURGE to confirm permanent deletion')
+    if (typed !== 'PURGE') {
+      toast.error('Purge cancelled: confirmation text did not match')
+      return
+    }
+    setLifecycleLoading(true)
+    try {
+      await adminApi.purgeCompany(company.id, 'Backoffice purge')
+      toast.success('Company purged')
+      router.push(`${basePath}/companies`)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to purge company')
+    } finally {
+      setLifecycleLoading(false)
+    }
+  }
+
+  const heroActions = company ? (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={handleDeactivateCompany}
+        disabled={lifecycleLoading || !company.isActive}
+        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {lifecycleLoading ? 'Working...' : company.isActive ? 'Deactivate' : 'Deactivated'}
+      </button>
+      <button
+        type="button"
+        onClick={handlePurgeCompany}
+        disabled={lifecycleLoading}
+        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        Purge
+      </button>
+    </div>
+  ) : null
 
   if (invalidId) {
     return (
@@ -359,12 +532,15 @@ export default function CompanyDetailsPage() {
     return (
       <div className="flex-1 overflow-auto p-4 sm:p-6">
         <div className="mx-auto w-full max-w-6xl space-y-5">
-          <header className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#0e0e39] via-[#123968] to-[var(--brand-color-2)] p-5 text-white ">
-            {backLink}
-          </header>
-          <div className="flex min-h-[320px] items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-white">
+          <AdminHero
+            title="Company details"
+            description="Loading company information and campaign overview."
+            eyebrow="Organization management"
+            variant="blue"
+            topSlot={breadcrumb}
+          />
+          <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
             <div className="h-11 w-11 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
-            <p className="text-sm text-slate-500">Loading company...</p>
           </div>
         </div>
       </div>
@@ -375,9 +551,13 @@ export default function CompanyDetailsPage() {
     return (
       <div className="flex-1 overflow-auto p-4 sm:p-6">
         <div className="mx-auto w-full max-w-6xl space-y-5">
-          <header className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#0e0e39] via-[#123968] to-[var(--brand-color-2)] p-5 text-white">
-            {backLink}
-          </header>
+          <AdminHero
+            title="Company details"
+            description="Unable to load company details."
+            eyebrow="Organization management"
+            variant="blue"
+            topSlot={breadcrumb}
+          />
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-sm">
             {error || 'Company not found'}
           </div>
@@ -387,66 +567,49 @@ export default function CompanyDetailsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-4 sm:p-6">
+    <div className="flex-1 overflow-auto bg-[radial-gradient(circle_at_top_right,rgba(148,163,184,0.14),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.09),transparent_42%)] p-4 sm:p-6">
       <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-6">
-        <header className="relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#0e0e39] via-[#123968] to-[var(--brand-color-2)] text-white shadow-[0_25px_70px_rgba(14,14,57,0.32)]">
-          <div className="absolute -left-20 top-0 h-52 w-52 rounded-full bg-white/15 blur-3xl" />
-          <div className="absolute -right-24 -bottom-16 h-64 w-64 rounded-full bg-[var(--brand-color-4)]/25 blur-3xl" />
+        <AdminHero
+          topSlot={breadcrumb}
+          eyebrow="Organization management"
+          title={company.name ?? 'Company'}
+          description={company.industry || 'Industry not specified'}
+          variant="blue"
+          actions={heroActions}
+        />
 
-          <div className="relative p-5 sm:p-7">
-            {backLink}
-
-            <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl font-bold uppercase text-white ring-1 ring-white/25 backdrop-blur-sm">
-                  {(company.name ?? 'C').charAt(0)}
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                    {company.name ?? 'Company'}
-                  </h1>
-                  <p className="mt-1 text-sm text-white/80">
-                    {company.industry || 'Industry not specified'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid w-full gap-3 sm:grid-cols-3 lg:w-auto">
-                <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/75">Company</p>
-                  <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold">
-                    {company.isCompanyVerified ? (
-                      <>
-                        <BadgeCheck className="h-4 w-4 text-emerald-300" />
-                        Verified
-                      </>
-                    ) : (
-                      <>
-                        <ShieldX className="h-4 w-4 text-amber-300" />
-                        Unverified
-                      </>
-                    )}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/75">Sender ID</p>
-                  <div className="mt-1 text-sm font-semibold">
-                    <SenderIdStatusBadge
-                      company={company}
-                      rejectedInSession={rejectedSenderId}
-                    />
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-white/75">Campaigns</p>
-                  <p className="mt-1 text-sm font-semibold">
-                    {campaigns.length} total, {activeCampaignsCount} active
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <StatCard
+            label="Lifecycle"
+            value={company.isActive ? 'Active' : 'Deactivated'}
+            hint={company.isActive ? 'Operational actions enabled' : 'Operational actions blocked'}
+            icon={<SignalHigh className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Verification"
+            value={company.isCompanyVerified ? 'Verified' : 'Not verified'}
+            hint={company.isCompanyVerified ? 'Public profile is trusted' : 'Awaiting verification'}
+            icon={<ShieldCheck className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Sender ID"
+            value={senderStatusLabel}
+            hint={company.senderId ? company.senderId : 'Not configured'}
+            icon={<BadgeCheck className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Campaigns"
+            value={`${campaigns.length} total`}
+            hint={`${activeCampaignsCount} currently active`}
+            icon={<Megaphone className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Approval rate"
+            value={approvedRate}
+            hint={`${approvedCampaignsCount} approved`}
+            icon={<CheckCircle2 className="h-4 w-4" />}
+          />
+        </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
@@ -494,128 +657,152 @@ export default function CompanyDetailsPage() {
             </SectionCard>
           </div>
 
-          <SectionCard
-            title="Verification & sender ID"
-            subtitle="Approve verification status and sender ID controls"
-            rightSlot={
-              <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                ID: {company.id}
-              </div>
-            }
-          >
-            <dl className="space-y-0">
-              <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  Company verified
-                </dt>
-                <dd className="text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {company.isCompanyVerified ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        <BadgeCheck className="h-3.5 w-3.5" />
-                        Verified
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                        <ShieldX className="h-3.5 w-3.5" />
-                        Not verified
-                      </span>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handleProfileVerificationClick}
-                      disabled={verifyLoading}
-                      className={classNames(
-                        buttonBase,
-                        company.isCompanyVerified
-                          ? 'border border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          : 'border border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-200',
-                      )}
-                    >
-                      {verifyLoading ? 'Updating...' : company.isCompanyVerified ? 'Unverify' : 'Verify'}
-                    </button>
-                  </div>
-                </dd>
-              </div>
-
-              <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender ID</dt>
-                <dd className="text-sm">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={classNames('font-medium', company.senderId ? 'text-gray-800' : 'italic text-gray-400')}>
-                      {company.senderId || '—'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={startSenderIdEdit}
-                      className={classNames(
-                        buttonBase,
-                        'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-                      )}
-                    >
-                      {company.senderId ? 'Edit' : 'Set sender ID'}
-                    </button>
-                  </div>
-                </dd>
-              </div>
-
-              <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender status</dt>
-                <dd className="text-sm">
-                  <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
-                </dd>
-              </div>
-
-              {company.senderId && (
-                <div className="grid gap-2 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Actions</dt>
+          <div className="xl:sticky xl:top-6 xl:self-start">
+            <SectionCard
+              title="Verification & sender ID"
+              subtitle="Approve verification status and sender ID controls"
+            >
+              <dl className="space-y-0">
+                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
+                  <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    Lifecycle
+                  </dt>
                   <dd className="text-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                      {senderIdActionLoading ? (
-                        <span className="text-xs text-slate-500">Updating...</span>
+                      <span
+                        className={classNames(
+                          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
+                          company.isActive
+                            ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-300/80 bg-slate-100 text-slate-700',
+                        )}
+                      >
+                        {company.isActive ? 'Active' : 'Deactivated'}
+                      </span>
+                      {!company.isActive && company.deactivatedAt ? (
+                        <span className="text-xs text-slate-500">
+                          Deactivated at {new Date(company.deactivatedAt).toLocaleString()}
+                        </span>
                       ) : null}
+                    </div>
+                  </dd>
+                </div>
+
+                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
+                  <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Company verified
+                  </dt>
+                  <dd className="text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {company.isCompanyVerified ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                          <BadgeCheck className="h-3.5 w-3.5" />
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                          <ShieldX className="h-3.5 w-3.5" />
+                          Not verified
+                        </span>
+                      )}
 
                       <button
                         type="button"
-                        disabled={senderIdActionLoading}
-                        onClick={() => handleApproveSenderId(true)}
+                        onClick={handleProfileVerificationClick}
+                        disabled={verifyLoading || !company.isActive}
                         className={classNames(
                           buttonBase,
-                          'border border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-200',
+                          company.isCompanyVerified
+                            ? 'border border-slate-300 bg-slate-100 text-slate-700 shadow-sm hover:bg-slate-200'
+                            : 'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
                         )}
                       >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        disabled={senderIdActionLoading}
-                        onClick={handleSetSenderIdPending}
-                        className={classNames(
-                          buttonBase,
-                          'border border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200',
-                        )}
-                      >
-                        Pending
-                      </button>
-                      <button
-                        type="button"
-                        disabled={senderIdActionLoading}
-                        onClick={() => handleApproveSenderId(false)}
-                        className={classNames(
-                          buttonBase,
-                          'border border-red-300 bg-red-100 text-red-800 hover:bg-red-200',
-                        )}
-                      >
-                        Reject
+                        {verifyLoading ? 'Updating...' : company.isCompanyVerified ? 'Unverify' : 'Verify'}
                       </button>
                     </div>
                   </dd>
                 </div>
-              )}
-            </dl>
-          </SectionCard>
+
+                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender ID</dt>
+                  <dd className="text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={classNames('font-medium', company.senderId ? 'text-gray-800' : 'italic text-gray-400')}>
+                        {company.senderId || '—'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={startSenderIdEdit}
+                        className={classNames(
+                          buttonBase,
+                          'border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50',
+                        )}
+                        disabled={!company.isActive}
+                      >
+                        {company.senderId ? 'Edit' : 'Set sender ID'}
+                      </button>
+                    </div>
+                  </dd>
+                </div>
+
+                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender status</dt>
+                  <dd className="text-sm">
+                    <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
+                  </dd>
+                </div>
+
+                {company.senderId && (
+                  <div className="grid gap-2 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
+                    <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Actions</dt>
+                    <dd className="text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {senderIdActionLoading ? (
+                          <span className="text-xs text-slate-500">Updating...</span>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          disabled={senderIdActionLoading || !company.isActive}
+                          onClick={() => handleApproveSenderId(true)}
+                          className={classNames(
+                            buttonBase,
+                            'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                          )}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={senderIdActionLoading || !company.isActive}
+                          onClick={handleSetSenderIdPending}
+                          className={classNames(
+                            buttonBase,
+                            'border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
+                          )}
+                        >
+                          Pending
+                        </button>
+                        <button
+                          type="button"
+                          disabled={senderIdActionLoading || !company.isActive}
+                          onClick={() => handleApproveSenderId(false)}
+                          className={classNames(
+                            buttonBase,
+                            'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
+                          )}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </SectionCard>
+          </div>
         </div>
 
         <SectionCard
@@ -623,16 +810,15 @@ export default function CompanyDetailsPage() {
           subtitle={`${campaigns.length} total, ${approvedCampaignsCount} approved`}
         >
           {campaignsLoading ? (
-            <div className="flex items-center justify-center gap-3 py-14">
+            <div className="flex items-center justify-center py-14">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
-              <span className="text-sm text-slate-500">Loading campaigns...</span>
             </div>
           ) : campaigns.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
               No campaigns yet
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white/90 p-4">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="bg-gradient-to-r from-slate-50 to-white text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -772,6 +958,7 @@ export default function CompanyDetailsPage() {
             </div>
           </div>
         ) : null}
+        {confirmDialog}
       </div>
     </div>
   )

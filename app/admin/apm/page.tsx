@@ -1,17 +1,72 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { adminApi, type ApmChannelHealthResponse, type ApmLinksResponse, type ApmOverviewResponse, type ApmSeverity } from '@/lib/adminApi'
+import {
+  adminApi,
+  type ApmAlertsResponse,
+  type ApmChannelHealthResponse,
+  type ApmLinksResponse,
+  type ApmOverviewResponse,
+  type ApmSeverity,
+  type DispatchControlResponse,
+} from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import { AlertCircle, AlertTriangle, CheckCircle2, Clock3, Database, Globe, ShieldCheck } from 'lucide-react'
+import {
+  applyChannelPauseToggle,
+  buildEmergencyControlMatrix,
+  summarizeReliabilityAlerts,
+} from './reliabilityViewModel'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 function severityBadge(severity: ApmSeverity) {
+  const base =
+    'inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide shadow-sm ring-1 ring-inset'
   if (severity === 'critical') {
-    return 'bg-red-100 text-red-700 border border-red-200'
+    return `${base} border-red-200/90 bg-red-50 text-red-700 ring-red-200/70`
   }
   if (severity === 'warning') {
-    return 'bg-yellow-100 text-yellow-700 border border-yellow-200'
+    return `${base} border-amber-200/90 bg-amber-50 text-amber-700 ring-amber-200/70`
   }
-  return 'bg-green-100 text-green-700 border border-green-200'
+  return `${base} border-emerald-200/90 bg-emerald-50 text-emerald-700 ring-emerald-200/70`
+}
+
+function severityIcon(severity: ApmSeverity) {
+  if (severity === 'critical') return <AlertCircle className="h-3.5 w-3.5" />
+  if (severity === 'warning') return <AlertTriangle className="h-3.5 w-3.5" />
+  return <CheckCircle2 className="h-3.5 w-3.5" />
+}
+
+function SeverityBadge({
+  severity,
+  text,
+  className = '',
+}: {
+  severity: ApmSeverity
+  text: string
+  className?: string
+}) {
+  return (
+    <span className={`${severityBadge(severity)} ${className}`.trim()}>
+      {severityIcon(severity)}
+      <span className="ml-1.5">{text}</span>
+    </span>
+  )
 }
 
 function severityText(severity: ApmSeverity) {
@@ -29,20 +84,26 @@ function maxSeverity(a: ApmSeverity, b: ApmSeverity): ApmSeverity {
   return rank[a] >= rank[b] ? a : b
 }
 
-function incidentBannerStyle(severity: ApmSeverity) {
-  if (severity === 'critical') {
-    return 'rounded-xl bg-red-50 border border-red-200 text-red-800 px-5 py-4'
-  }
-  if (severity === 'warning') {
-    return 'rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4'
-  }
-  return 'rounded-xl bg-green-50 border border-green-200 text-green-800 px-5 py-4'
-}
-
 function formatDateTime(value?: string) {
   if (!value) return '—'
   const d = new Date(value)
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString()
+}
+
+const BRAND_COLORS = {
+  primary: '#0e0e39',
+  secondary: '#1d5a9a',
+  accent: '#4b8ed0',
+  soft: '#dbeafe',
+  success: '#16a34a',
+  warning: '#d97706',
+  danger: '#dc2626',
+}
+
+function severityChartColor(severity: ApmSeverity) {
+  if (severity === 'critical') return BRAND_COLORS.danger
+  if (severity === 'warning') return BRAND_COLORS.warning
+  return BRAND_COLORS.success
 }
 
 export default function ApmPage() {
@@ -53,10 +114,17 @@ export default function ApmPage() {
   const [overview, setOverview] = useState<ApmOverviewResponse | null>(null)
   const [channels, setChannels] = useState<ApmChannelHealthResponse | null>(null)
   const [links, setLinks] = useState<ApmLinksResponse | null>(null)
+  const [dispatchControls, setDispatchControls] = useState<DispatchControlResponse | null>(null)
+  const [alerts, setAlerts] = useState<ApmAlertsResponse | null>(null)
   const [overviewError, setOverviewError] = useState('')
   const [channelsError, setChannelsError] = useState('')
   const [linksError, setLinksError] = useState('')
+  const [dispatchControlsError, setDispatchControlsError] = useState('')
+  const [alertsError, setAlertsError] = useState('')
   const [lastRefreshAt, setLastRefreshAt] = useState<Date | null>(null)
+  const [updatingGlobalPause, setUpdatingGlobalPause] = useState(false)
+  const [updatingChannel, setUpdatingChannel] = useState<string | null>(null)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent === true
@@ -66,11 +134,15 @@ export default function ApmPage() {
     setOverviewError('')
     setChannelsError('')
     setLinksError('')
+    setDispatchControlsError('')
+    setAlertsError('')
 
-    const [overviewRes, channelsRes, linksRes] = await Promise.allSettled([
+    const [overviewRes, channelsRes, linksRes, dispatchControlsRes, alertsRes] = await Promise.allSettled([
       adminApi.getApmOverview(),
       adminApi.getApmChannels(),
       adminApi.getApmLinks(),
+      adminApi.getDispatchControls(),
+      adminApi.getApmAlerts(),
     ])
 
     let failureCount = 0
@@ -99,7 +171,29 @@ export default function ApmPage() {
       setLinksError(linksRes.reason instanceof Error ? linksRes.reason.message : 'Failed to load observability links')
     }
 
-    if (failureCount === 3) {
+    if (dispatchControlsRes.status === 'fulfilled') {
+      setDispatchControls(dispatchControlsRes.value)
+    } else {
+      failureCount += 1
+      setDispatchControls(null)
+      setDispatchControlsError(
+        dispatchControlsRes.reason instanceof Error
+          ? dispatchControlsRes.reason.message
+          : 'Failed to load emergency controls',
+      )
+    }
+
+    if (alertsRes.status === 'fulfilled') {
+      setAlerts(alertsRes.value)
+    } else {
+      failureCount += 1
+      setAlerts(null)
+      setAlertsError(
+        alertsRes.reason instanceof Error ? alertsRes.reason.message : 'Failed to load reliability alerts',
+      )
+    }
+
+    if (failureCount === 5) {
       setError('Unable to load APM data. You may not have access (401/403) or the service is unavailable.')
     } else if (failureCount > 0) {
       setError('Some APM sections are unavailable right now. Partial data is shown below.')
@@ -153,37 +247,179 @@ export default function ApmPage() {
     return 'All monitored systems are healthy.'
   }, [incidentSeverity])
 
+  const operationalKpiData = useMemo(() => {
+    if (!overview) return []
+    const kpis = overview.localMetrics.operationalKpis
+    return [
+      { name: 'Active campaigns', value: kpis.activeCampaigns },
+      { name: 'Pending campaigns', value: kpis.pendingCampaigns },
+      { name: 'Completed 24h', value: kpis.completedCampaignsLast24Hours },
+      { name: 'Active POs', value: kpis.activePurchaseOrders },
+      { name: 'Failed POs 24h', value: kpis.failedPurchaseOrdersLast24Hours },
+      { name: 'API failures 24h', value: kpis.apiUsageFailuresLast24Hours },
+    ]
+  }, [overview])
+
+  const balanceData = useMemo(() => {
+    if (!overview) return []
+    const kpis = overview.localMetrics.operationalKpis
+    return [
+      { name: 'SMS', value: kpis.smsBalance, fill: BRAND_COLORS.primary },
+      { name: 'Email', value: kpis.emailBalance, fill: BRAND_COLORS.secondary },
+      { name: 'WhatsApp', value: kpis.whatsAppBalance, fill: BRAND_COLORS.accent },
+      { name: 'WA Utility', value: kpis.whatsAppUtilityBalance, fill: '#7c3aed' },
+    ]
+  }, [overview])
+
+  const readinessChartData = useMemo(
+    () =>
+      readinessItems.map((item) => ({
+        name: item.label,
+        configured: item.isConfigured ? 100 : 0,
+        severity: item.severity,
+      })),
+    [readinessItems],
+  )
+
+  const probeLatencyData = useMemo(
+    () =>
+      overview?.environmentProbes.map((probe) => ({
+        name: probe.environment,
+        latency: probe.latencyMs,
+        severity: probe.severity,
+      })) ?? [],
+    [overview],
+  )
+
+  const channelDispatchData = useMemo(
+    () =>
+      channels?.channels.map((item) => ({
+        name: item.channel,
+        dispatched: item.dispatchedLast24Hours,
+        pending: item.pendingRecipients,
+      })) ?? [],
+    [channels],
+  )
+
+  const channelFailureData = useMemo(
+    () =>
+      channels?.channels.map((item) => ({
+        name: item.channel,
+        failures: item.failedApiUsagesLast24Hours,
+      })) ?? [],
+    [channels],
+  )
+
+  const emergencyMatrix = useMemo(
+    () => (dispatchControls ? buildEmergencyControlMatrix(dispatchControls) : null),
+    [dispatchControls],
+  )
+
+  const reliabilitySummary = useMemo(
+    () => (alerts ? summarizeReliabilityAlerts(alerts) : null),
+    [alerts],
+  )
+
+  const handleGlobalPauseToggle = async () => {
+    if (!emergencyMatrix || updatingGlobalPause) return
+    const willPause = !emergencyMatrix.global.isPaused
+    const approved = await confirm({
+      title: willPause ? 'Pause global dispatch' : 'Resume global dispatch',
+      description: willPause
+        ? 'Pause all outbound messaging globally for this environment?'
+        : 'Resume all outbound messaging globally for this environment?',
+      confirmLabel: willPause ? 'Pause globally' : 'Resume globally',
+      tone: willPause ? 'danger' : 'default',
+    })
+    if (!approved) {
+      return
+    }
+    setUpdatingGlobalPause(true)
+    try {
+      const updated = await adminApi.setGlobalDispatchPause(
+        emergencyMatrix.environment,
+        !emergencyMatrix.global.isPaused,
+      )
+      setDispatchControls(updated)
+      setDispatchControlsError('')
+    } catch (err) {
+      setDispatchControlsError(err instanceof Error ? err.message : 'Failed to update global pause')
+    } finally {
+      setUpdatingGlobalPause(false)
+    }
+  }
+
+  const handleChannelPauseToggle = async (channel: string, paused: boolean) => {
+    if (!dispatchControls || !emergencyMatrix || updatingChannel) return
+    const willPause = !paused
+    const approved = await confirm({
+      title: willPause ? 'Pause channel dispatch' : 'Resume channel dispatch',
+      description: willPause
+        ? `Pause outbound messaging for ${channel}?`
+        : `Resume outbound messaging for ${channel}?`,
+      confirmLabel: willPause ? 'Pause channel' : 'Resume channel',
+      tone: willPause ? 'danger' : 'default',
+    })
+    if (!approved) {
+      return
+    }
+    setUpdatingChannel(channel)
+    const previous = dispatchControls
+    setDispatchControls(applyChannelPauseToggle(previous, channel, !paused))
+    try {
+      const updated = await adminApi.setChannelDispatchPause(
+        emergencyMatrix.environment,
+        channel,
+        !paused,
+      )
+      setDispatchControls(updated)
+      setDispatchControlsError('')
+    } catch (err) {
+      setDispatchControls(previous)
+      setDispatchControlsError(err instanceof Error ? err.message : 'Failed to update channel pause')
+    } finally {
+      setUpdatingChannel(null)
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6 space-y-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">APM Dashboard</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Backend health, channel flow, and observability links across staging and production.
-            </p>
+        <header className="relative overflow-hidden rounded-[30px] border border-[#7e75f8] bg-[linear-gradient(130deg,#675de4_0%,#5c61df_42%,#6a6ee9_75%,#6762db_100%)] px-8 py-7 text-white shadow-[0_18px_45px_rgba(84,72,190,0.30)]">
+          <div className="pointer-events-none absolute -top-10 right-32 h-36 w-36 rounded-[2.2rem] border border-white/10 bg-white/5 blur-[1px]" />
+          <div className="pointer-events-none absolute top-8 right-10 h-32 w-32 rounded-[2.1rem] border border-white/10 bg-white/5 blur-[1px]" />
+          <div className="pointer-events-none absolute bottom-6 right-40 h-24 w-24 rounded-[1.8rem] border border-white/10 bg-white/5 blur-[1px]" />
+          <div className="pointer-events-none absolute right-20 top-20 h-1 w-24 rounded-full bg-white/70 blur-[1px]" />
+          <div className="pointer-events-none absolute right-8 top-8 h-20 w-20 rounded-full bg-white/10 blur-xl" />
+          <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs uppercase tracking-[0.26em] text-white/80">APM overview</p>
+              <h1 className="mt-2 text-3xl font-semibold leading-tight md:text-5xl">
+                Monitor system health and service reliability
+              </h1>
+              <p className="mt-3 text-sm text-white/90 md:text-base">
+                {incidentMessage}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-white/85">
+                <SeverityBadge severity={incidentSeverity} text={severityText(incidentSeverity)} className="bg-white/95" />
+                <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                  Last refresh: {lastRefreshAt ? lastRefreshAt.toLocaleTimeString() : '—'}
+                </span>
+                <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                  Auto refresh: 30s
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => load()}
+              disabled={loading || refreshing}
+              className="inline-flex items-center gap-2 self-start rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
+            >
+              {loading || refreshing ? 'Refreshing...' : 'Refresh now'}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => load()}
-            disabled={loading || refreshing}
-            className="px-4 py-2 rounded-lg bg-[var(--brand-color-2)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading || refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
         </header>
-
-        <div className={incidentBannerStyle(incidentSeverity)}>
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-medium">{incidentMessage}</p>
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(incidentSeverity)}`}>
-              {severityText(incidentSeverity)}
-            </span>
-          </div>
-          <p className="text-xs mt-2">
-            Last refresh: {lastRefreshAt ? lastRefreshAt.toLocaleTimeString() : '—'} (auto-refresh every 30s)
-          </p>
-        </div>
 
         {error && (
           <div className="rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4">
@@ -197,13 +433,11 @@ export default function ApmPage() {
           </div>
         ) : (
           <>
-            <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Overview</h2>
                 {overview && (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(overview.severity)}`}>
-                    {severityText(overview.severity)}
-                  </span>
+                  <SeverityBadge severity={overview.severity} text={severityText(overview.severity)} />
                 )}
               </div>
               {overviewError ? (
@@ -211,39 +445,71 @@ export default function ApmPage() {
               ) : overview ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    <div className="rounded-lg border border-gray-200 p-4">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Current environment</p>
-                      <p className="text-base font-semibold text-gray-900 mt-1">{overview.currentEnvironment}</p>
+                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(140deg,#f2f6ff_0%,#ffffff_45%,#deebff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                      <div className="absolute -top-8 -left-8 h-24 w-24 rounded-full bg-[#dbe8ff] blur-2xl opacity-80" />
+                      <div className="absolute right-5 top-5 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
+                        <Globe className="h-5 w-5 text-[#24539a]" />
+                      </div>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">Current environment</p>
+                      <p className="mt-14 text-4xl font-semibold leading-none text-[#131a2c]">{overview.currentEnvironment}</p>
+                      <p className="mt-3 text-sm text-gray-600">Active target for API and monitoring endpoints</p>
                     </div>
-                    <div className="rounded-lg border border-gray-200 p-4">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Verification mode</p>
-                      <p className="text-base font-semibold text-gray-900 mt-1">{overview.providerVerificationMode}</p>
+                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(145deg,#eef7ff_0%,#ffffff_42%,#d7f1ff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                      <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-[#cdf0ff] blur-2xl opacity-80" />
+                      <div className="absolute right-5 top-5 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
+                        <ShieldCheck className="h-5 w-5 text-[#1d5a9a]" />
+                      </div>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500">Verification mode</p>
+                      <p className="mt-14 text-4xl font-semibold leading-none text-[#131a2c]">{overview.providerVerificationMode}</p>
+                      <p className="mt-3 text-sm text-gray-600">Provider validation strategy in this environment</p>
                     </div>
-                    <div className="rounded-lg border border-gray-200 p-4">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">DB probe</p>
-                      <div className="flex items-center justify-between mt-1 gap-2">
-                        <p className="text-base font-semibold text-gray-900">
-                          {overview.localMetrics.database.canConnect ? 'Connected' : 'Unavailable'}
-                        </p>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(overview.localMetrics.database.severity)}`}>
-                          {severityText(overview.localMetrics.database.severity)}
+                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(145deg,#f3f7ff_0%,#ffffff_40%,#dbe7ff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                      <div className="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-[#dfe8ff] blur-2xl opacity-80" />
+                      <div className="absolute right-5 top-5 z-10 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
+                        <Database className="h-5 w-5 text-[#295ea8]" />
+                      </div>
+                      <div className="flex items-center gap-2 pr-20">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500 flex-1">DB probe</p>
+                      </div>
+                      <p className="mt-11 text-4xl font-semibold leading-none text-[#131a2c]">
+                        {overview.localMetrics.database.canConnect ? 'Connected' : 'Unavailable'}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-full bg-[#e8f0ff] px-2 py-1 text-[#1d4f91] font-medium">
+                          Connect {overview.localMetrics.database.connectivityLatencyMs}ms
+                        </span>
+                        <span className="rounded-full bg-[#e8f0ff] px-2 py-1 text-[#1d4f91] font-medium">
+                          Query {overview.localMetrics.database.sampleQueryLatencyMs}ms
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {overview.localMetrics.database.connectivityLatencyMs}ms connect / {overview.localMetrics.database.sampleQueryLatencyMs}ms query
-                      </p>
+                      <SeverityBadge
+                        severity={overview.localMetrics.database.severity}
+                        text={severityText(overview.localMetrics.database.severity)}
+                        className="absolute right-5 bottom-5 z-20"
+                      />
                     </div>
-                    <div className="rounded-lg border border-gray-200 p-4">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Scheduler</p>
-                      <div className="flex items-center justify-between mt-1 gap-2">
-                        <p className="text-base font-semibold text-gray-900">{overview.localMetrics.scheduler.storageType}</p>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(overview.localMetrics.scheduler.severity)}`}>
-                          {severityText(overview.localMetrics.scheduler.severity)}
+                    <div className="relative overflow-hidden rounded-[28px] border border-[#dbe4fb] bg-[linear-gradient(140deg,#f0f6ff_0%,#ffffff_42%,#d9e7ff_100%)] p-6 min-h-[220px] shadow-[0_16px_40px_rgba(14,14,57,0.08)]">
+                      <div className="absolute -top-10 right-2 h-24 w-24 rounded-full bg-[#d5e6ff] blur-2xl opacity-85" />
+                      <div className="absolute right-5 top-5 z-10 rounded-2xl border border-white/60 bg-white/55 p-2.5 backdrop-blur">
+                        <Clock3 className="h-5 w-5 text-[#2f63ad]" />
+                      </div>
+                      <div className="flex items-center gap-2 pr-20">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-gray-500 flex-1">Scheduler</p>
+                      </div>
+                      <p className="mt-11 text-4xl font-semibold leading-none text-[#131a2c]">{overview.localMetrics.scheduler.storageType}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-full bg-[#e8f0ff] px-2 py-1 text-[#1d4f91] font-medium">
+                          Recurring {overview.localMetrics.scheduler.recurringJobsCount}
+                        </span>
+                        <span className="rounded-full bg-[#e8f0ff] px-2 py-1 text-[#1d4f91] font-medium">
+                          Enqueued {overview.localMetrics.scheduler.enqueuedCount}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        recurring {overview.localMetrics.scheduler.recurringJobsCount}, enqueued {overview.localMetrics.scheduler.enqueuedCount}
-                      </p>
+                      <SeverityBadge
+                        severity={overview.localMetrics.scheduler.severity}
+                        text={severityText(overview.localMetrics.scheduler.severity)}
+                        className="absolute right-5 bottom-5 z-20"
+                      />
                     </div>
                   </div>
 
@@ -251,34 +517,70 @@ export default function ApmPage() {
                     Instance: <span className="font-medium">{overview.heartbeat.instanceId}</span> · Started: {formatDateTime(overview.heartbeat.startedAt)} · Last seen: {formatDateTime(overview.heartbeat.lastSeenAt)}
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Operational KPIs</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 text-sm">
-                      <div className="rounded-md border border-gray-200 p-3">Active campaigns: {overview.localMetrics.operationalKpis.activeCampaigns}</div>
-                      <div className="rounded-md border border-gray-200 p-3">Pending campaigns: {overview.localMetrics.operationalKpis.pendingCampaigns}</div>
-                      <div className="rounded-md border border-gray-200 p-3">Completed (24h): {overview.localMetrics.operationalKpis.completedCampaignsLast24Hours}</div>
-                      <div className="rounded-md border border-gray-200 p-3">Active purchase orders: {overview.localMetrics.operationalKpis.activePurchaseOrders}</div>
-                      <div className="rounded-md border border-gray-200 p-3">Failed purchase orders (24h): {overview.localMetrics.operationalKpis.failedPurchaseOrdersLast24Hours}</div>
-                      <div className="rounded-md border border-gray-200 p-3">API failures (24h): {overview.localMetrics.operationalKpis.apiUsageFailuresLast24Hours}</div>
-                      <div className="rounded-md border border-gray-200 p-3">SMS balance: {overview.localMetrics.operationalKpis.smsBalance}</div>
-                      <div className="rounded-md border border-gray-200 p-3">Email balance: {overview.localMetrics.operationalKpis.emailBalance}</div>
-                      <div className="rounded-md border border-gray-200 p-3">WhatsApp balance: {overview.localMetrics.operationalKpis.whatsAppBalance}</div>
-                      <div className="rounded-md border border-gray-200 p-3">WhatsApp utility balance: {overview.localMetrics.operationalKpis.whatsAppUtilityBalance}</div>
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                    <div className="rounded-xl border border-gray-200 p-4 xl:col-span-2">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">Operational KPI chart</h3>
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={operationalKpiData} margin={{ top: 6, right: 12, left: 0, bottom: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={52} tick={{ fill: '#475569', fontSize: 11 }} />
+                            <YAxis tick={{ fill: '#475569', fontSize: 11 }} />
+                            <Tooltip />
+                            <Bar dataKey="value" fill={BRAND_COLORS.secondary} radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">Balance breakdown</h3>
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={balanceData} dataKey="value" nameKey="name" cx="50%" cy="48%" outerRadius={95} innerRadius={58}>
+                              {balanceData.map((entry) => (
+                                <Cell key={entry.name} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend verticalAlign="bottom" height={36} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2">Third-party readiness</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                      {readinessItems.map((item) => (
-                        <div key={item.key} className="rounded-md border border-gray-200 p-3">
-                          <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                          <p className="text-xs text-gray-500">{item.provider}</p>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs mt-2 ${severityBadge(item.severity)}`}>
-                            {item.isConfigured ? `Configured (${severityText(item.severity)})` : `Not configured (${severityText(item.severity)})`}
-                          </span>
-                        </div>
-                      ))}
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Third-party readiness</h3>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={readinessChartData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 12 }} />
+                            <YAxis domain={[0, 100]} tick={{ fill: '#475569', fontSize: 11 }} />
+                            <Tooltip formatter={(value) => [`${value}%`, 'Configured']} />
+                            <Bar dataKey="configured" radius={[6, 6, 0, 0]}>
+                              {readinessChartData.map((item) => (
+                                <Cell key={item.name} fill={severityChartColor(item.severity)} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {readinessItems.map((item) => (
+                          <div key={item.key} className="rounded-md border border-gray-200 p-3">
+                            <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                            <p className="text-xs text-gray-500">{item.provider}</p>
+                            <SeverityBadge
+                              severity={item.severity}
+                              text={item.isConfigured ? `Configured (${severityText(item.severity)})` : `Not configured (${severityText(item.severity)})`}
+                              className="mt-2"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </>
@@ -287,70 +589,128 @@ export default function ApmPage() {
               )}
             </section>
 
-            <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
               <h2 className="text-lg font-semibold text-gray-900">Environment probes</h2>
               {overviewError ? (
                 <p className="text-sm text-red-600">{overviewError}</p>
               ) : overview && overview.environmentProbes.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {overview.environmentProbes.map((probe) => (
-                    <div key={probe.environment} className="rounded-lg border border-gray-200 p-4">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-gray-900 capitalize">{probe.environment}</p>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(probe.severity)}`}>
-                          {probe.isReachable ? `Reachable (${severityText(probe.severity)})` : `Unreachable (${severityText(probe.severity)})`}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2 break-all">{probe.baseUrl}</p>
-                      <p className="text-sm text-gray-700 mt-2">Status: {probe.statusCode ?? 'N/A'}</p>
-                      <p className="text-sm text-gray-700">Latency: {probe.latencyMs}ms</p>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                  <div className="rounded-xl border border-gray-200 p-4 xl:col-span-2">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Probe latency by environment</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={probeLatencyData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                          <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 12 }} />
+                          <YAxis tick={{ fill: '#475569', fontSize: 11 }} />
+                          <Tooltip formatter={(value) => [`${value} ms`, 'Latency']} />
+                          <Bar dataKey="latency" radius={[6, 6, 0, 0]}>
+                            {probeLatencyData.map((item) => (
+                              <Cell key={item.name} fill={severityChartColor(item.severity)} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))}
+                  </div>
+                  <div className="space-y-3">
+                    {overview.environmentProbes.map((probe) => (
+                      <div key={probe.environment} className="rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-gray-900 capitalize">{probe.environment}</p>
+                          <SeverityBadge
+                            severity={probe.severity}
+                            text={probe.isReachable ? `Reachable (${severityText(probe.severity)})` : `Unreachable (${severityText(probe.severity)})`}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 break-all">{probe.baseUrl}</p>
+                        <p className="text-sm text-gray-700 mt-2">Status: {probe.statusCode ?? 'N/A'}</p>
+                        <p className="text-sm text-gray-700">Latency: {probe.latencyMs}ms</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">No environment probe data available.</p>
               )}
             </section>
 
-            <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Channel health</h2>
                 {channels && (
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(channels.severity)}`}>
-                    {severityText(channels.severity)}
-                  </span>
+                  <SeverityBadge severity={channels.severity} text={severityText(channels.severity)} />
                 )}
               </div>
               {channelsError ? (
                 <p className="text-sm text-red-600">{channelsError}</p>
               ) : channels && channels.channels.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[760px]">
-                    <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50">
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Channel</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Pending recipients</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Dispatched (24h)</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Failed API usages (24h)</th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Severity</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {channels.channels.map((item) => (
-                        <tr key={item.channel} className="border-b border-gray-100">
-                          <td className="py-3 px-4 font-medium text-gray-900">{item.channel}</td>
-                          <td className="py-3 px-4 text-gray-700">{item.pendingRecipients}</td>
-                          <td className="py-3 px-4 text-gray-700">{item.dispatchedLast24Hours}</td>
-                          <td className="py-3 px-4 text-gray-700">{item.failedApiUsagesLast24Hours}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${severityBadge(item.severity)}`}>
-                              {severityText(item.severity)}
-                            </span>
-                          </td>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">Dispatch vs pending recipients</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={channelDispatchData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 12 }} />
+                            <YAxis tick={{ fill: '#475569', fontSize: 11 }} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="dispatched" fill={BRAND_COLORS.secondary} radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="pending" fill={BRAND_COLORS.soft} radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">API failures trend by channel (24h)</h3>
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={channelFailureData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" tick={{ fill: '#475569', fontSize: 12 }} />
+                            <YAxis tick={{ fill: '#475569', fontSize: 11 }} />
+                            <Tooltip />
+                            <Line
+                              type="monotone"
+                              dataKey="failures"
+                              stroke={BRAND_COLORS.primary}
+                              strokeWidth={3}
+                              dot={{ r: 4, fill: BRAND_COLORS.primary }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-xl border border-gray-200 bg-transparent p-4">
+                    <table className="w-full min-w-[760px]">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Channel</th>
+                          <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Pending recipients</th>
+                          <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Dispatched (24h)</th>
+                          <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Failed API usages (24h)</th>
+                          <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase">Severity</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {channels.channels.map((item) => (
+                          <tr key={item.channel} className="border-b border-gray-100 last:border-b-0">
+                            <td className="py-3 px-4 font-medium text-gray-900">{item.channel}</td>
+                            <td className="py-3 px-4 text-gray-700">{item.pendingRecipients}</td>
+                            <td className="py-3 px-4 text-gray-700">{item.dispatchedLast24Hours}</td>
+                            <td className="py-3 px-4 text-gray-700">{item.failedApiUsagesLast24Hours}</td>
+                            <td className="py-3 px-4">
+                              <SeverityBadge severity={item.severity} text={severityText(item.severity)} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">No channel metrics available.</p>
@@ -358,14 +718,124 @@ export default function ApmPage() {
               <p className="text-xs text-gray-500">Generated at: {formatDateTime(channels?.generatedAt)}</p>
             </section>
 
-            <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">Emergency dispatch controls</h2>
+              {dispatchControlsError ? (
+                <p className="text-sm text-red-600">{dispatchControlsError}</p>
+              ) : emergencyMatrix ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-gray-200 p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Global outbound messaging</p>
+                      <p className="text-xs text-gray-500">
+                        Environment: {emergencyMatrix.environment} | Updated:{' '}
+                        {formatDateTime(emergencyMatrix.global.updatedAt)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleGlobalPauseToggle}
+                      disabled={updatingGlobalPause}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium border ${
+                        emergencyMatrix.global.isPaused
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      } disabled:opacity-60`}
+                    >
+                      {updatingGlobalPause
+                        ? 'Updating...'
+                        : emergencyMatrix.global.isPaused
+                          ? 'Paused (resume)'
+                          : 'Running (pause)'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                    {emergencyMatrix.channels.map((item) => (
+                      <div key={item.channel} className="rounded-lg border border-gray-200 p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-gray-900">{item.channel}</p>
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                              item.isPaused ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                            }`}
+                          >
+                            {item.isPaused ? 'Paused' : 'Running'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleChannelPauseToggle(item.channel, item.isPaused)}
+                          disabled={Boolean(updatingChannel)}
+                          className="mt-3 text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50 disabled:opacity-60"
+                        >
+                          {updatingChannel === item.channel
+                            ? 'Updating...'
+                            : item.isPaused
+                              ? 'Resume channel'
+                              : 'Pause channel'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No emergency controls available.</p>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">Abnormal spike alerts</h2>
+              {alertsError ? (
+                <p className="text-sm text-red-600">{alertsError}</p>
+              ) : alerts && reliabilitySummary ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                    <div className="rounded-lg border border-gray-200 px-3 py-2">Open: {reliabilitySummary.openCount}</div>
+                    <div className="rounded-lg border border-gray-200 px-3 py-2">Critical: {alerts.counters.critical}</div>
+                    <div className="rounded-lg border border-gray-200 px-3 py-2">High: {alerts.counters.high}</div>
+                    <div className="rounded-lg border border-gray-200 px-3 py-2">Medium: {alerts.counters.medium}</div>
+                    <div className="rounded-lg border border-gray-200 px-3 py-2">
+                      Headline: {reliabilitySummary.headlineSeverity}
+                    </div>
+                  </div>
+
+                  {reliabilitySummary.topAlerts.length > 0 ? (
+                    <div className="space-y-2">
+                      {reliabilitySummary.topAlerts.map((alert) => (
+                        <div key={alert.alertKey} className="rounded-lg border border-gray-200 p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-gray-900">{alert.title}</p>
+                            <span className="text-xs uppercase tracking-wide text-gray-500">{alert.severity}</span>
+                          </div>
+                          <p className="text-sm text-gray-700 mt-1">{alert.description}</p>
+                          <p className="text-xs text-gray-500 mt-2">
+                            {alert.environment ?? 'unknown'} {alert.channel ? `| ${alert.channel}` : ''} |{' '}
+                            {formatDateTime(alert.observedAt)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No active reliability alerts.</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No reliability alerts available.</p>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
               <h2 className="text-lg font-semibold text-gray-900">Observability links</h2>
               {linksError ? (
                 <p className="text-sm text-red-600">{linksError}</p>
               ) : links ? (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   {[links.production, links.staging].map((group) => (
-                    <div key={group.environment} className="rounded-lg border border-gray-200 p-4">
+                    <div
+                      key={group.environment}
+                      className="rounded-xl border border-[#d1d9ef] bg-gradient-to-br from-[#f8faff] to-white p-4"
+                    >
                       <h3 className="text-sm font-semibold text-gray-900 capitalize">{group.environment}</h3>
                       <div className="mt-3 space-y-2 text-sm">
                         <a className="block text-[var(--brand-color-2)] hover:underline break-all" href={group.apiBaseUrl} target="_blank" rel="noreferrer">
@@ -394,6 +864,7 @@ export default function ApmPage() {
             </section>
           </>
         )}
+        {confirmDialog}
       </div>
     </div>
   )

@@ -5,6 +5,8 @@ import { adminApi, type MtnWhitelistedSenderIdResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { Pencil, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 export default function WhitelistedSenderIdsPage() {
   const { env } = useApiEnv()
@@ -15,6 +17,7 @@ export default function WhitelistedSenderIdsPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editValue, setEditValue] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -86,7 +89,13 @@ export default function WhitelistedSenderIdsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Remove this whitelisted sender ID?')) return
+    const approved = await confirm({
+      title: 'Remove sender ID',
+      description: 'Remove this whitelisted sender ID?',
+      confirmLabel: 'Remove',
+      tone: 'danger',
+    })
+    if (!approved) return
     setSubmitting(true)
     try {
       await adminApi.removeMtnWhitelistedSenderId(id)
@@ -112,16 +121,12 @@ export default function WhitelistedSenderIdsPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6 space-y-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80">
-          <h1 className="text-2xl font-bold text-gray-800">
-            MTN Whitelisted Sender IDs
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Sender IDs in this list are allowed to send to MTN numbers. If a
-            company&apos;s sender ID is not whitelisted, the default
-            &quot;BalloAds&quot; sender ID is used instead.
-          </p>
-        </header>
+        <AdminHero
+          eyebrow="Channel compliance"
+          title="MTN whitelisted sender IDs"
+          description="Sender IDs in this list are allowed to send to MTN numbers. If a company sender ID is not whitelisted, the default BalloAds sender ID is used."
+          variant="sky"
+        />
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -170,7 +175,7 @@ export default function WhitelistedSenderIdsPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto bg-transparent p-4">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
@@ -271,6 +276,7 @@ export default function WhitelistedSenderIdsPage() {
             </div>
           )}
         </div>
+        {confirmDialog}
       </div>
     </div>
   )

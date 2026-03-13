@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 import { requireAdminAuth } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
+import {
+  isNotificationTableMissingError,
+  isPrismaDatabaseUnavailableError,
+} from '../prismaErrors'
 
 const POLL_INTERVAL_MS = 2000
 const HEARTBEAT_INTERVAL_MS = 20000
-
-function isTableMissingError(err: unknown): err is Prisma.PrismaClientKnownRequestError {
-  return err instanceof Error && 'code' in err && (err as Prisma.PrismaClientKnownRequestError).code === 'P2021'
-}
 
 export async function GET(request: NextRequest) {
   const authError = await requireAdminAuth()
@@ -24,9 +23,15 @@ export async function GET(request: NextRequest) {
       })
       if (lastNotif) lastCreatedAt = lastNotif.createdAt
     } catch (err) {
-      if (isTableMissingError(err)) {
+      if (isNotificationTableMissingError(err)) {
         return new NextResponse(
           JSON.stringify({ error: 'Notifications table not set up. Run: npx prisma db push' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+      if (isPrismaDatabaseUnavailableError(err)) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Notifications DB unavailable. Streaming disabled until database reconnects.' }),
           { status: 503, headers: { 'Content-Type': 'application/json' } }
         )
       }
@@ -39,7 +44,7 @@ export async function GET(request: NextRequest) {
       const encoder = new TextEncoder()
       let lastHeartbeat = Date.now()
       let closed = false
-      let tableMissingLogged = false
+      let unavailableLogged = false
 
       const send = (data: string, eventId?: string) => {
         if (closed) return
@@ -74,10 +79,20 @@ export async function GET(request: NextRequest) {
             if (n.createdAt > lastCreatedAt) lastCreatedAt = n.createdAt
           }
         } catch (err) {
-          if (isTableMissingError(err)) {
-            if (!tableMissingLogged) {
-              tableMissingLogged = true
-              console.warn('Notifications SSE: Notification table does not exist. Run: npx prisma db push')
+          if (isNotificationTableMissingError(err)) {
+            if (!unavailableLogged) {
+              unavailableLogged = true
+              console.warn('Notifications SSE disabled: notification table does not exist. Run: npx prisma db push')
+            }
+            if (intervalRef) clearInterval(intervalRef)
+            closed = true
+            controller.close()
+            return
+          }
+          if (isPrismaDatabaseUnavailableError(err)) {
+            if (!unavailableLogged) {
+              unavailableLogged = true
+              console.warn('Notifications SSE paused: database is unreachable.')
             }
             if (intervalRef) clearInterval(intervalRef)
             closed = true

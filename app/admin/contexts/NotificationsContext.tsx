@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { adminApi } from '@/lib/adminApi'
 
 export type NotificationItem = {
   id: string
@@ -18,6 +19,10 @@ export type NotificationItem = {
   read: boolean
   link: string | null
   createdAt: string
+}
+
+function notificationDedupKey(item: NotificationItem): string {
+  return item.link ? `${item.type}:${item.link}` : item.id
 }
 
 type NotificationsContextValue = {
@@ -44,22 +49,43 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
 
+  const syncReliabilityAlerts = useCallback(async () => {
+    try {
+      const apmAlerts = await adminApi.getApmAlerts()
+      if (apmAlerts.alerts.length === 0) return
+      await fetch('/api/admin/notifications', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alerts: apmAlerts.alerts }),
+      })
+    } catch {
+      // sync failures should not block notification rendering
+    }
+  }, [])
+
   const fetchList = useCallback(async () => {
     try {
+      await syncReliabilityAlerts()
       const res = await fetch('/api/admin/notifications?limit=20', { credentials: 'include' })
       if (!res.ok) {
         setError('Failed to load notifications')
         return
       }
       const data = await res.json()
-      setNotifications(data.notifications ?? [])
+      const incoming = (data.notifications ?? []) as NotificationItem[]
+      const unique = new Map<string, NotificationItem>()
+      for (const item of incoming) {
+        unique.set(notificationDedupKey(item), item)
+      }
+      setNotifications([...unique.values()])
       setError(null)
     } catch {
       setError('Failed to load notifications')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [syncReliabilityAlerts])
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -71,6 +97,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [fetchList])
 
   useEffect(() => {
+    const id = window.setInterval(() => {
+      void syncReliabilityAlerts()
+    }, 30000)
+    return () => window.clearInterval(id)
+  }, [syncReliabilityAlerts])
+
+  useEffect(() => {
     const es = new EventSource('/api/admin/notifications/stream', { withCredentials: true })
     eventSourceRef.current = es
 
@@ -78,7 +111,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       try {
         const item = JSON.parse(event.data) as NotificationItem
         setNotifications((prev) => {
-          const exists = prev.some((n) => n.id === item.id)
+          const key = notificationDedupKey(item)
+          const exists = prev.some((n) => notificationDedupKey(n) === key)
           if (exists) return prev
           return [item, ...prev]
         })

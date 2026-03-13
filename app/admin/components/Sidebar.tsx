@@ -170,7 +170,7 @@ export default function Sidebar() {
             }`}
           >
             <Activity className="w-5 h-5" />
-            <span>APM</span>
+            <span>APM & Reliability</span>
           </button>
         </div>
       </nav>

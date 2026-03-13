@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
+import {
+  isNotificationTableMissingError,
+  isPrismaDatabaseUnavailableError,
+} from '../../prismaErrors'
 
 export async function PATCH(
   _request: NextRequest,
@@ -14,10 +18,17 @@ export async function PATCH(
     return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   }
 
-  await prisma.notification.update({
-    where: { id },
-    data: { read: true },
-  })
+  try {
+    await prisma.notification.update({
+      where: { id },
+      data: { read: true },
+    })
+  } catch (err) {
+    if (isNotificationTableMissingError(err) || isPrismaDatabaseUnavailableError(err)) {
+      return NextResponse.json({ success: false, degraded: true })
+    }
+    throw err
+  }
 
   return NextResponse.json({ success: true })
 }

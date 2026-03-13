@@ -10,6 +10,16 @@ const ALLOWED_BASES = [
   "http://127.0.0.1:5238",
 ];
 
+function getFallbackBase(primaryBase: string): string | null {
+  if (primaryBase === DEV_API_BASE.replace(/\/+$/, "")) {
+    return PROD_API_BASE.replace(/\/+$/, "");
+  }
+  if (primaryBase === PROD_API_BASE.replace(/\/+$/, "")) {
+    return DEV_API_BASE.replace(/\/+$/, "");
+  }
+  return null;
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ path?: string[] }> },
@@ -82,6 +92,11 @@ async function proxy(
   };
 
   let res: Response;
+  const isAnalyticsPath = path.startsWith("Backoffice/analytics/");
+  const isApmPath = path.startsWith("Backoffice/apm/");
+  const isDispatchControlsPath = path.startsWith("Backoffice/dispatch-controls");
+  const shouldFallbackPath = isAnalyticsPath || isApmPath || isDispatchControlsPath;
+  const canFallback = request.method === "GET" && shouldFallbackPath;
   try {
     res = await fetch(url, {
       method: request.method,
@@ -89,10 +104,57 @@ async function proxy(
       ...(body !== undefined && body !== "" && { body }),
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: "Backend unreachable", details: err instanceof Error ? err.message : "Unknown error" },
-      { status: 502 },
-    );
+    if (!canFallback) {
+      return NextResponse.json(
+        { error: "Backend unreachable", details: err instanceof Error ? err.message : "Unknown error" },
+        { status: 502 },
+      );
+    }
+
+    const fallbackBase = getFallbackBase(baseFromHeader);
+    if (!fallbackBase) {
+      return NextResponse.json(
+        { error: "Backend unreachable", details: err instanceof Error ? err.message : "Unknown error" },
+        { status: 502 },
+      );
+    }
+
+    const fallbackUrl = `${fallbackBase}/${path.replace(/^\/+/, "")}${search ? `?${search}` : ""}`;
+    try {
+      res = await fetch(fallbackUrl, {
+        method: request.method,
+        headers,
+        ...(body !== undefined && body !== "" && { body }),
+      });
+    } catch (fallbackErr) {
+      return NextResponse.json(
+        {
+          error: "Backend unreachable",
+          details: fallbackErr instanceof Error ? fallbackErr.message : "Unknown error",
+          fallbackTried: true,
+        },
+        { status: 502 },
+      );
+    }
+  }
+
+  if (canFallback && res.status === 404) {
+    const fallbackBase = getFallbackBase(baseFromHeader);
+    if (fallbackBase) {
+      const fallbackUrl = `${fallbackBase}/${path.replace(/^\/+/, "")}${search ? `?${search}` : ""}`;
+      try {
+        const fallbackRes = await fetch(fallbackUrl, {
+          method: request.method,
+          headers,
+          ...(body !== undefined && body !== "" && { body }),
+        });
+        if (fallbackRes.ok) {
+          res = fallbackRes;
+        }
+      } catch {
+        // Keep primary 404 response when fallback is unreachable.
+      }
+    }
   }
 
   const text = await res.text();

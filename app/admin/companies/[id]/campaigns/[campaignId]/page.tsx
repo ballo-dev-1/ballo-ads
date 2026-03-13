@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, usePathname } from 'next/navigation'
-import { ArrowLeft, CalendarDays } from 'lucide-react'
+import {
+  ArrowLeft,
+  BadgeCheck,
+  CalendarDays,
+  ChevronRight,
+  CircleDashed,
+  CircleX,
+  RefreshCw,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
   adminApi,
@@ -16,6 +24,13 @@ import {
   formatDateRange,
   getCampaignStatusClasses,
 } from '@/app/admin/utils/campaignDisplay'
+import AdminHero from '@/app/admin/components/AdminHero'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+
+type CampaignDetailsResponse = AdsCampaignResponse & {
+  attachments?: string[]
+  whatsAppTemplatePayload?: string
+}
 
 export default function CampaignDetailsPage() {
   const params = useParams()
@@ -25,11 +40,12 @@ export default function CampaignDetailsPage() {
   const companyId = Number(params.id)
   const campaignId = Number(params.campaignId)
 
-  const [campaign, setCampaign] = useState<AdsCampaignResponse | null>(null)
+  const [campaign, setCampaign] = useState<CampaignDetailsResponse | null>(null)
   const [logs, setLogs] = useState<CampaignLogResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const loadCampaign = async () => {
     if (Number.isNaN(companyId) || Number.isNaN(campaignId)) {
@@ -62,7 +78,7 @@ export default function CampaignDetailsPage() {
     setActionLoading(true)
     try {
       const updated = await fn()
-      setCampaign(updated)
+      setCampaign((previous) => (previous ? { ...previous, ...updated } : updated))
       toast.success(success)
       const logsData = await adminApi.getCampaignLogs(companyId, campaignId)
       setLogs(logsData)
@@ -73,12 +89,27 @@ export default function CampaignDetailsPage() {
     }
   }
 
+  const runConfirmedAction = async (
+    message: string,
+    fn: () => Promise<AdsCampaignResponse>,
+    success: string,
+    options?: { title?: string; confirmLabel?: string; tone?: 'default' | 'danger' },
+  ) => {
+    const approved = await confirm({
+      title: options?.title,
+      description: message,
+      confirmLabel: options?.confirmLabel,
+      tone: options?.tone,
+    })
+    if (!approved) return
+    await runAction(fn, success)
+  }
+
   if (loading) {
     return (
-      <div className="flex-1 overflow-auto p-6">
-        <div className="flex min-h-[280px] items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white">
-          <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
-          <span className="text-sm text-slate-500">Loading campaign details...</span>
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
+        <div className="mx-auto flex min-h-[320px] w-full max-w-[1280px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
         </div>
       </div>
     )
@@ -86,30 +117,123 @@ export default function CampaignDetailsPage() {
 
   if (error || !campaign) {
     return (
-      <div className="flex-1 overflow-auto p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-[1280px] rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-sm">
           {error || 'Campaign not found'}
         </div>
       </div>
     )
   }
 
-  return (
-    <div className="flex-1 overflow-auto p-6">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <header className="rounded-2xl border border-white/15 bg-gradient-to-br from-[#0e0e39] via-[#123968] to-[var(--brand-color-2)] p-6 text-white">
-          <Link
-            href={`${basePath}/campaigns`}
-            className="inline-flex items-center gap-2 text-sm font-medium text-white/85 hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to campaigns
-          </Link>
-          <h1 className="mt-4 text-2xl font-bold">{campaign.name}</h1>
-          <p className="mt-1 text-sm text-white/80">Campaign ID: {campaign.id} · Company ID: {campaign.companyId}</p>
-        </header>
+  const normalizedStatus = campaign.status.toLowerCase()
+  const actionDisabled = actionLoading
+  const canApprove = !campaign.isApproved
+  const canReject = campaign.isApproved
+  const canActivate = !normalizedStatus.includes('active')
+  const canCancel = !normalizedStatus.includes('cancel')
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
+  return (
+    <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-6">
+        <AdminHero
+          topSlot={
+            <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
+              <Link href={`${basePath}/campaigns`} className="hover:text-white hover:underline">
+                Campaigns
+              </Link>
+              <ChevronRight className="h-3.5 w-3.5" />
+              <Link href={`${basePath}/companies/${companyId}`} className="hover:text-white hover:underline">
+                Company {companyId}
+              </Link>
+              <ChevronRight className="h-3.5 w-3.5" />
+              <span>Campaign {campaign.id}</span>
+            </div>
+          }
+          eyebrow="Campaign details"
+          title={campaign.name}
+          description={`Campaign ID: ${campaign.id} · Company ID: ${campaign.companyId}`}
+          variant="teal"
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`${basePath}/companies/${companyId}`}
+                className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to company
+              </Link>
+              <button
+                type="button"
+                onClick={loadCampaign}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw className={classNames('h-3.5 w-3.5', loading && 'animate-spin')} />
+                Refresh
+              </button>
+            </div>
+          }
+          meta={
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                {campaign.status}
+              </span>
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                {campaign.isApproved ? 'Approved' : 'Not approved'}
+              </span>
+            </div>
+          }
+        />
+
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Current status</p>
+            <span
+              className={classNames(
+                'mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                getCampaignStatusClasses(campaign.status),
+              )}
+            >
+              {campaign.status}
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Approval</p>
+            <span
+              className={classNames(
+                'mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold',
+                campaign.isApproved
+                  ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
+                  : 'border-amber-300/80 bg-amber-50 text-amber-700',
+              )}
+            >
+              {campaign.isApproved ? (
+                <>
+                  <BadgeCheck className="h-3.5 w-3.5" />
+                  Approved
+                </>
+              ) : (
+                <>
+                  <CircleDashed className="h-3.5 w-3.5" />
+                  Not approved
+                </>
+              )}
+            </span>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Date window</p>
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-700">
+              <CalendarDays className="h-4 w-4 text-slate-500" />
+              {formatDateRange(campaign.startDate, campaign.endDate)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Creator ID</p>
+            <p className="mt-2 text-sm font-medium text-slate-800">{campaign.creatorId}</p>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={classNames(
@@ -136,13 +260,13 @@ export default function CampaignDetailsPage() {
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Channel</p>
-              <p className="mt-1 text-sm text-gray-900">{campaign.campaignChannel}</p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Channel</p>
+              <p className="mt-1 text-sm font-medium text-slate-800">{campaign.campaignChannel}</p>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Purpose</p>
-              <p className="mt-1 text-sm text-gray-900">{campaign.campaignPurpose}</p>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Purpose</p>
+              <p className="mt-1 text-sm font-medium text-slate-800">{campaign.campaignPurpose}</p>
             </div>
           </div>
 
@@ -160,7 +284,7 @@ export default function CampaignDetailsPage() {
                 href={campaign.mediaFileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-block text-sm text-[var(--brand-color-2)] hover:underline"
+                className="mt-1 inline-block break-all text-sm font-medium text-[var(--brand-color-2)] hover:text-[var(--brand-color-1)] hover:underline"
               >
                 {campaign.mediaFileUrl}
               </a>
@@ -172,7 +296,7 @@ export default function CampaignDetailsPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attachments</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-800">
                 {campaign.attachments.map((attachment) => (
-                  <li key={attachment}>{attachment}</li>
+                  <li key={attachment} className="break-all">{attachment}</li>
                 ))}
               </ul>
             </div>
@@ -187,72 +311,137 @@ export default function CampaignDetailsPage() {
             </div>
           ) : null}
 
-          <div className="mt-6 flex flex-wrap items-center gap-2">
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Actions</p>
+              {actionLoading ? <span className="text-xs font-medium text-slate-500">Updating campaign...</span> : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={() => runAction(() => adminApi.approveCampaign(companyId, campaignId, true), 'Campaign approved')}
-              className="inline-flex rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-xs font-medium text-emerald-800 hover:bg-emerald-200 disabled:opacity-50"
+              disabled={actionDisabled || !canApprove}
+              onClick={() =>
+                runConfirmedAction(
+                  `Approve campaign #${campaignId}?`,
+                  () => adminApi.approveCampaign(companyId, campaignId, true),
+                  'Campaign approved',
+                  { title: 'Approve campaign', confirmLabel: 'Approve' },
+                )
+              }
+              className="inline-flex rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Approve
             </button>
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={() => runAction(() => adminApi.approveCampaign(companyId, campaignId, false), 'Campaign rejected')}
-              className="inline-flex rounded-lg border border-amber-300 bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:opacity-50"
+              disabled={actionDisabled || !canReject}
+              onClick={() =>
+                runConfirmedAction(
+                  `Reject campaign #${campaignId}?`,
+                  () => adminApi.approveCampaign(companyId, campaignId, false),
+                  'Campaign rejected',
+                  { title: 'Reject campaign', confirmLabel: 'Reject', tone: 'danger' },
+                )
+              }
+              className="inline-flex rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Reject
             </button>
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={() => runAction(() => adminApi.activateCampaign(companyId, campaignId), 'Campaign activated')}
-              className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)] disabled:opacity-50"
+              disabled={actionDisabled || !canActivate}
+              onClick={() =>
+                runConfirmedAction(
+                  `Activate campaign #${campaignId}?`,
+                  () => adminApi.activateCampaign(companyId, campaignId),
+                  'Campaign activated',
+                  { title: 'Activate campaign', confirmLabel: 'Activate' },
+                )
+              }
+              className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Activate
             </button>
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={() => runAction(() => adminApi.cancelCampaign(companyId, campaignId), 'Campaign cancelled')}
-              className="inline-flex rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-200 disabled:opacity-50"
+              disabled={actionDisabled || !canCancel}
+              onClick={() =>
+                runConfirmedAction(
+                  `Cancel campaign #${campaignId}?`,
+                  () => adminApi.cancelCampaign(companyId, campaignId),
+                  'Campaign cancelled',
+                  { title: 'Cancel campaign', confirmLabel: 'Cancel campaign', tone: 'danger' },
+                )
+              }
+              className="inline-flex rounded-lg border border-red-300 bg-red-100 px-3 py-2 text-xs font-semibold text-red-800 transition-colors hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="button"
-              disabled={actionLoading}
-              onClick={() => runAction(() => adminApi.resendCampaign(companyId, campaignId), 'Campaign resend queued')}
-              className="inline-flex rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+              disabled={actionDisabled}
+              onClick={() =>
+                runConfirmedAction(
+                  `Resend campaign #${campaignId}? This will queue another delivery attempt.`,
+                  () => adminApi.resendCampaign(companyId, campaignId),
+                  'Campaign resend queued',
+                  { title: 'Resend campaign', confirmLabel: 'Queue resend' },
+                )
+              }
+              className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Resend
             </button>
+            </div>
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-base font-semibold text-slate-900">Campaign logs</h2>
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <div className="mb-3 border-b border-slate-100 pb-3">
+            <h2 className="text-base font-semibold text-slate-900">Campaign logs</h2>
+            <p className="mt-1 text-xs text-slate-500">Audit trail of campaign status transitions.</p>
+          </div>
           {logs.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-500">No logs yet.</p>
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
+              No logs yet.
+            </div>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {logs.map((log) => (
-                <li key={log.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                  <span className="font-medium">{log.initialStatus ?? '—'}</span>
-                  {' -> '}
-                  <span className="font-medium">{log.finalStatus ?? '—'}</span>
-                  {(log.actorFirstName || log.actorLastName) ? (
-                    <span className="text-slate-500">
-                      {' '}
-                      ({[log.actorFirstName, log.actorLastName].filter(Boolean).join(' ')})
-                    </span>
-                  ) : null}
-                </li>
-              ))}
+            <ul className="space-y-2">
+              {logs
+                .slice()
+                .sort((a, b) => b.id - a.id)
+                .map((log) => {
+                  const actorName = [log.actorFirstName, log.actorLastName].filter(Boolean).join(' ')
+                  return (
+                    <li
+                      key={log.id}
+                      className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3 text-sm text-slate-700"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{log.initialStatus ?? '—'}</span>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                        <span className="font-medium">{log.finalStatus ?? '—'}</span>
+                        <span className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                          Log #{log.id}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {actorName ? (
+                          <>Changed by {actorName}</>
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <CircleX className="h-3 w-3" />
+                            Actor unknown
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
             </ul>
           )}
         </section>
+        {confirmDialog}
       </div>
     </div>
   )

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminApi, type TransactionResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import AdminHero from '@/app/admin/components/AdminHero'
 
 export default function TransactionsPage() {
   const { env } = useApiEnv()
@@ -36,10 +37,13 @@ export default function TransactionsPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Transactions</h1>
-          <p className="text-sm text-gray-500 mt-1">View payment transactions</p>
-        </header>
+        <AdminHero
+          className="mb-6"
+          eyebrow="Billing"
+          title="Transactions"
+          description="View payment transactions."
+          variant="slate"
+        />
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-50/90 border border-red-200 text-red-700 px-5 py-4">
@@ -52,8 +56,8 @@ export default function TransactionsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto bg-transparent p-4">
               <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">

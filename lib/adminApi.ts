@@ -221,6 +221,92 @@ export type ApmLinksResponse = {
   };
 };
 
+export type DispatchChannelControl = {
+  channel: string;
+  isPaused: boolean;
+};
+
+export type DispatchControlResponse = {
+  environment: string;
+  isGloballyPaused: boolean;
+  channels: DispatchChannelControl[];
+  updatedAt: string;
+};
+
+export type ReliabilityAlertSeverity = "critical" | "high" | "medium" | "warning" | "ok";
+
+export type ReliabilityAlert = {
+  alertKey: string;
+  type: string;
+  severity: ReliabilityAlertSeverity;
+  title: string;
+  description: string;
+  channel?: string;
+  environment?: string;
+  observedAt: string;
+  acknowledged?: boolean;
+};
+
+export type ApmAlertsResponse = {
+  generatedAt: string;
+  counters: {
+    open: number;
+    critical: number;
+    high: number;
+    medium: number;
+  };
+  alerts: ReliabilityAlert[];
+};
+
+export type DashboardAnalyticsOverviewResponse = {
+  generatedAt: string;
+  activeCampaigns: number;
+  totalCompanies: number;
+  activeClients: number;
+  totalRevenue: number;
+  paymentSuccessRate: number;
+};
+
+export type DashboardAnalyticsTrendPoint = {
+  bucketStart: string;
+  campaigns: number;
+  approvedCampaigns: number;
+  activeCampaigns: number;
+  purchaseOrders: number;
+  transactions: number;
+};
+
+export type DashboardAnalyticsTrendsResponse = {
+  bucket: "day" | "week";
+  points: DashboardAnalyticsTrendPoint[];
+};
+
+export type DashboardAnalyticsFunnelResponse = {
+  created: number;
+  approved: number;
+  activated: number;
+  completed: number;
+  completionRate: number;
+};
+
+export type DashboardAnalyticsModerationResponse = {
+  pendingApprovals: number;
+  approvedCount: number;
+  rejectedCount: number;
+  approvalRate: number;
+  medianReviewHours: number;
+};
+
+export type ReliabilityNotificationPayload = {
+  title: string;
+  message: string;
+  type: "reliability_alert";
+  link: string;
+  dedupeKey: string;
+  severity: ReliabilityAlertSeverity;
+  metadata: Record<string, unknown>;
+};
+
 export type TransactionResponse = {
   id: number;
   transactionId: string;
@@ -269,6 +355,8 @@ export type CompanyLeanResponse = {
   senderId?: string;
   profileImageUrl?: string;
   isApprovedSenderId: boolean;
+  isActive: boolean;
+  deactivatedAt?: string;
 };
 
 export type AdsCampaignResponse = {
@@ -358,6 +446,8 @@ function mapCompanyLeanResponse(
       | undefined,
     isApprovedSenderId: (r.IsApprovedSenderId ??
       r.isApprovedSenderId) as boolean,
+    isActive: Boolean(r.IsActive ?? r.isActive ?? true),
+    deactivatedAt: (r.DeactivatedAt ?? r.deactivatedAt) as string | undefined,
   };
 }
 
@@ -693,6 +783,143 @@ function mapApmLinksResponse(r: Record<string, unknown>): ApmLinksResponse {
   };
 }
 
+export function mapDispatchControlResponse(
+  r: Record<string, unknown>,
+): DispatchControlResponse {
+  const channelsRaw = (r.Channels ?? r.channels) as unknown;
+  return {
+    environment: String(r.Environment ?? r.environment ?? "unknown"),
+    isGloballyPaused: Boolean(r.IsGloballyPaused ?? r.isGloballyPaused ?? false),
+    channels: Array.isArray(channelsRaw)
+      ? channelsRaw.map((item) => {
+          const c = (item ?? {}) as Record<string, unknown>;
+          return {
+            channel: String(c.Channel ?? c.channel ?? "unknown"),
+            isPaused: Boolean(c.IsPaused ?? c.isPaused ?? false),
+          };
+        })
+      : [],
+    updatedAt: String(r.UpdatedAt ?? r.updatedAt ?? ""),
+  };
+}
+
+export function mapApmAlertsResponse(r: Record<string, unknown>): ApmAlertsResponse {
+  const countersRaw = ((r.Counters ?? r.counters) ?? {}) as Record<string, unknown>;
+  const alertsRaw = (r.Alerts ?? r.alerts) as unknown;
+
+  return {
+    generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    counters: {
+      open: Number(countersRaw.Open ?? countersRaw.open ?? 0),
+      critical: Number(countersRaw.Critical ?? countersRaw.critical ?? 0),
+      high: Number(countersRaw.High ?? countersRaw.high ?? 0),
+      medium: Number(countersRaw.Medium ?? countersRaw.medium ?? 0),
+    },
+    alerts: Array.isArray(alertsRaw)
+      ? alertsRaw.map((item) => {
+          const a = (item ?? {}) as Record<string, unknown>;
+          return {
+            alertKey: String(a.AlertKey ?? a.alertKey ?? ""),
+            type: String(a.Type ?? a.type ?? "unknown"),
+            severity: String(a.Severity ?? a.severity ?? "warning") as ReliabilityAlertSeverity,
+            title: String(a.Title ?? a.title ?? "Alert"),
+            description: String(a.Description ?? a.description ?? ""),
+            channel: (a.Channel ?? a.channel) as string | undefined,
+            environment: (a.Environment ?? a.environment) as string | undefined,
+            observedAt: String(a.ObservedAt ?? a.observedAt ?? ""),
+            acknowledged: Boolean(a.Acknowledged ?? a.acknowledged ?? false),
+          };
+        })
+      : [],
+  };
+}
+
+export function mapDashboardAnalyticsOverviewResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsOverviewResponse {
+  return {
+    generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    activeCampaigns: Number(r.ActiveCampaigns ?? r.activeCampaigns ?? 0),
+    totalCompanies: Number(r.TotalCompanies ?? r.totalCompanies ?? 0),
+    activeClients: Number(r.ActiveClients ?? r.activeClients ?? 0),
+    totalRevenue: Number(r.TotalRevenue ?? r.totalRevenue ?? 0),
+    paymentSuccessRate: Number(r.PaymentSuccessRate ?? r.paymentSuccessRate ?? 0),
+  };
+}
+
+export function mapDashboardAnalyticsTrendsResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsTrendsResponse {
+  const pointsRaw = (r.Points ?? r.points) as unknown;
+  return {
+    bucket: String(r.Bucket ?? r.bucket ?? "day") === "week" ? "week" : "day",
+    points: Array.isArray(pointsRaw)
+      ? pointsRaw.map((item) => {
+          const p = (item ?? {}) as Record<string, unknown>;
+          return {
+            bucketStart: String(p.BucketStart ?? p.bucketStart ?? ""),
+            campaigns: Number(p.Campaigns ?? p.campaigns ?? 0),
+            approvedCampaigns: Number(p.ApprovedCampaigns ?? p.approvedCampaigns ?? 0),
+            activeCampaigns: Number(p.ActiveCampaigns ?? p.activeCampaigns ?? 0),
+            purchaseOrders: Number(p.PurchaseOrders ?? p.purchaseOrders ?? 0),
+            transactions: Number(p.Transactions ?? p.transactions ?? 0),
+          };
+        })
+      : [],
+  };
+}
+
+function mapDashboardAnalyticsFunnelResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsFunnelResponse {
+  return {
+    created: Number(r.Created ?? r.created ?? 0),
+    approved: Number(r.Approved ?? r.approved ?? 0),
+    activated: Number(r.Activated ?? r.activated ?? 0),
+    completed: Number(r.Completed ?? r.completed ?? 0),
+    completionRate: Number(r.CompletionRate ?? r.completionRate ?? 0),
+  };
+}
+
+function mapDashboardAnalyticsModerationResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsModerationResponse {
+  return {
+    pendingApprovals: Number(r.PendingApprovals ?? r.pendingApprovals ?? 0),
+    approvedCount: Number(r.ApprovedCount ?? r.approvedCount ?? 0),
+    rejectedCount: Number(r.RejectedCount ?? r.rejectedCount ?? 0),
+    approvalRate: Number(r.ApprovalRate ?? r.approvalRate ?? 0),
+    medianReviewHours: Number(r.MedianReviewHours ?? r.medianReviewHours ?? 0),
+  };
+}
+
+export function buildReliabilityNotificationPayload(alert: {
+  alertKey: string;
+  severity: ReliabilityAlertSeverity;
+  title: string;
+  description: string;
+  environment?: string;
+  channel?: string;
+  observedAt?: string;
+}): ReliabilityNotificationPayload {
+  const envSegment = alert.environment ? ` (${alert.environment})` : "";
+  const channelSegment = alert.channel ? ` [${alert.channel}]` : "";
+  return {
+    title: alert.title,
+    message: `${alert.description}${envSegment}${channelSegment}`.trim(),
+    type: "reliability_alert",
+    link: "/admin/apm",
+    dedupeKey: `reliability:${alert.alertKey}`,
+    severity: alert.severity,
+    metadata: {
+      alertKey: alert.alertKey,
+      observedAt: alert.observedAt ?? "",
+      environment: alert.environment ?? null,
+      channel: alert.channel ?? null,
+    },
+  };
+}
+
 async function request<T>(
   path: string,
   options: RequestInit & { authToken?: string; baseUrlOverride?: string } = {},
@@ -774,6 +1001,7 @@ export const adminApi = {
     industry?: string;
     isCompanyVerified?: boolean;
     query?: string;
+    includeDeactivated?: boolean;
     authToken?: string;
   }) => {
     const { authToken, ...filters } = params || {};
@@ -783,6 +1011,8 @@ export const adminApi = {
     if (filters.isCompanyVerified != null)
       search.set("IsCompanyVerified", String(filters.isCompanyVerified));
     if (filters.query) search.set("Query", filters.query);
+    if (filters.includeDeactivated != null)
+      search.set("IncludeDeactivated", String(filters.includeDeactivated));
 
     const qs = search.toString();
     const path = qs ? `${BACKOFFICE}/companies?${qs}` : `${BACKOFFICE}/companies`;
@@ -816,6 +1046,19 @@ export const adminApi = {
     }).then(mapCompanyLeanResponse),
 
   deleteCompany: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/companies/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  deactivateCompany: (id: number, reason?: string, authToken?: string) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/companies/${id}/deactivate`, {
+      method: "PATCH",
+      body: JSON.stringify({ reason }),
+      authToken,
+    }).then(mapCompanyLeanResponse),
+
+  purgeCompany: (id: number, _reason?: string, authToken?: string) =>
     request<void>(`${BACKOFFICE}/companies/${id}`, {
       method: "DELETE",
       authToken,
@@ -1405,5 +1648,154 @@ export const adminApi = {
       );
       return mapApmLinksResponse(fallback);
     }
+  },
+
+  getDispatchControls: async (authToken?: string) => {
+    try {
+      const result = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/dispatch-controls`,
+        { authToken },
+      );
+      return mapDispatchControlResponse(result);
+    } catch (err) {
+      if (!shouldFallbackApmToProd(err)) throw err;
+      const fallback = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/dispatch-controls`,
+        { authToken, baseUrlOverride: PROD_API_BASE },
+      );
+      return mapDispatchControlResponse(fallback);
+    }
+  },
+
+  setGlobalDispatchPause: (
+    environment: string,
+    isPaused: boolean,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/dispatch-controls/global`, {
+      method: "PATCH",
+      body: JSON.stringify({ environment, isPaused }),
+      authToken,
+    }).then(mapDispatchControlResponse),
+
+  setChannelDispatchPause: (
+    environment: string,
+    channel: string,
+    isPaused: boolean,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/dispatch-controls/channel`, {
+      method: "PATCH",
+      body: JSON.stringify({ environment, channel, isPaused }),
+      authToken,
+    }).then(mapDispatchControlResponse),
+
+  getApmAlerts: async (authToken?: string) => {
+    try {
+      const result = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/alerts`,
+        { authToken },
+      );
+      return mapApmAlertsResponse(result);
+    } catch (err) {
+      if (!shouldFallbackApmToProd(err)) throw err;
+      const fallback = await request<Record<string, unknown>>(
+        `${BACKOFFICE}/apm/alerts`,
+        { authToken, baseUrlOverride: PROD_API_BASE },
+      );
+      return mapApmAlertsResponse(fallback);
+    }
+  },
+
+  getDashboardAnalyticsOverview: (
+    params: {
+      from?: string;
+      to?: string;
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/overview?${qs}`
+      : `${BACKOFFICE}/analytics/overview`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsOverviewResponse,
+    );
+  },
+
+  getDashboardAnalyticsTrends: (
+    params: {
+      from?: string;
+      to?: string;
+      bucket?: "day" | "week";
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.bucket) search.set("bucket", params.bucket);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/trends?${qs}`
+      : `${BACKOFFICE}/analytics/trends`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsTrendsResponse,
+    );
+  },
+
+  getDashboardAnalyticsFunnel: (
+    params: {
+      from?: string;
+      to?: string;
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/funnel?${qs}`
+      : `${BACKOFFICE}/analytics/funnel`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsFunnelResponse,
+    );
+  },
+
+  getDashboardAnalyticsModeration: (
+    params: {
+      from?: string;
+      to?: string;
+      companyId?: number;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/moderation?${qs}`
+      : `${BACKOFFICE}/analytics/moderation`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsModerationResponse,
+    );
   },
 };

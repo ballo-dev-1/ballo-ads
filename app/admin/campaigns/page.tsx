@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CalendarDays } from 'lucide-react'
 import {
@@ -15,6 +15,7 @@ import {
   formatDateRange,
   getCampaignStatusClasses,
 } from '@/app/admin/utils/campaignDisplay'
+import AdminHero from '@/app/admin/components/AdminHero'
 
 type CampaignWithCompany = AdsCampaignResponse & {
   companyName: string
@@ -42,6 +43,7 @@ function getMostRecentlySentMs(campaign: CampaignWithCompany) {
 }
 
 export default function CampaignsPage() {
+  const router = useRouter()
   const pathname = usePathname()
   const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
   const { env } = useApiEnv()
@@ -158,15 +160,26 @@ export default function CampaignsPage() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
-        <header className="rounded-xl p-5 bg-[whitesmoke] border border-gray-200/80 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Campaigns</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Global campaign management across all companies
-          </p>
-          <p className="text-xs text-gray-500 mt-2">
-            {campaigns.length} total, {approvedCount} approved, {activeCount} active
-          </p>
-        </header>
+        <AdminHero
+          className="mb-6"
+          eyebrow="Campaign hub"
+          title="Campaigns"
+          description="Global campaign management across all companies."
+          variant="teal"
+          meta={
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                Total: {campaigns.length}
+              </span>
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                Approved: {approvedCount}
+              </span>
+              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+                Active: {activeCount}
+              </span>
+            </div>
+          }
+        />
 
         <section className="rounded-xl border border-gray-200/80 bg-white p-4 mb-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
@@ -246,16 +259,15 @@ export default function CampaignsPage() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-[220px] gap-3">
+          <div className="flex items-center justify-center min-h-[220px]">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
-            <p className="text-sm text-gray-500">Loading campaigns...</p>
           </div>
         ) : visibleCampaigns.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
             No campaigns match your current filters.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-transparent p-4">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-slate-50 to-white text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -266,19 +278,32 @@ export default function CampaignsPage() {
                   <th className="whitespace-nowrap px-3 py-3">Status</th>
                   <th className="whitespace-nowrap px-3 py-3">Approved</th>
                   <th className="whitespace-nowrap px-3 py-3">Dates</th>
-                  <th className="whitespace-nowrap px-3 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleCampaigns.map((campaign) => {
+                  const detailsPath = `${basePath}/companies/${campaign.companyId}/campaigns/${campaign.id}`
                   return (
-                    <tr key={`${campaign.companyId}:${campaign.id}`} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
+                    <tr
+                      key={`${campaign.companyId}:${campaign.id}`}
+                      className="border-t border-slate-100 transition-colors hover:bg-slate-50/70 cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => router.push(detailsPath)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          router.push(detailsPath)
+                        }
+                      }}
+                    >
                       <td className="px-3 py-3 text-slate-800">
                         <div className="font-medium">{campaign.name}</div>
                       </td>
                       <td className="px-3 py-3 text-slate-700">
                         <Link
                           href={`${basePath}/companies/${campaign.companyId}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="text-[var(--brand-color-2)] hover:underline"
                         >
                           {campaign.companyName}
@@ -313,14 +338,6 @@ export default function CampaignsPage() {
                           <CalendarDays className="h-3.5 w-3.5" />
                           {formatDateRange(campaign.startDate, campaign.endDate)}
                         </div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <Link
-                          href={`${basePath}/companies/${campaign.companyId}/campaigns/${campaign.id}`}
-                          className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
-                        >
-                          Open details
-                        </Link>
                       </td>
                     </tr>
                   )
