@@ -975,14 +975,16 @@ export default function ApmPage() {
         )}
         {selectedOverviewCard && overview ? (
           <div
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[1px]"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
             onClick={closeOverviewPopup}
             role="dialog"
             aria-modal="true"
             aria-labelledby="overview-card-dialog-title"
           >
             <div
-              className="w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              className={`flex w-full max-h-[90vh] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] shadow-2xl ${
+                selectedOverviewCard === 'scheduler' ? 'max-w-4xl' : 'max-w-2xl'
+              }`}
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
@@ -1004,7 +1006,7 @@ export default function ApmPage() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="space-y-4 px-5 py-4">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
                 {selectedOverviewCard === 'environment' && (
                   <>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
@@ -1136,7 +1138,7 @@ export default function ApmPage() {
                         <p className="font-semibold text-slate-900">{overview.localMetrics.scheduler.scheduledCount}</p>
                       </div>
                     </div>
-                    <div className="rounded-lg border border-slate-200 p-4">
+                    <div className="rounded-lg border border-slate-200 bg-white/80 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-slate-900">Recurring jobs</p>
                         {schedulerJobsLoading && (
@@ -1157,7 +1159,7 @@ export default function ApmPage() {
                           {schedulerJobs.map((job) => (
                             <div
                               key={job.jobId}
-                              className="rounded-md border border-slate-200 px-3 py-3 text-sm"
+                              className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm shadow-sm"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <p className="font-medium text-slate-900">{job.jobId}</p>
