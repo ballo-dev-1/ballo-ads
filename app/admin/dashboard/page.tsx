@@ -55,7 +55,7 @@ type RangePreset = '7d' | '40d' | '90d' | 'lifetime'
 
 export default function Dashboard() {
   const { env } = useApiEnv()
-  const [rangePreset, setRangePreset] = useState<RangePreset>('90d')
+  const [rangePreset, setRangePreset] = useState<RangePreset>('lifetime')
   const [channelFilter, setChannelFilter] = useState<'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility'>('All')
   const [waitlistStats, setWaitlistStats] = useState<WaitlistStats>({
     total: 0,
