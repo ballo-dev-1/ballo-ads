@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ADMIN_TOKEN_COOKIE } from "@/lib/adminAuth";
-import { DEV_API_BASE, PROD_API_BASE } from "@/lib/adminApi";
+import { ADMIN_ENV_COOKIE, ADMIN_TOKEN_COOKIE } from "@/lib/adminAuth";
+import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from "@/lib/adminApi";
 
 const ALLOWED_BASES = [
   DEV_API_BASE.replace(/\/+$/, ""),
+  STAGING_API_BASE.replace(/\/+$/, ""),
   PROD_API_BASE.replace(/\/+$/, ""),
   "http://localhost:5238",
   "http://127.0.0.1:5238",
@@ -14,9 +15,20 @@ function getFallbackBase(primaryBase: string): string | null {
   if (primaryBase === DEV_API_BASE.replace(/\/+$/, "")) {
     return PROD_API_BASE.replace(/\/+$/, "");
   }
+  if (primaryBase === STAGING_API_BASE.replace(/\/+$/, "")) {
+    return PROD_API_BASE.replace(/\/+$/, "");
+  }
   if (primaryBase === PROD_API_BASE.replace(/\/+$/, "")) {
     return DEV_API_BASE.replace(/\/+$/, "");
   }
+  return null;
+}
+
+function getBaseFromEnvCookie(envCookie: string | undefined): string | null {
+  if (!envCookie) return null;
+  if (envCookie === "dev") return DEV_API_BASE.replace(/\/+$/, "");
+  if (envCookie === "staging") return STAGING_API_BASE.replace(/\/+$/, "");
+  if (envCookie === "prod") return PROD_API_BASE.replace(/\/+$/, "");
   return null;
 }
 
@@ -69,22 +81,26 @@ async function proxy(
     .get("X-Api-Base")
     ?.trim()
     .replace(/\/+$/, "");
+  const cookieStore = await cookies();
+  const baseFromEnvCookie = getBaseFromEnvCookie(
+    cookieStore.get(ADMIN_ENV_COOKIE)?.value,
+  );
+  const baseFromRequest = baseFromHeader || baseFromEnvCookie;
 
-  if (!baseFromHeader || !ALLOWED_BASES.includes(baseFromHeader)) {
+  if (!baseFromRequest || !ALLOWED_BASES.includes(baseFromRequest)) {
     return NextResponse.json(
       { error: "Invalid or missing X-Api-Base header" },
       { status: 400 },
     );
   }
 
-  const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value;
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const search = request.nextUrl.searchParams.toString();
-  const url = `${baseFromHeader}/${path.replace(/^\/+/, "")}${search ? `?${search}` : ""}`;
+  const url = `${baseFromRequest}/${path.replace(/^\/+/, "")}${search ? `?${search}` : ""}`;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -111,7 +127,7 @@ async function proxy(
       );
     }
 
-    const fallbackBase = getFallbackBase(baseFromHeader);
+    const fallbackBase = getFallbackBase(baseFromRequest);
     if (!fallbackBase) {
       return NextResponse.json(
         { error: "Backend unreachable", details: err instanceof Error ? err.message : "Unknown error" },
@@ -139,7 +155,7 @@ async function proxy(
   }
 
   if (canFallback && res.status === 404) {
-    const fallbackBase = getFallbackBase(baseFromHeader);
+    const fallbackBase = getFallbackBase(baseFromRequest);
     if (fallbackBase) {
       const fallbackUrl = `${fallbackBase}/${path.replace(/^\/+/, "")}${search ? `?${search}` : ""}`;
       try {
