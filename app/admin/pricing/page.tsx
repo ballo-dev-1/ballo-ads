@@ -96,7 +96,7 @@ export default function PricingPage() {
       const isRangeExists = /range already exists/i.test(msg)
       setError(
         isRangeExists
-          ? 'A pricing model with this platform (or related platform), range, and duration already exists. Try a range that does not overlap existing models for WhatsApp/WhatsApp Utility, or a different duration.'
+          ? 'A pricing model with this platform, duration, and overlapping range already exists. Use a non-overlapping range or a different duration.'
           : msg
       )
     }
@@ -146,33 +146,59 @@ export default function PricingPage() {
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (editingId == null) return
+    const currentModel = models.find((m) => m.id === editingId)
+    if (!currentModel) return
     setError('')
     try {
-      let enableResponse: PricingModelResponse | null = null
-      if (pendingEnable !== null) {
+      const updated = await adminApi.updatePricingModel(editingId, editForm)
+
+      let finalModel = updated
+      const wantsStatusChange = pendingEnable !== null && pendingEnable !== updated.isEnabled
+
+      if (wantsStatusChange) {
         const approved = await confirm({
           title: pendingEnable ? 'Enable pricing model' : 'Disable pricing model',
           description: `${pendingEnable ? 'Enable' : 'Disable'} this pricing model?`,
           confirmLabel: pendingEnable ? 'Enable' : 'Disable',
           tone: pendingEnable ? 'default' : 'danger',
         })
-        if (!approved) {
-          return
+
+        if (approved) {
+          try {
+            finalModel = pendingEnable
+              ? await adminApi.enablePricingModel(editingId)
+              : await adminApi.disablePricingModel(editingId)
+          } catch (toggleError: unknown) {
+            setModels((prev) => prev.map((m) => (m.id === editingId ? updated : m)))
+            setEditForm({
+              thresholdStart: updated.thresholdStart,
+              thresholdEnd: updated.thresholdEnd,
+              amountPerMessage: updated.amountPerMessage,
+              duration: updated.duration,
+            })
+            setPendingEnable(null)
+            const toggleMessage =
+              toggleError instanceof Error ? toggleError.message : 'Failed to change pricing status'
+            setError(
+              `Pricing fields were saved, but status change failed: ${toggleMessage}. You can retry the status toggle.`
+            )
+            return
+          }
         }
-        enableResponse = pendingEnable
-          ? await adminApi.enablePricingModel(editingId)
-          : await adminApi.disablePricingModel(editingId)
       }
-      const updated = await adminApi.updatePricingModel(editingId, editForm)
-      const merged: PricingModelResponse = enableResponse
-        ? { ...updated, isEnabled: enableResponse.isEnabled }
-        : updated
-      setModels((prev) => prev.map((m) => (m.id === editingId ? merged : m)))
+
+      setModels((prev) => prev.map((m) => (m.id === editingId ? finalModel : m)))
       setEditingId(null)
       setEditForm({})
       setPendingEnable(null)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to update pricing model')
+      const msg = e instanceof Error ? e.message : 'Failed to update pricing model'
+      const isOverlap = /overlap|range/i.test(msg)
+      setError(
+        isOverlap
+          ? 'Update failed due to an overlapping pricing range for this platform and duration. Adjust threshold start/end and try again.'
+          : msg
+      )
     }
   }
 

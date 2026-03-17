@@ -5,12 +5,16 @@ import Image from 'next/image'
 import { LayoutDashboard, Users, Building2, Megaphone, Tags, ShieldCheck, UserCog, KeyRound, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
-  const isLoginPage = pathname === '/admin/login' || pathname === '/dev-admin/login'
+  const basePath = getAdminBasePath(pathname)
+  const isLoginPage =
+    pathname === '/admin/login' ||
+    pathname === '/dev-admin/login' ||
+    pathname === '/staging-admin/login'
   const to = (suffix: string) => `${basePath}${suffix}`
   const active = (suffix: string) => pathname === to(suffix)
   const activeStartsWith = (suffix: string) => pathname?.startsWith(to(suffix))

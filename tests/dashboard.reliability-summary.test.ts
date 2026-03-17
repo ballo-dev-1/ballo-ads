@@ -40,7 +40,11 @@ test("buildDashboardReliabilitySummary computes paused channels and latest incid
   assert.equal(summary.latestIncidentSeverity, "critical");
 });
 
-test("dashboardApmRouteForPathname maps admin and dev-admin", () => {
+test("dashboardApmRouteForPathname maps admin namespaces", () => {
   assert.equal(dashboardApmRouteForPathname("/admin/dashboard"), "/admin/apm");
   assert.equal(dashboardApmRouteForPathname("/dev-admin/dashboard"), "/dev-admin/apm");
+  assert.equal(
+    dashboardApmRouteForPathname("/staging-admin/dashboard"),
+    "/staging-admin/apm",
+  );
 });

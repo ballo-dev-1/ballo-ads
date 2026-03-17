@@ -4,11 +4,12 @@ import { useRef, useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { User, LogOut, ChevronDown } from 'lucide-react'
 import NotificationBell from './NotificationBell'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 export default function AdminHeader() {
   const router = useRouter()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const [open, setOpen] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
 

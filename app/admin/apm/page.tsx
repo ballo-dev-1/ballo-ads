@@ -35,6 +35,7 @@ import {
   summarizeReliabilityAlerts,
 } from './reliabilityViewModel'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 function severityBadge(severity: ApmSeverity) {
   const base =
@@ -113,7 +114,7 @@ type OverviewCardKey = 'environment' | 'verification' | 'dbProbe' | 'scheduler'
 export default function ApmPage() {
   const pathname = usePathname()
   const { env } = useApiEnv()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -1041,12 +1042,12 @@ export default function ApmPage() {
                         <p className="mt-1 text-xs text-slate-500">Open {basePath}/apm</p>
                       </a>
                       <a
-                        href={basePath === '/admin' ? '/dev-admin/apm' : '/admin/apm'}
+                        href={basePath === '/admin' ? '/staging-admin/apm' : '/admin/apm'}
                         className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
                       >
                         Alternate APM route
                         <p className="mt-1 text-xs text-slate-500">
-                          Open {basePath === '/admin' ? '/dev-admin/apm' : '/admin/apm'}
+                          Open {basePath === '/admin' ? '/staging-admin/apm' : '/admin/apm'}
                         </p>
                       </a>
                     </div>

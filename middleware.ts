@@ -5,22 +5,24 @@ import {
   ADMIN_REFRESH_TOKEN_COOKIE,
   ADMIN_TOKEN_COOKIE,
 } from "@/lib/adminAuth";
+import { getAdminBasePath, getAdminEnvFromPathname } from "@/lib/adminNamespace";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
   const tokenEnv = request.cookies.get(ADMIN_ENV_COOKIE)?.value;
-  const isDevAdmin = pathname.startsWith("/dev-admin");
   const isAdmin = pathname.startsWith("/admin");
-  const basePath = isDevAdmin ? "/dev-admin" : "/admin";
-  const expectedEnv = isDevAdmin ? "dev" : "prod";
+  const isDevAdmin = pathname.startsWith("/dev-admin");
+  const isStagingAdmin = pathname.startsWith("/staging-admin");
+  const basePath = getAdminBasePath(pathname);
+  const expectedEnv = getAdminEnvFromPathname(pathname);
   const hasMatchingEnv = !tokenEnv || tokenEnv === expectedEnv;
   const isAuthenticatedForNamespace = Boolean(token) && hasMatchingEnv;
   const loginPath = `${basePath}/login`;
   const dashboardPath = `${basePath}/dashboard`;
 
   // Self-heal legacy sessions that have token but no namespace cookie.
-  if (token && !tokenEnv && (isAdmin || isDevAdmin)) {
+  if (token && !tokenEnv && (isAdmin || isDevAdmin || isStagingAdmin)) {
     const response = NextResponse.next();
     response.cookies.set(ADMIN_ENV_COOKIE, expectedEnv, {
       httpOnly: true,
@@ -33,7 +35,11 @@ export function middleware(request: NextRequest) {
   }
 
   // Allow access to login pages
-  if (pathname === "/admin/login" || pathname === "/dev-admin/login") {
+  if (
+    pathname === "/admin/login" ||
+    pathname === "/dev-admin/login" ||
+    pathname === "/staging-admin/login"
+  ) {
     if (isAuthenticatedForNamespace) {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
@@ -51,14 +57,14 @@ export function middleware(request: NextRequest) {
   }
 
   // Redirect base admin namespaces to dashboard for authenticated users
-  if (pathname === "/admin" || pathname === "/dev-admin") {
+  if (pathname === "/admin" || pathname === "/dev-admin" || pathname === "/staging-admin") {
     if (isAuthenticatedForNamespace) {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
   }
 
   // Protect all admin routes
-  if (isAdmin || isDevAdmin) {
+  if (isAdmin || isDevAdmin || isStagingAdmin) {
     if (!isAuthenticatedForNamespace) {
       return NextResponse.redirect(new URL(loginPath, request.url));
     }
@@ -68,5 +74,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dev-admin/:path*"],
+  matcher: ["/admin/:path*", "/dev-admin/:path*", "/staging-admin/:path*"],
 };

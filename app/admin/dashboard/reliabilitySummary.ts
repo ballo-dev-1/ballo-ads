@@ -1,4 +1,5 @@
 import type { ApmAlertsResponse, DispatchControlResponse, ReliabilityAlertSeverity } from "@/lib/adminApi";
+import { getAdminBasePath } from "@/lib/adminNamespace";
 
 export type DashboardReliabilitySummary = {
   activeAlertsCount: number;
@@ -36,5 +37,5 @@ export function buildDashboardReliabilitySummary(
 }
 
 export function dashboardApmRouteForPathname(pathname: string): string {
-  return pathname.startsWith("/dev-admin") ? "/dev-admin/apm" : "/admin/apm";
+  return `${getAdminBasePath(pathname)}/apm`;
 }

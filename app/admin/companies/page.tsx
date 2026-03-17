@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { adminApi, type CompanyLeanResponse } from '@/lib/adminApi'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { ChevronDown, ChevronUp, ChevronsUpDown, Filter, Search } from 'lucide-react'
@@ -62,7 +63,7 @@ function SenderIdStatusBadge({
 export default function CompaniesPage() {
   const router = useRouter()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const { env } = useApiEnv()
   const [companies, setCompanies] = useState<CompanyLeanResponse[]>([])
   const [loading, setLoading] = useState(true)

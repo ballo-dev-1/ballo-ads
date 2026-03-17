@@ -26,6 +26,7 @@ import {
 } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 type CampaignDetailsResponse = AdsCampaignResponse & {
   attachments?: string[]
@@ -36,7 +37,7 @@ export default function CampaignDetailsPage() {
   const params = useParams()
   const pathname = usePathname()
   const { env } = useApiEnv()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const companyId = Number(params.id)
   const campaignId = Number(params.campaignId)
 

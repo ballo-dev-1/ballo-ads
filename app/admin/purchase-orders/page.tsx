@@ -9,13 +9,14 @@ import Link from 'next/link'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { Pencil } from 'lucide-react'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 const STATUS_OPTIONS = ['Pending', 'Active', 'Failed', 'Depleted', 'Expired'] as const
 
 export default function PurchaseOrdersPage() {
   const { env } = useApiEnv()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const [orders, setOrders] = useState<PurchaseOrderResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

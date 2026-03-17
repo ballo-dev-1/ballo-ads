@@ -12,13 +12,15 @@ import { usePathname } from 'next/navigation'
 import {
   DEV_API_BASE,
   PROD_API_BASE,
+  STAGING_API_BASE,
   registerBaseUrlGetter,
   setApiBaseUrl,
 } from '@/lib/adminApi'
+import { getAdminEnvFromPathname } from '@/lib/adminNamespace'
 
 export const API_ENV_STORAGE_KEY = 'ballo-ads-api-env'
 
-export type ApiEnv = 'dev' | 'prod'
+export type ApiEnv = 'dev' | 'staging' | 'prod'
 
 type ApiEnvContextValue = {
   env: ApiEnv
@@ -36,14 +38,15 @@ export function useApiEnv(): ApiEnvContextValue {
 
 function getInitialEnv(): ApiEnv {
   if (typeof window === 'undefined') return 'prod'
-  return window.location.pathname.startsWith('/dev-admin') ? 'dev' : 'prod'
+  return getAdminEnvFromPathname(window.location.pathname)
 }
 
 export function ApiEnvProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [env, setEnvState] = useState<ApiEnv>(getInitialEnv)
 
-  const baseUrl = env === 'prod' ? PROD_API_BASE : DEV_API_BASE
+  const baseUrl =
+    env === 'prod' ? PROD_API_BASE : env === 'staging' ? STAGING_API_BASE : DEV_API_BASE
 
   // Update getter and module variable synchronously before children run (so refetch after env switch uses correct URL)
   useLayoutEffect(() => {
@@ -53,7 +56,7 @@ export function ApiEnvProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!pathname) return
-    setEnvState(pathname.startsWith('/dev-admin') ? 'dev' : 'prod')
+    setEnvState(getAdminEnvFromPathname(pathname))
   }, [pathname])
 
   const setEnv = () => {

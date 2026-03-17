@@ -1,8 +1,14 @@
+import { getAdminEnvFromPathname } from "@/lib/adminNamespace";
+
 /** Dev = local or dev server; Prod = production API. Backoffice uses Backoffice/* on both. */
 export const DEV_API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_DEV_API_URL
     ? process.env.NEXT_PUBLIC_DEV_API_URL
     : "https://dev-api.balloads.com";
+export const STAGING_API_BASE =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_STAGING_API_URL
+    ? process.env.NEXT_PUBLIC_STAGING_API_URL
+    : "https://staging-api.balloads.com";
 export const PROD_API_BASE =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_PROD_API_URL
     ? process.env.NEXT_PUBLIC_PROD_API_URL
@@ -10,12 +16,17 @@ export const PROD_API_BASE =
 
 const BACKOFFICE = "Backoffice";
 
-function inferEnvFromPathname(pathname: string | null | undefined): "dev" | "prod" {
-  return pathname?.startsWith("/dev-admin") ? "dev" : "prod";
+function inferEnvFromPathname(
+  pathname: string | null | undefined,
+): "dev" | "staging" | "prod" {
+  return getAdminEnvFromPathname(pathname);
 }
 
 function inferBaseUrlFromLocationPathname(pathname: string | null | undefined): string {
-  return inferEnvFromPathname(pathname) === "dev" ? DEV_API_BASE : PROD_API_BASE;
+  const env = inferEnvFromPathname(pathname);
+  if (env === "dev") return DEV_API_BASE;
+  if (env === "staging") return STAGING_API_BASE;
+  return PROD_API_BASE;
 }
 
 let currentBaseUrl =
@@ -533,7 +544,7 @@ function mapCampaignLogResponse(
   };
 }
 
-/** PATCH /pricing/{id}/update expects camelCase body per Swagger EditPricingModelRequest. */
+/** PATCH Backoffice/pricing/{id} expects camelCase EditPricingModelRequest fields. */
 function editPricingRequestToBody(
   p: EditPricingModelRequest,
 ): Record<string, unknown> {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { Eye, EyeOff } from 'lucide-react'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')
@@ -14,7 +15,7 @@ export default function AdminLogin() {
   const router = useRouter()
   const pathname = usePathname()
   const { baseUrl } = useApiEnv()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
 
   useEffect(() => {
     fetch('/api/admin/login')

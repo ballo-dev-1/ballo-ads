@@ -31,6 +31,7 @@ import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -177,7 +178,7 @@ export default function CompanyDetailsPage() {
   const pathname = usePathname()
   const router = useRouter()
   const { env } = useApiEnv()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const id = params.id
   const [company, setCompany] = useState<CompanyLeanResponse | null>(null)
   const [loading, setLoading] = useState(true)

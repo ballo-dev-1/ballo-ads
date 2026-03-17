@@ -16,6 +16,7 @@ import {
   getCampaignStatusClasses,
 } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 type CampaignWithCompany = AdsCampaignResponse & {
   companyName: string
@@ -45,7 +46,7 @@ function getMostRecentlySentMs(campaign: CampaignWithCompany) {
 export default function CampaignsPage() {
   const router = useRouter()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const { env } = useApiEnv()
   const [campaigns, setCampaigns] = useState<CampaignWithCompany[]>([])
   const [loading, setLoading] = useState(true)

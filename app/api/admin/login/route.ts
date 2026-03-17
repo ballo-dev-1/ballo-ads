@@ -5,12 +5,13 @@ import {
   ADMIN_TOKEN_COOKIE,
   ADMIN_REFRESH_TOKEN_COOKIE,
 } from "@/lib/adminAuth";
-import { DEV_API_BASE, PROD_API_BASE } from "@/lib/adminApi";
+import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from "@/lib/adminApi";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 const ALLOWED_BASES = [
   DEV_API_BASE.replace(/\/+$/, ""),
+  STAGING_API_BASE.replace(/\/+$/, ""),
   PROD_API_BASE.replace(/\/+$/, ""),
   "http://localhost:5238",
   "http://127.0.0.1:5238",
@@ -47,7 +48,11 @@ export async function POST(request: NextRequest) {
         ? baseFromBody
         : getDefaultApiBaseUrl().replace(/\/+$/, "");
     const selectedEnv =
-      baseUrl === PROD_API_BASE.replace(/\/+$/, "") ? "prod" : "dev";
+      baseUrl === PROD_API_BASE.replace(/\/+$/, "")
+        ? "prod"
+        : baseUrl === STAGING_API_BASE.replace(/\/+$/, "")
+          ? "staging"
+          : "dev";
     const res = await fetch(`${baseUrl}/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

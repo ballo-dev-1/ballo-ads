@@ -19,6 +19,7 @@ import {
   dashboardApmRouteForPathname,
 } from './reliabilitySummary'
 import { buildDashboardKpiCards, summarizeTrendTotals } from './analyticsViewModel'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 interface WaitlistStats {
   total: number
@@ -76,7 +77,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
 
   useEffect(() => {
     const fetchAll = async () => {

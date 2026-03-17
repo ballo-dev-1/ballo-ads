@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import AdminHero from '@/app/admin/components/AdminHero'
+import { getAdminBasePath } from '@/lib/adminNamespace'
 
 interface WaitlistEntry {
   id: string
@@ -28,7 +29,7 @@ type StatusFilter = 'all' | 'pending' | 'contacted' | 'completed'
 export default function WaitlistDashboard() {
   const router = useRouter()
   const pathname = usePathname()
-  const basePath = pathname?.startsWith('/dev-admin') ? '/dev-admin' : '/admin'
+  const basePath = getAdminBasePath(pathname)
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
