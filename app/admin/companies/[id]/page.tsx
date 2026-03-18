@@ -498,6 +498,12 @@ export default function CompanyDetailsPage() {
 
   const heroActions = company ? (
     <div className="flex flex-wrap items-center gap-2">
+      <Link
+        href={`${basePath}/companies/${company.id}/analytics`}
+        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
+      >
+        View analytics
+      </Link>
       <button
         type="button"
         onClick={handleDeactivateCompany}

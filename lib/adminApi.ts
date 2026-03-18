@@ -300,6 +300,10 @@ export type DashboardAnalyticsOverviewResponse = {
   activeClients: number;
   totalRevenue: number;
   paymentSuccessRate: number;
+  campaignPerformance: DashboardAnalyticsCampaignPerformanceResponse;
+  creditsFinance: DashboardAnalyticsCreditsFinanceResponse;
+  audience: DashboardAnalyticsAudienceResponse;
+  apiOps: DashboardAnalyticsApiOpsResponse;
 };
 
 export type DashboardAnalyticsTrendPoint = {
@@ -330,6 +334,76 @@ export type DashboardAnalyticsModerationResponse = {
   rejectedCount: number;
   approvalRate: number;
   medianReviewHours: number;
+};
+
+export type DashboardAnalyticsBreakdownPoint = {
+  label: string;
+  value: number;
+};
+
+export type DashboardAnalyticsCampaignPerformanceByChannel = {
+  channel: string;
+  campaigns: number;
+  completedCampaigns: number;
+  completionRate: number;
+  totalRecipients: number;
+  dispatchedRecipients: number;
+  dispatchRate: number;
+};
+
+export type DashboardAnalyticsCampaignPerformanceResponse = {
+  totalCampaigns: number;
+  completedCampaigns: number;
+  completionRate: number;
+  totalRecipients: number;
+  dispatchedRecipients: number;
+  dispatchRate: number;
+  averageTimeToCompleteHours: number;
+  byChannel: DashboardAnalyticsCampaignPerformanceByChannel[];
+};
+
+export type DashboardAnalyticsCreditsFinanceResponse = {
+  balances: {
+    sms: number;
+    email: number;
+    whatsApp: number;
+    whatsAppUtility: number;
+  };
+  purchaseOrders: {
+    pending: number;
+    active: number;
+    failed: number;
+    depleted: number;
+    expired: number;
+  };
+  totalRevenue: number;
+  paymentSuccessRate: number;
+};
+
+export type DashboardAnalyticsAudienceResponse = {
+  totalSubscribers: number;
+  newSubscribers: number;
+  activeSubscribers: number;
+  optInSms: number;
+  optInEmail: number;
+  optInWhatsApp: number;
+  bySubscriptionSource: DashboardAnalyticsBreakdownPoint[];
+  byProvince: DashboardAnalyticsBreakdownPoint[];
+};
+
+export type DashboardAnalyticsApiOpsResponse = {
+  apiUsage: {
+    total: number;
+    successCount: number;
+    failureCount: number;
+    successRate: number;
+    byChannel: DashboardAnalyticsBreakdownPoint[];
+  };
+  channelOperations: {
+    pendingRecipients: number;
+    dispatchedLast24Hours: number;
+    failedApiUsagesLast24Hours: number;
+  };
 };
 
 export type ReliabilityNotificationPayload = {
@@ -911,6 +985,13 @@ export function mapApmAlertsResponse(r: Record<string, unknown>): ApmAlertsRespo
 export function mapDashboardAnalyticsOverviewResponse(
   r: Record<string, unknown>,
 ): DashboardAnalyticsOverviewResponse {
+  const campaignPerformanceRaw =
+    ((r.CampaignPerformance ?? r.campaignPerformance) as Record<string, unknown> | undefined) ?? {};
+  const creditsFinanceRaw =
+    ((r.CreditsFinance ?? r.creditsFinance) as Record<string, unknown> | undefined) ?? {};
+  const audienceRaw = ((r.Audience ?? r.audience) as Record<string, unknown> | undefined) ?? {};
+  const apiOpsRaw = ((r.ApiOps ?? r.apiOps) as Record<string, unknown> | undefined) ?? {};
+
   return {
     generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
     activeCampaigns: Number(r.ActiveCampaigns ?? r.activeCampaigns ?? 0),
@@ -918,6 +999,10 @@ export function mapDashboardAnalyticsOverviewResponse(
     activeClients: Number(r.ActiveClients ?? r.activeClients ?? 0),
     totalRevenue: Number(r.TotalRevenue ?? r.totalRevenue ?? 0),
     paymentSuccessRate: Number(r.PaymentSuccessRate ?? r.paymentSuccessRate ?? 0),
+    campaignPerformance: mapDashboardAnalyticsCampaignPerformanceResponse(campaignPerformanceRaw),
+    creditsFinance: mapDashboardAnalyticsCreditsFinanceResponse(creditsFinanceRaw),
+    audience: mapDashboardAnalyticsAudienceResponse(audienceRaw),
+    apiOps: mapDashboardAnalyticsApiOpsResponse(apiOpsRaw),
   };
 }
 
@@ -964,6 +1049,131 @@ function mapDashboardAnalyticsModerationResponse(
     rejectedCount: Number(r.RejectedCount ?? r.rejectedCount ?? 0),
     approvalRate: Number(r.ApprovalRate ?? r.approvalRate ?? 0),
     medianReviewHours: Number(r.MedianReviewHours ?? r.medianReviewHours ?? 0),
+  };
+}
+
+function mapDashboardAnalyticsBreakdownPoints(
+  input: unknown,
+): DashboardAnalyticsBreakdownPoint[] {
+  return Array.isArray(input)
+    ? input.map((item) => {
+        const p = (item ?? {}) as Record<string, unknown>;
+        return {
+          label: String(p.Label ?? p.label ?? ""),
+          value: Number(p.Value ?? p.value ?? 0),
+        };
+      })
+    : [];
+}
+
+function mapDashboardAnalyticsCampaignPerformanceResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsCampaignPerformanceResponse {
+  const byChannelRaw = (r.ByChannel ?? r.byChannel) as unknown;
+  return {
+    totalCampaigns: Number(r.TotalCampaigns ?? r.totalCampaigns ?? 0),
+    completedCampaigns: Number(r.CompletedCampaigns ?? r.completedCampaigns ?? 0),
+    completionRate: Number(r.CompletionRate ?? r.completionRate ?? 0),
+    totalRecipients: Number(r.TotalRecipients ?? r.totalRecipients ?? 0),
+    dispatchedRecipients: Number(r.DispatchedRecipients ?? r.dispatchedRecipients ?? 0),
+    dispatchRate: Number(r.DispatchRate ?? r.dispatchRate ?? 0),
+    averageTimeToCompleteHours: Number(
+      r.AverageTimeToCompleteHours ?? r.averageTimeToCompleteHours ?? 0,
+    ),
+    byChannel: Array.isArray(byChannelRaw)
+      ? byChannelRaw.map((item) => {
+          const c = (item ?? {}) as Record<string, unknown>;
+          return {
+            channel: String(c.Channel ?? c.channel ?? ""),
+            campaigns: Number(c.Campaigns ?? c.campaigns ?? 0),
+            completedCampaigns: Number(c.CompletedCampaigns ?? c.completedCampaigns ?? 0),
+            completionRate: Number(c.CompletionRate ?? c.completionRate ?? 0),
+            totalRecipients: Number(c.TotalRecipients ?? c.totalRecipients ?? 0),
+            dispatchedRecipients: Number(c.DispatchedRecipients ?? c.dispatchedRecipients ?? 0),
+            dispatchRate: Number(c.DispatchRate ?? c.dispatchRate ?? 0),
+          };
+        })
+      : [],
+  };
+}
+
+function mapDashboardAnalyticsCreditsFinanceResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsCreditsFinanceResponse {
+  const balancesRaw = ((r.Balances ?? r.balances) as Record<string, unknown> | undefined) ?? {};
+  const purchaseOrdersRaw =
+    ((r.PurchaseOrders ?? r.purchaseOrders) as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    balances: {
+      sms: Number(balancesRaw.Sms ?? balancesRaw.sms ?? 0),
+      email: Number(balancesRaw.Email ?? balancesRaw.email ?? 0),
+      whatsApp: Number(balancesRaw.WhatsApp ?? balancesRaw.whatsApp ?? 0),
+      whatsAppUtility: Number(
+        balancesRaw.WhatsAppUtility ?? balancesRaw.whatsAppUtility ?? 0,
+      ),
+    },
+    purchaseOrders: {
+      pending: Number(purchaseOrdersRaw.Pending ?? purchaseOrdersRaw.pending ?? 0),
+      active: Number(purchaseOrdersRaw.Active ?? purchaseOrdersRaw.active ?? 0),
+      failed: Number(purchaseOrdersRaw.Failed ?? purchaseOrdersRaw.failed ?? 0),
+      depleted: Number(purchaseOrdersRaw.Depleted ?? purchaseOrdersRaw.depleted ?? 0),
+      expired: Number(purchaseOrdersRaw.Expired ?? purchaseOrdersRaw.expired ?? 0),
+    },
+    totalRevenue: Number(r.TotalRevenue ?? r.totalRevenue ?? 0),
+    paymentSuccessRate: Number(r.PaymentSuccessRate ?? r.paymentSuccessRate ?? 0),
+  };
+}
+
+function mapDashboardAnalyticsAudienceResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsAudienceResponse {
+  return {
+    totalSubscribers: Number(r.TotalSubscribers ?? r.totalSubscribers ?? 0),
+    newSubscribers: Number(r.NewSubscribers ?? r.newSubscribers ?? 0),
+    activeSubscribers: Number(r.ActiveSubscribers ?? r.activeSubscribers ?? 0),
+    optInSms: Number(r.OptInSms ?? r.optInSms ?? 0),
+    optInEmail: Number(r.OptInEmail ?? r.optInEmail ?? 0),
+    optInWhatsApp: Number(r.OptInWhatsApp ?? r.optInWhatsApp ?? 0),
+    bySubscriptionSource: mapDashboardAnalyticsBreakdownPoints(
+      r.BySubscriptionSource ?? r.bySubscriptionSource,
+    ),
+    byProvince: mapDashboardAnalyticsBreakdownPoints(r.ByProvince ?? r.byProvince),
+  };
+}
+
+function mapDashboardAnalyticsApiOpsResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsApiOpsResponse {
+  const apiUsageRaw = ((r.ApiUsage ?? r.apiUsage) as Record<string, unknown> | undefined) ?? {};
+  const channelOperationsRaw =
+    ((r.ChannelOperations ?? r.channelOperations) as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    apiUsage: {
+      total: Number(apiUsageRaw.Total ?? apiUsageRaw.total ?? 0),
+      successCount: Number(apiUsageRaw.SuccessCount ?? apiUsageRaw.successCount ?? 0),
+      failureCount: Number(apiUsageRaw.FailureCount ?? apiUsageRaw.failureCount ?? 0),
+      successRate: Number(apiUsageRaw.SuccessRate ?? apiUsageRaw.successRate ?? 0),
+      byChannel: mapDashboardAnalyticsBreakdownPoints(
+        apiUsageRaw.ByChannel ?? apiUsageRaw.byChannel,
+      ),
+    },
+    channelOperations: {
+      pendingRecipients: Number(
+        channelOperationsRaw.PendingRecipients ?? channelOperationsRaw.pendingRecipients ?? 0,
+      ),
+      dispatchedLast24Hours: Number(
+        channelOperationsRaw.DispatchedLast24Hours ??
+          channelOperationsRaw.dispatchedLast24Hours ??
+          0,
+      ),
+      failedApiUsagesLast24Hours: Number(
+        channelOperationsRaw.FailedApiUsagesLast24Hours ??
+          channelOperationsRaw.failedApiUsagesLast24Hours ??
+          0,
+      ),
+    },
   };
 }
 
