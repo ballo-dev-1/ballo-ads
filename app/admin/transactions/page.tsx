@@ -74,24 +74,29 @@ export default function TransactionsPage() {
           title="Transactions"
           description="View payment transactions."
           variant="slate"
-        />
-
-        {canViewWalletBalance && (
-          <div className="mb-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-5 py-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Lipila wallet balance
-            </div>
-            {walletBalanceLoading ? (
-              <div className="mt-2 text-sm text-emerald-700">Loading wallet balance...</div>
-            ) : walletBalanceError ? (
-              <div className="mt-2 text-sm text-red-700">{walletBalanceError}</div>
-            ) : (
-              <div className="mt-2 text-2xl font-semibold text-emerald-900">
-                ZMW {walletBalance?.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) ?? '0.000'}
+          actions={
+            canViewWalletBalance ? (
+              <div className="rounded-full bg-[#0f1222] px-5 py-3 text-white shadow-lg">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
+                  Lipila wallet balance
+                </div>
+                {walletBalanceLoading ? (
+                  <div className="mt-0.5 text-sm font-semibold">Loading...</div>
+                ) : walletBalanceError ? (
+                  <div className="mt-0.5 text-sm font-semibold text-red-300">Unavailable</div>
+                ) : (
+                  <div className="mt-0.5 text-sm font-semibold">
+                    ZMW{' '}
+                    {walletBalance?.toLocaleString(undefined, {
+                      minimumFractionDigits: 3,
+                      maximumFractionDigits: 3,
+                    }) ?? '0.000'}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
+            ) : null
+          }
+        />
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-50/90 border border-red-200 text-red-700 px-5 py-4">

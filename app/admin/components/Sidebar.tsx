@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutDashboard, Users, Building2, Megaphone, Tags, ShieldCheck, UserCog, KeyRound, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
+import { LayoutDashboard, Users, Building2, Megaphone, Tags, ShieldCheck, UserCog, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
 import { getAdminBasePath } from '@/lib/adminNamespace'
@@ -98,17 +98,6 @@ export default function Sidebar() {
           >
             <Users className="w-5 h-5" />
             <span>Waitlist</span>
-          </button>
-          <button
-            onClick={() => router.push(to('/roles'))}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              activeStartsWith('/roles')
-                ? 'bg-[var(--brand-color-3)] text-white'
-                : 'hover:bg-[var(--brand-color-2)]/50'
-            }`}
-          >
-            <KeyRound className="w-5 h-5" />
-            <span>Roles</span>
           </button>
           <button
             onClick={() => router.push(to('/backoffice-users'))}
