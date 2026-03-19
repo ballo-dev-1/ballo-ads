@@ -106,35 +106,6 @@ export default function CampaignDetailsPage() {
     await runAction(fn, success)
   }
 
-  const handleRetargetPendingRecipients = async () => {
-    const pendingCount = campaign.networkDispatchSummary?.pendingSenderIdCount ?? 0
-    const approved = await confirm({
-      title: 'Retarget pending recipients',
-      description: `Queue a new delivery attempt for ${pendingCount} recipient(s) pending sender ID approval (networks that are now approved).`,
-      confirmLabel: 'Retarget',
-    })
-    if (!approved) return
-
-    setActionLoading(true)
-    try {
-      const result = await adminApi.retargetCampaign(companyId, campaignId)
-      toast.success(
-        result.retargetedCount > 0
-          ? `Retarget queued for ${result.retargetedCount} recipient(s)${
-              result.stillPendingCount > 0
-                ? ` (${result.stillPendingCount} still pending)`
-                : ''
-            }.`
-          : `No recipients could be retargeted (${result.stillPendingCount} still pending).`,
-      )
-      await loadCampaign()
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to retarget pending recipients')
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex-1 overflow-auto p-4 sm:p-6">
@@ -160,8 +131,6 @@ export default function CampaignDetailsPage() {
   const canApprove = !campaign.isApproved
   const canReject = campaign.isApproved
   const canActivate = !normalizedStatus.includes('active') && campaign.isApproved
-  const pendingSenderIdCount = campaign.networkDispatchSummary?.pendingSenderIdCount ?? 0
-  const canRetarget = pendingSenderIdCount > 0
   const canCancel = !normalizedStatus.includes('cancel')
 
   return (
@@ -348,18 +317,6 @@ export default function CampaignDetailsPage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Actions</p>
               {actionLoading ? <span className="text-xs font-medium text-slate-500">Updating campaign...</span> : null}
             </div>
-            {canRetarget ? (
-              <div className="mb-3">
-                <p className="text-xs text-slate-500">
-                  {pendingSenderIdCount} recipient(s) pending sender ID approval on one or more networks.
-                </p>
-                {campaign.networkDispatchSummary?.pendingNetworks?.length ? (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Pending networks: {campaign.networkDispatchSummary.pendingNetworks.join(', ')}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
             <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -421,17 +378,6 @@ export default function CampaignDetailsPage() {
             >
               Cancel
             </button>
-
-            {canRetarget ? (
-              <button
-                type="button"
-                disabled={actionDisabled}
-                onClick={() => void handleRetargetPendingRecipients()}
-                className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-white px-3 py-2 text-xs font-semibold text-[var(--brand-color-2)] transition-colors hover:bg-[rgba(91,94,231,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Retarget pending ({pendingSenderIdCount})
-              </button>
-            ) : null}
 
             <button
               type="button"

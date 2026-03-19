@@ -184,7 +184,6 @@ export default function CompanyDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [senderIdActionLoading, setSenderIdActionLoading] = useState(false)
-  const [networkSenderIdActionLoading, setNetworkSenderIdActionLoading] = useState(false)
   const [rejectedSenderId, setRejectedSenderId] = useState(false)
   const [senderIdModalOpen, setSenderIdModalOpen] = useState(false)
   const [senderIdInputValue, setSenderIdInputValue] = useState('')
@@ -320,56 +319,6 @@ export default function CompanyDetailsPage() {
     }
   }
 
-  const handleApproveNetworkSenderId = async (
-    network: 'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile',
-    approve: boolean,
-  ) => {
-    if (!company) return
-    if (!company.isActive) {
-      toast.error('Cannot change sender approval for a deactivated company')
-      return
-    }
-    if (!company.senderId) {
-      toast.error('Set a sender ID before approving it per network')
-      return
-    }
-
-    const networkLabelMap: Record<
-      'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile',
-      string
-    > = {
-      Mtn: 'MTN',
-      Airtel: 'Airtel',
-      Zamtel: 'Zamtel',
-      Zedmobile: 'Zedmobile',
-    }
-
-    const label = networkLabelMap[network]
-    const approved = await confirm({
-      title: `${approve ? 'Approve' : 'Revoke'} sender ID for ${label}`,
-      description: `${approve ? 'Approve' : 'Revoke'} network sender ID approval for this company (${company.senderId}).`,
-      confirmLabel: approve ? 'Approve' : 'Revoke',
-      tone: approve ? 'default' : 'danger',
-    })
-
-    if (!approved) return
-
-    setNetworkSenderIdActionLoading(true)
-    try {
-      const updated = await adminApi.approveCompanyNetworkSenderId(
-        company.id,
-        network,
-        approve,
-      )
-      setCompany(updated)
-      toast.success(approve ? `${label} approved` : `${label} revoked`)
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to update network sender ID approval')
-    } finally {
-      setNetworkSenderIdActionLoading(false)
-    }
-  }
-
   const startSenderIdEdit = () => {
     if (company && !company.isActive) {
       toast.error('Cannot edit sender ID for a deactivated company')
@@ -499,28 +448,6 @@ export default function CompanyDetailsPage() {
   const buttonBase =
     'inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50'
 
-  const handleDeactivateCompany = async () => {
-    if (!company || !company.isActive) return
-    const confirmed = await confirm({
-      title: 'Deactivate company',
-      description: 'Deactivate this company? This blocks operational actions but keeps data.',
-      confirmLabel: 'Deactivate',
-      tone: 'danger',
-    })
-    if (!confirmed) return
-    const reason = window.prompt('Optional reason for deactivation') || undefined
-    setLifecycleLoading(true)
-    try {
-      const updated = await adminApi.deactivateCompany(company.id, reason)
-      setCompany((prev) => (prev ? { ...prev, ...updated } : null))
-      toast.success('Company deactivated')
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to deactivate company')
-    } finally {
-      setLifecycleLoading(false)
-    }
-  }
-
   const handlePurgeCompany = async () => {
     if (!company) return
     const confirmed = await confirm({
@@ -555,14 +482,6 @@ export default function CompanyDetailsPage() {
       >
         View analytics
       </Link>
-      <button
-        type="button"
-        onClick={handleDeactivateCompany}
-        disabled={lifecycleLoading || !company.isActive}
-        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {lifecycleLoading ? 'Working...' : company.isActive ? 'Deactivate' : 'Deactivated'}
-      </button>
       <button
         type="button"
         onClick={handlePurgeCompany}
@@ -809,58 +728,6 @@ export default function CompanyDetailsPage() {
                   <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender status</dt>
                   <dd className="text-sm">
                     <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
-                  </dd>
-                </div>
-
-                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
-                    Network sender ID approvals
-                  </dt>
-                  <dd className="text-sm">
-                    <div className="space-y-2">
-                      {(
-                        [
-                          { key: 'Mtn' as const, label: 'MTN', approved: company.isApprovedSenderIdMtn ?? false },
-                          { key: 'Airtel' as const, label: 'Airtel', approved: company.isApprovedSenderIdAirtel ?? false },
-                          { key: 'Zamtel' as const, label: 'Zamtel', approved: company.isApprovedSenderIdZamtel ?? false },
-                          { key: 'Zedmobile' as const, label: 'Zedmobile', approved: company.isApprovedSenderIdZedmobile ?? false },
-                        ] as const
-                      ).map((item) => (
-                        <div key={item.key} className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                            <span
-                              className={classNames(
-                                'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
-                                item.approved
-                                  ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
-                                  : 'border-amber-300/80 bg-amber-50 text-amber-700',
-                              )}
-                            >
-                              {item.approved ? 'Approved' : 'Pending'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              disabled={networkSenderIdActionLoading || !company.isActive}
-                              onClick={() => handleApproveNetworkSenderId(item.key, !item.approved)}
-                              className={classNames(
-                                buttonBase,
-                                item.approved
-                                  ? 'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200'
-                                  : 'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
-                              )}
-                            >
-                              {networkSenderIdActionLoading ? 'Updating...' : item.approved ? 'Revoke' : 'Approve'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      <p className="text-xs text-slate-500">
-                        Used when platform requires sender ID approval per network.
-                      </p>
-                    </div>
                   </dd>
                 </div>
 

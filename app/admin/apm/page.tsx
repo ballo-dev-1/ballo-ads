@@ -10,9 +10,6 @@ import {
   type ApmOverviewResponse,
   type ApmSeverity,
   type DispatchControlResponse,
-  type PlatformSettingsResponse,
-  type PlatformSettingsUpdateRequest,
-  type SchedulerRecurringJobResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import {
@@ -125,8 +122,6 @@ export default function ApmPage() {
   const [links, setLinks] = useState<ApmLinksResponse | null>(null)
   const [dispatchControls, setDispatchControls] = useState<DispatchControlResponse | null>(null)
   const [alerts, setAlerts] = useState<ApmAlertsResponse | null>(null)
-  const [platformSettings, setPlatformSettings] = useState<PlatformSettingsResponse | null>(null)
-  const [platformSettingsError, setPlatformSettingsError] = useState('')
   const [overviewError, setOverviewError] = useState('')
   const [channelsError, setChannelsError] = useState('')
   const [linksError, setLinksError] = useState('')
@@ -136,11 +131,6 @@ export default function ApmPage() {
   const [updatingGlobalPause, setUpdatingGlobalPause] = useState(false)
   const [updatingChannel, setUpdatingChannel] = useState<string | null>(null)
   const [selectedOverviewCard, setSelectedOverviewCard] = useState<OverviewCardKey | null>(null)
-  const [schedulerJobs, setSchedulerJobs] = useState<SchedulerRecurringJobResponse[]>([])
-  const [schedulerJobsLoading, setSchedulerJobsLoading] = useState(false)
-  const [schedulerJobsError, setSchedulerJobsError] = useState('')
-  const [updatingSchedulerJobId, setUpdatingSchedulerJobId] = useState<string | null>(null)
-  const [updatingPlatformSettings, setUpdatingPlatformSettings] = useState(false)
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const closeOverviewPopup = useCallback(() => {
@@ -149,22 +139,6 @@ export default function ApmPage() {
 
   const openOverviewPopup = useCallback((card: OverviewCardKey) => {
     setSelectedOverviewCard(card)
-  }, [])
-
-  const loadSchedulerJobs = useCallback(async () => {
-    setSchedulerJobsLoading(true)
-    setSchedulerJobsError('')
-    try {
-      const response = await adminApi.getSchedulerRecurringJobs()
-      setSchedulerJobs(response.jobs)
-    } catch (err) {
-      setSchedulerJobs([])
-      setSchedulerJobsError(
-        err instanceof Error ? err.message : 'Recurring job controls are unavailable in this environment.',
-      )
-    } finally {
-      setSchedulerJobsLoading(false)
-    }
   }, [])
 
   const load = useCallback(async (opts?: { silent?: boolean }) => {
@@ -234,15 +208,6 @@ export default function ApmPage() {
       )
     }
 
-    try {
-      const ps = await adminApi.getPlatformSettings()
-      setPlatformSettings(ps)
-      setPlatformSettingsError('')
-    } catch (err) {
-      setPlatformSettings(null)
-      setPlatformSettingsError(err instanceof Error ? err.message : 'Failed to load platform settings')
-    }
-
     if (failureCount === 5) {
       setError('Unable to load APM data. You may not have access (401/403) or the service is unavailable.')
     } else if (failureCount > 0) {
@@ -277,11 +242,6 @@ export default function ApmPage() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [closeOverviewPopup, selectedOverviewCard])
-
-  useEffect(() => {
-    if (selectedOverviewCard !== 'scheduler') return
-    void loadSchedulerJobs()
-  }, [loadSchedulerJobs, selectedOverviewCard])
 
   const readinessItems = useMemo(() => {
     if (!overview) return []
@@ -445,83 +405,6 @@ export default function ApmPage() {
       setDispatchControlsError(err instanceof Error ? err.message : 'Failed to update channel pause')
     } finally {
       setUpdatingChannel(null)
-    }
-  }
-
-  const updatePlatformSettings = async (patch: PlatformSettingsUpdateRequest, humanLabel: string) => {
-    if (!platformSettings || updatingPlatformSettings) return
-    const next = {
-      ...platformSettings,
-      ...patch,
-    }
-    const approved = await confirm({
-      title: `Update ${humanLabel}`,
-      description: `Set: require campaign approval = ${next.requireCampaignApproval ? 'ON' : 'OFF'}, require sender ID approval = ${next.requireSenderIdApproval ? 'ON' : 'OFF'}.`,
-      confirmLabel: 'Save changes',
-    })
-    if (!approved) return
-
-    setUpdatingPlatformSettings(true)
-    try {
-      const updated = await adminApi.updatePlatformSettings(patch)
-      setPlatformSettings(updated)
-      setPlatformSettingsError('')
-    } catch (err) {
-      setPlatformSettingsError(err instanceof Error ? err.message : `Failed to update ${humanLabel}`)
-    } finally {
-      setUpdatingPlatformSettings(false)
-    }
-  }
-
-  const handleRequireCampaignApprovalToggle = async (requireCampaignApproval: boolean) => {
-    await updatePlatformSettings(
-      { requireCampaignApproval },
-      'campaign approval requirement',
-    )
-  }
-
-  const handleRequireSenderIdApprovalToggle = async (requireSenderIdApproval: boolean) => {
-    await updatePlatformSettings(
-      { requireSenderIdApproval },
-      'sender ID approval requirement',
-    )
-  }
-
-  const handleSchedulerRecurringJobAction = async (
-    job: SchedulerRecurringJobResponse,
-    action: 'pause' | 'resume' | 'cancel',
-  ) => {
-    if (updatingSchedulerJobId) return
-    const actionLabel = action === 'pause' ? 'Pause' : action === 'resume' ? 'Resume' : 'Cancel'
-    const approved = await confirm({
-      title: `${actionLabel} recurring job`,
-      description:
-        action === 'resume'
-          ? `Resume recurring schedule for "${job.jobId}"?`
-          : `${actionLabel} recurring schedule for "${job.jobId}"?`,
-      confirmLabel: actionLabel,
-      tone: action === 'cancel' ? 'danger' : 'default',
-    })
-    if (!approved) return
-
-    setUpdatingSchedulerJobId(job.jobId)
-    setSchedulerJobsError('')
-    try {
-      if (action === 'pause') {
-        await adminApi.pauseSchedulerRecurringJob(job.jobId)
-      } else if (action === 'resume') {
-        await adminApi.resumeSchedulerRecurringJob(job.jobId)
-      } else {
-        await adminApi.cancelSchedulerRecurringJob(job.jobId)
-      }
-      await loadSchedulerJobs()
-      await load({ silent: true })
-    } catch (err) {
-      setSchedulerJobsError(
-        err instanceof Error ? err.message : `Failed to ${action} recurring job ${job.jobId}.`,
-      )
-    } finally {
-      setUpdatingSchedulerJobId(null)
     }
   }
 
@@ -948,53 +831,6 @@ export default function ApmPage() {
             </section>
 
             <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
-              <h2 className="text-lg font-semibold text-gray-900">Campaign & sender ID approvals</h2>
-              {platformSettingsError ? (
-                <p className="text-sm text-red-600">{platformSettingsError}</p>
-              ) : platformSettings ? (
-                <div className="space-y-3">
-                  <label className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-3">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">Require campaign approval</p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        When enabled, campaigns must be approved before they can be activated.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={platformSettings.requireCampaignApproval}
-                      onChange={(e) => void handleRequireCampaignApprovalToggle(e.target.checked)}
-                      disabled={updatingPlatformSettings}
-                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)] disabled:opacity-60"
-                    />
-                  </label>
-
-                  <label className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-3">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">Require sender ID approval</p>
-                      <p className="mt-1 text-xs text-gray-500">
-                        When enabled, dispatch will skip network recipients until the sender ID is approved per network.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={platformSettings.requireSenderIdApproval}
-                      onChange={(e) => void handleRequireSenderIdApprovalToggle(e.target.checked)}
-                      disabled={updatingPlatformSettings}
-                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)] disabled:opacity-60"
-                    />
-                  </label>
-
-                  {updatingPlatformSettings ? (
-                    <p className="text-xs text-gray-500">Saving...</p>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Loading...</p>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
               <h2 className="text-lg font-semibold text-gray-900">Abnormal spike alerts</h2>
               {alertsError ? (
                 <p className="text-sm text-red-600">{alertsError}</p>
@@ -1240,84 +1076,11 @@ export default function ApmPage() {
                       </div>
                     </div>
                     <div className="rounded-lg border border-slate-200 bg-white/80 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-slate-900">Recurring jobs</p>
-                        {schedulerJobsLoading && (
-                          <span className="text-xs text-slate-500">Refreshing jobs...</span>
-                        )}
-                      </div>
-                      {schedulerJobsError ? (
-                        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                          {schedulerJobsError}
-                        </div>
-                      ) : null}
-                      {schedulerJobs.length === 0 && !schedulerJobsLoading ? (
-                        <p className="mt-3 text-sm text-slate-500">
-                          No recurring jobs available for control.
-                        </p>
-                      ) : (
-                        <div className="mt-3 space-y-2">
-                          {schedulerJobs.map((job) => (
-                            <div
-                              key={job.jobId}
-                              className="rounded-md border border-slate-200 bg-white px-3 py-3 text-sm shadow-sm"
-                            >
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <p className="font-medium text-slate-900">{job.jobId}</p>
-                                <span
-                                  className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                    job.isScheduled
-                                      ? 'bg-emerald-50 text-emerald-700'
-                                      : 'bg-amber-50 text-amber-700'
-                                  }`}
-                                >
-                                  {job.isScheduled ? 'Running' : 'Paused/Unscheduled'}
-                                </span>
-                              </div>
-                              <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-slate-600 md:grid-cols-2">
-                                <p>Cron: {job.cron || 'N/A'}</p>
-                                <p>Queue: {job.queue || 'default'}</p>
-                                <p>Last state: {job.lastJobState || 'N/A'}</p>
-                                <p>Next run: {job.nextExecution ? formatDateTime(job.nextExecution) : 'N/A'}</p>
-                              </div>
-                              {job.error ? (
-                                <p className="mt-2 text-xs text-red-600 break-all">Error: {job.error}</p>
-                              ) : null}
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {job.isScheduled ? (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSchedulerRecurringJobAction(job, 'pause')}
-                                      disabled={updatingSchedulerJobId === job.jobId}
-                                      className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-                                    >
-                                      {updatingSchedulerJobId === job.jobId ? 'Updating...' : 'Pause'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSchedulerRecurringJobAction(job, 'cancel')}
-                                      disabled={updatingSchedulerJobId === job.jobId}
-                                      className="rounded-md border border-red-300 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
-                                    >
-                                      {updatingSchedulerJobId === job.jobId ? 'Updating...' : 'Cancel'}
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSchedulerRecurringJobAction(job, 'resume')}
-                                    disabled={updatingSchedulerJobId === job.jobId}
-                                    className="rounded-md border border-emerald-300 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
-                                  >
-                                    {updatingSchedulerJobId === job.jobId ? 'Updating...' : 'Resume'}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <p className="text-sm font-semibold text-slate-900">Recurring jobs</p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Job controls are not available in this environment.
+                        View the Hangfire dashboard for individual job management.
+                      </p>
                     </div>
                   </div>
                 )}
