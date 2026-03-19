@@ -349,9 +349,16 @@ export default function CampaignDetailsPage() {
               {actionLoading ? <span className="text-xs font-medium text-slate-500">Updating campaign...</span> : null}
             </div>
             {canRetarget ? (
-              <p className="mb-3 text-xs text-slate-500">
-                {pendingSenderIdCount} recipient(s) pending sender ID approval on one or more networks.
-              </p>
+              <div className="mb-3">
+                <p className="text-xs text-slate-500">
+                  {pendingSenderIdCount} recipient(s) pending sender ID approval on one or more networks.
+                </p>
+                {campaign.networkDispatchSummary?.pendingNetworks?.length ? (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Pending networks: {campaign.networkDispatchSummary.pendingNetworks.join(', ')}
+                  </p>
+                ) : null}
+              </div>
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
             <button
