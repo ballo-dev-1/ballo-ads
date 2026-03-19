@@ -10,6 +10,8 @@ import {
   type ApmOverviewResponse,
   type ApmSeverity,
   type DispatchControlResponse,
+  type PlatformSettingsResponse,
+  type PlatformSettingsUpdateRequest,
   type SchedulerRecurringJobResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
@@ -123,6 +125,8 @@ export default function ApmPage() {
   const [links, setLinks] = useState<ApmLinksResponse | null>(null)
   const [dispatchControls, setDispatchControls] = useState<DispatchControlResponse | null>(null)
   const [alerts, setAlerts] = useState<ApmAlertsResponse | null>(null)
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettingsResponse | null>(null)
+  const [platformSettingsError, setPlatformSettingsError] = useState('')
   const [overviewError, setOverviewError] = useState('')
   const [channelsError, setChannelsError] = useState('')
   const [linksError, setLinksError] = useState('')
@@ -136,6 +140,7 @@ export default function ApmPage() {
   const [schedulerJobsLoading, setSchedulerJobsLoading] = useState(false)
   const [schedulerJobsError, setSchedulerJobsError] = useState('')
   const [updatingSchedulerJobId, setUpdatingSchedulerJobId] = useState<string | null>(null)
+  const [updatingPlatformSettings, setUpdatingPlatformSettings] = useState(false)
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const closeOverviewPopup = useCallback(() => {
@@ -227,6 +232,15 @@ export default function ApmPage() {
       setAlertsError(
         alertsRes.reason instanceof Error ? alertsRes.reason.message : 'Failed to load reliability alerts',
       )
+    }
+
+    try {
+      const ps = await adminApi.getPlatformSettings()
+      setPlatformSettings(ps)
+      setPlatformSettingsError('')
+    } catch (err) {
+      setPlatformSettings(null)
+      setPlatformSettingsError(err instanceof Error ? err.message : 'Failed to load platform settings')
     }
 
     if (failureCount === 5) {
@@ -432,6 +446,45 @@ export default function ApmPage() {
     } finally {
       setUpdatingChannel(null)
     }
+  }
+
+  const updatePlatformSettings = async (patch: PlatformSettingsUpdateRequest, humanLabel: string) => {
+    if (!platformSettings || updatingPlatformSettings) return
+    const next = {
+      ...platformSettings,
+      ...patch,
+    }
+    const approved = await confirm({
+      title: `Update ${humanLabel}`,
+      description: `Set: require campaign approval = ${next.requireCampaignApproval ? 'ON' : 'OFF'}, require sender ID approval = ${next.requireSenderIdApproval ? 'ON' : 'OFF'}.`,
+      confirmLabel: 'Save changes',
+    })
+    if (!approved) return
+
+    setUpdatingPlatformSettings(true)
+    try {
+      const updated = await adminApi.updatePlatformSettings(patch)
+      setPlatformSettings(updated)
+      setPlatformSettingsError('')
+    } catch (err) {
+      setPlatformSettingsError(err instanceof Error ? err.message : `Failed to update ${humanLabel}`)
+    } finally {
+      setUpdatingPlatformSettings(false)
+    }
+  }
+
+  const handleRequireCampaignApprovalToggle = async (requireCampaignApproval: boolean) => {
+    await updatePlatformSettings(
+      { requireCampaignApproval },
+      'campaign approval requirement',
+    )
+  }
+
+  const handleRequireSenderIdApprovalToggle = async (requireSenderIdApproval: boolean) => {
+    await updatePlatformSettings(
+      { requireSenderIdApproval },
+      'sender ID approval requirement',
+    )
   }
 
   const handleSchedulerRecurringJobAction = async (
@@ -891,6 +944,53 @@ export default function ApmPage() {
                 </div>
               ) : (
                 <p className="text-sm text-gray-500">No emergency controls available.</p>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-gray-200/80 bg-white shadow-sm p-5 space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">Campaign & sender ID approvals</h2>
+              {platformSettingsError ? (
+                <p className="text-sm text-red-600">{platformSettingsError}</p>
+              ) : platformSettings ? (
+                <div className="space-y-3">
+                  <label className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Require campaign approval</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        When enabled, campaigns must be approved before they can be activated.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={platformSettings.requireCampaignApproval}
+                      onChange={(e) => void handleRequireCampaignApprovalToggle(e.target.checked)}
+                      disabled={updatingPlatformSettings}
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)] disabled:opacity-60"
+                    />
+                  </label>
+
+                  <label className="flex items-start justify-between gap-4 rounded-lg border border-gray-200 p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Require sender ID approval</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        When enabled, dispatch will skip network recipients until the sender ID is approved per network.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={platformSettings.requireSenderIdApproval}
+                      onChange={(e) => void handleRequireSenderIdApprovalToggle(e.target.checked)}
+                      disabled={updatingPlatformSettings}
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)] disabled:opacity-60"
+                    />
+                  </label>
+
+                  {updatingPlatformSettings ? (
+                    <p className="text-xs text-gray-500">Saving...</p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Loading...</p>
               )}
             </section>
 

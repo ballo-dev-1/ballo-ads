@@ -468,8 +468,20 @@ export type CompanyLeanResponse = {
   senderId?: string;
   profileImageUrl?: string;
   isApprovedSenderId: boolean;
+  isApprovedSenderIdMtn?: boolean;
+  isApprovedSenderIdAirtel?: boolean;
+  isApprovedSenderIdZamtel?: boolean;
+  isApprovedSenderIdZedmobile?: boolean;
   isActive: boolean;
   deactivatedAt?: string;
+};
+
+export type NetworkDispatchSummary = {
+  sentCount: number;
+  pendingSenderIdCount: number;
+  pendingCount: number;
+  failedCount: number;
+  pendingNetworks: string[];
 };
 
 export type AdsCampaignResponse = {
@@ -485,6 +497,7 @@ export type AdsCampaignResponse = {
   status: string;
   mediaFileUrl?: string;
   isApproved: boolean;
+  networkDispatchSummary?: NetworkDispatchSummary;
 };
 
 export type CampaignLogResponse = {
@@ -494,6 +507,23 @@ export type CampaignLogResponse = {
   actorLastName?: string;
   initialStatus?: string;
   finalStatus?: string;
+};
+
+export type RetargetResponse = {
+  retargetedCount: number;
+  stillPendingCount: number;
+  pendingNetworks: string[];
+};
+
+export type PlatformSettingsResponse = {
+  id?: number;
+  requireCampaignApproval: boolean;
+  requireSenderIdApproval: boolean;
+};
+
+export type PlatformSettingsUpdateRequest = {
+  requireCampaignApproval?: boolean;
+  requireSenderIdApproval?: boolean;
 };
 
 export type PricingModelResponse = {
@@ -559,6 +589,14 @@ function mapCompanyLeanResponse(
       | undefined,
     isApprovedSenderId: (r.IsApprovedSenderId ??
       r.isApprovedSenderId) as boolean,
+    isApprovedSenderIdMtn: (r.IsApprovedSenderIdMtn ??
+      r.isApprovedSenderIdMtn) as boolean | undefined,
+    isApprovedSenderIdAirtel: (r.IsApprovedSenderIdAirtel ??
+      r.isApprovedSenderIdAirtel) as boolean | undefined,
+    isApprovedSenderIdZamtel: (r.IsApprovedSenderIdZamtel ??
+      r.isApprovedSenderIdZamtel) as boolean | undefined,
+    isApprovedSenderIdZedmobile: (r.IsApprovedSenderIdZedmobile ??
+      r.isApprovedSenderIdZedmobile) as boolean | undefined,
     isActive: Boolean(r.IsActive ?? r.isActive ?? true),
     deactivatedAt: (r.DeactivatedAt ?? r.deactivatedAt) as string | undefined,
   };
@@ -590,6 +628,11 @@ function mapAdsClientResponse(r: Record<string, unknown>): AdsClientResponse {
 function mapAdsCampaignResponse(
   r: Record<string, unknown>,
 ): AdsCampaignResponse {
+  const summaryRaw =
+    (r.NetworkDispatchSummary ?? r.networkDispatchSummary) as
+      | Record<string, unknown>
+      | undefined;
+
   return {
     id: (r.Id ?? r.id) as number,
     name: (r.Name ?? r.name) as string,
@@ -603,6 +646,31 @@ function mapAdsCampaignResponse(
     status: (r.Status ?? r.status) as string,
     mediaFileUrl: (r.MediaFileUrl ?? r.mediaFileUrl) as string | undefined,
     isApproved: (r.IsApproved ?? r.isApproved) as boolean,
+    networkDispatchSummary: summaryRaw
+      ? {
+          sentCount: Number(
+            (summaryRaw.sentCount ?? summaryRaw.SentCount) as number ?? 0,
+          ),
+          pendingSenderIdCount: Number(
+            (summaryRaw.pendingSenderIdCount ??
+              summaryRaw.PendingSenderIdCount) as number ?? 0,
+          ),
+          pendingCount: Number(
+            (summaryRaw.pendingCount ?? summaryRaw.PendingCount) as number ?? 0,
+          ),
+          failedCount: Number(
+            (summaryRaw.failedCount ?? summaryRaw.FailedCount) as number ?? 0,
+          ),
+          pendingNetworks: (() => {
+            const pendingNetworksValue =
+              (summaryRaw as Record<string, unknown>)['pendingNetworks'] ??
+              (summaryRaw as Record<string, unknown>)['PendingNetworks']
+            return Array.isArray(pendingNetworksValue)
+              ? pendingNetworksValue.map((x) => String(x))
+              : []
+          })(),
+        }
+      : undefined,
   };
 }
 
@@ -1371,6 +1439,21 @@ export const adminApi = {
       },
     ).then(mapCompanyLeanResponse),
 
+  approveCompanyNetworkSenderId: (
+    companyId: number,
+    network: "Mtn" | "Airtel" | "Zamtel" | "Zedmobile",
+    approve: boolean,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/approve-network-sender-id`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ network, approve }),
+        authToken,
+      },
+    ).then(mapCompanyLeanResponse),
+
   updateCompanySenderId: (
     companyId: number,
     senderId: string,
@@ -1468,6 +1551,32 @@ export const adminApi = {
       `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/cancel`,
       { method: "PATCH", authToken },
     ).then(mapAdsCampaignResponse),
+
+  retargetCampaign: (
+    companyId: number,
+    campaignId: number,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/campaigns/${campaignId}/retarget`,
+      { method: "POST", authToken },
+    ).then((r) => {
+      const retargetedCount = Number(r.RetargetedCount ?? r.retargetedCount ?? 0)
+      const stillPendingCount = Number(
+        r.StillPendingCount ?? r.stillPendingCount ?? 0,
+      )
+      const pendingNetworksRaw =
+        (r.PendingNetworks ?? r.pendingNetworks) as unknown
+      const pendingNetworks = Array.isArray(pendingNetworksRaw)
+        ? (pendingNetworksRaw as unknown[]).map((x) => String(x))
+        : []
+      const out: RetargetResponse = {
+        retargetedCount,
+        stillPendingCount,
+        pendingNetworks,
+      }
+      return out
+    }),
 
   resendCampaign: (
     companyId: number,
@@ -1959,6 +2068,45 @@ export const adminApi = {
       );
       return mapDispatchControlResponse(fallback);
     }
+  },
+
+  getPlatformSettings: async (authToken?: string) => {
+    const result = await request<Record<string, unknown>>(
+      `${BACKOFFICE}/platform-settings`,
+      { authToken },
+    );
+    return {
+      id: (result.Id ?? result.id) as number | undefined,
+      requireCampaignApproval: Boolean(
+        (result.RequireCampaignApproval ?? result.requireCampaignApproval) ?? true,
+      ),
+      requireSenderIdApproval: Boolean(
+        (result.RequireSenderIdApproval ?? result.requireSenderIdApproval) ?? true,
+      ),
+    } satisfies PlatformSettingsResponse;
+  },
+
+  updatePlatformSettings: async (
+    payload: PlatformSettingsUpdateRequest,
+    authToken?: string,
+  ) => {
+    const result = await request<Record<string, unknown>>(
+      `${BACKOFFICE}/platform-settings`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        authToken,
+      },
+    );
+    return {
+      id: (result.Id ?? result.id) as number | undefined,
+      requireCampaignApproval: Boolean(
+        (result.RequireCampaignApproval ?? result.requireCampaignApproval) ?? true,
+      ),
+      requireSenderIdApproval: Boolean(
+        (result.RequireSenderIdApproval ?? result.requireSenderIdApproval) ?? true,
+      ),
+    } satisfies PlatformSettingsResponse;
   },
 
   setGlobalDispatchPause: (
