@@ -43,7 +43,7 @@ export default function TransactionsPage() {
         setWalletBalance(walletBalanceResult.value.balance ?? 0)
       } else {
         const walletError = walletBalanceResult.reason as { status?: number; message?: string }
-        if (walletError?.status === 403) {
+        if (walletError?.status === 403 || walletError?.status === 404) {
           setCanViewWalletBalance(false)
           setWalletBalance(null)
         } else {
