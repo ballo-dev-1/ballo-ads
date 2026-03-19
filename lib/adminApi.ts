@@ -427,6 +427,10 @@ export type TransactionResponse = {
   createdAt: string;
 };
 
+export type TransactionsWalletBalanceResponse = {
+  balance: number;
+};
+
 export type AdsClientResponse = {
   id: number;
   email?: string;
@@ -1762,6 +1766,12 @@ export const adminApi = {
       : `${BACKOFFICE}/transactions`;
     return request<TransactionResponse[]>(path, { authToken });
   },
+
+  getTransactionsWalletBalance: (authToken?: string) =>
+    request<TransactionsWalletBalanceResponse>(
+      `${BACKOFFICE}/transactions/wallet-balance`,
+      { authToken },
+    ),
 
   getMtnWhitelistedSenderIds: (authToken?: string) =>
     request<Record<string, unknown>[]>(`${BACKOFFICE}/mtn-whitelisted-sender-ids`, {

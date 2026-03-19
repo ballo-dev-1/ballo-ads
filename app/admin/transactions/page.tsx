@@ -10,23 +10,54 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [walletBalanceLoading, setWalletBalanceLoading] = useState(true)
+  const [walletBalanceError, setWalletBalanceError] = useState('')
+  const [canViewWalletBalance, setCanViewWalletBalance] = useState(true)
   const [page, setPage] = useState(1)
   const pageSize = 20
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
+    setWalletBalanceLoading(true)
+    setWalletBalanceError('')
     try {
-      const data = await adminApi.getTransactions({
-        pageNumber: page,
-        pageSize,
-      })
+      const [transactionsResult, walletBalanceResult] = await Promise.allSettled([
+        adminApi.getTransactions({
+          pageNumber: page,
+          pageSize,
+        }),
+        adminApi.getTransactionsWalletBalance(),
+      ])
+
+      if (transactionsResult.status === 'rejected') {
+        throw transactionsResult.reason
+      }
+
+      const data = transactionsResult.value
       setTransactions(Array.isArray(data) ? data : [])
+
+      if (walletBalanceResult.status === 'fulfilled') {
+        setCanViewWalletBalance(true)
+        setWalletBalance(walletBalanceResult.value.balance ?? 0)
+      } else {
+        const walletError = walletBalanceResult.reason as { status?: number; message?: string }
+        if (walletError?.status === 403) {
+          setCanViewWalletBalance(false)
+          setWalletBalance(null)
+        } else {
+          setCanViewWalletBalance(true)
+          setWalletBalance(null)
+          setWalletBalanceError(walletError?.message ?? 'Failed to load wallet balance')
+        }
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load transactions')
       setTransactions([])
     } finally {
       setLoading(false)
+      setWalletBalanceLoading(false)
     }
   }, [page])
 
@@ -44,6 +75,23 @@ export default function TransactionsPage() {
           description="View payment transactions."
           variant="slate"
         />
+
+        {canViewWalletBalance && (
+          <div className="mb-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-5 py-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Lipila wallet balance
+            </div>
+            {walletBalanceLoading ? (
+              <div className="mt-2 text-sm text-emerald-700">Loading wallet balance...</div>
+            ) : walletBalanceError ? (
+              <div className="mt-2 text-sm text-red-700">{walletBalanceError}</div>
+            ) : (
+              <div className="mt-2 text-2xl font-semibold text-emerald-900">
+                ZMW {walletBalance?.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) ?? '0.000'}
+              </div>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-50/90 border border-red-200 text-red-700 px-5 py-4">
