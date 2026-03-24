@@ -109,7 +109,7 @@ export default function CampaignDetailsPage() {
   }
 
   const handleRetargetPendingRecipients = async () => {
-    const pendingCount = campaign.networkDispatchSummary?.pendingSenderIdCount ?? 0
+    const pendingCount = campaign?.networkDispatchSummary?.pendingSenderIdCount ?? 0
     const approved = await confirm({
       title: 'Retarget pending recipients',
       description: `Queue a new delivery attempt for ${pendingCount} recipient(s) pending sender ID approval (networks that are now approved).`,
