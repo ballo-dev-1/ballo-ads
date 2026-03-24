@@ -250,7 +250,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 {kpiCards.map((card) => {
                   const isPositive = card.delta >= 0
                   const deltaClass = isPositive ? 'text-emerald-700' : 'text-rose-700'
@@ -279,6 +279,16 @@ export default function Dashboard() {
                   )
                 })}
               </div>
+              <p className="mt-3 text-xs text-gray-500">
+                Applied filters:{" "}
+                {overviewCurrent?.appliedFilters?.from
+                  ? `${new Date(overviewCurrent.appliedFilters.from).toLocaleDateString()} - ${new Date(
+                      overviewCurrent.appliedFilters.to,
+                    ).toLocaleDateString()}`
+                  : "all time"}
+                {" • "}
+                Channel: {overviewCurrent?.appliedFilters?.channel ?? "All"}
+              </p>
             </section>
 
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">

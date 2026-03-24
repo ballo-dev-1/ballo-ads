@@ -47,6 +47,7 @@ export default function CampaignDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState<'overview' | 'recipients' | 'actions' | 'logs'>('overview')
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const loadCampaign = async () => {
@@ -223,6 +224,55 @@ export default function CampaignDetailsPage() {
           }
         />
 
+        <div className="mb-1 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'overview'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('recipients')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'recipients'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Recipients
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('actions')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'actions'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Actions
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('logs')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'logs'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Logs
+          </button>
+        </div>
+
+        {activeTab === 'overview' ? (
+        <>
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Current status</p>
@@ -270,7 +320,10 @@ export default function CampaignDetailsPage() {
             <p className="mt-2 text-sm font-medium text-slate-800">{campaign.creatorId}</p>
           </div>
         </section>
+        </>
+        ) : null}
 
+        {activeTab === 'recipients' ? (
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -333,7 +386,9 @@ export default function CampaignDetailsPage() {
             </div>
           )}
         </section>
+        ) : null}
 
+        {activeTab === 'overview' ? (
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-center gap-2">
             <span
@@ -412,7 +467,12 @@ export default function CampaignDetailsPage() {
             </div>
           ) : null}
 
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+        </section>
+        ) : null}
+
+        {activeTab === 'actions' ? (
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Actions</p>
               {actionLoading ? <span className="text-xs font-medium text-slate-500">Updating campaign...</span> : null}
@@ -430,97 +490,97 @@ export default function CampaignDetailsPage() {
               </div>
             ) : null}
             <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled={actionDisabled || !canApprove}
-              onClick={() =>
-                runConfirmedAction(
-                  `Approve campaign #${campaignId}?`,
-                  () => adminApi.approveCampaign(companyId, campaignId, true),
-                  'Campaign approved',
-                  { title: 'Approve campaign', confirmLabel: 'Approve' },
-                )
-              }
-              className="inline-flex rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Approve
-            </button>
-            <button
-              type="button"
-              disabled={actionDisabled || !canReject}
-              onClick={() =>
-                runConfirmedAction(
-                  `Reject campaign #${campaignId}?`,
-                  () => adminApi.approveCampaign(companyId, campaignId, false),
-                  'Campaign rejected',
-                  { title: 'Reject campaign', confirmLabel: 'Reject', tone: 'danger' },
-                )
-              }
-              className="inline-flex rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Reject
-            </button>
-            <button
-              type="button"
-              disabled={actionDisabled || !canActivate}
-              onClick={() =>
-                runConfirmedAction(
-                  `Activate campaign #${campaignId}?`,
-                  () => adminApi.activateCampaign(companyId, campaignId),
-                  'Campaign activated',
-                  { title: 'Activate campaign', confirmLabel: 'Activate' },
-                )
-              }
-              className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Activate
-            </button>
-            <button
-              type="button"
-              disabled={actionDisabled || !canCancel}
-              onClick={() =>
-                runConfirmedAction(
-                  `Cancel campaign #${campaignId}?`,
-                  () => adminApi.cancelCampaign(companyId, campaignId),
-                  'Campaign cancelled',
-                  { title: 'Cancel campaign', confirmLabel: 'Cancel campaign', tone: 'danger' },
-                )
-              }
-              className="inline-flex rounded-lg border border-red-300 bg-red-100 px-3 py-2 text-xs font-semibold text-red-800 transition-colors hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Cancel
-            </button>
-
-            {canRetarget ? (
+              <button
+                type="button"
+                disabled={actionDisabled || !canApprove}
+                onClick={() =>
+                  runConfirmedAction(
+                    `Approve campaign #${campaignId}?`,
+                    () => adminApi.approveCampaign(companyId, campaignId, true),
+                    'Campaign approved',
+                    { title: 'Approve campaign', confirmLabel: 'Approve' },
+                  )
+                }
+                className="inline-flex rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 transition-colors hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Approve
+              </button>
+              <button
+                type="button"
+                disabled={actionDisabled || !canReject}
+                onClick={() =>
+                  runConfirmedAction(
+                    `Reject campaign #${campaignId}?`,
+                    () => adminApi.approveCampaign(companyId, campaignId, false),
+                    'Campaign rejected',
+                    { title: 'Reject campaign', confirmLabel: 'Reject', tone: 'danger' },
+                  )
+                }
+                className="inline-flex rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Reject
+              </button>
+              <button
+                type="button"
+                disabled={actionDisabled || !canActivate}
+                onClick={() =>
+                  runConfirmedAction(
+                    `Activate campaign #${campaignId}?`,
+                    () => adminApi.activateCampaign(companyId, campaignId),
+                    'Campaign activated',
+                    { title: 'Activate campaign', confirmLabel: 'Activate' },
+                  )
+                }
+                className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Activate
+              </button>
+              <button
+                type="button"
+                disabled={actionDisabled || !canCancel}
+                onClick={() =>
+                  runConfirmedAction(
+                    `Cancel campaign #${campaignId}?`,
+                    () => adminApi.cancelCampaign(companyId, campaignId),
+                    'Campaign cancelled',
+                    { title: 'Cancel campaign', confirmLabel: 'Cancel campaign', tone: 'danger' },
+                  )
+                }
+                className="inline-flex rounded-lg border border-red-300 bg-red-100 px-3 py-2 text-xs font-semibold text-red-800 transition-colors hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {canRetarget ? (
+                <button
+                  type="button"
+                  disabled={actionDisabled}
+                  onClick={() => void handleRetargetPendingRecipients()}
+                  className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-white px-3 py-2 text-xs font-semibold text-[var(--brand-color-2)] transition-colors hover:bg-[rgba(91,94,231,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Retarget pending ({pendingSenderIdCount})
+                </button>
+              ) : null}
               <button
                 type="button"
                 disabled={actionDisabled}
-                onClick={() => void handleRetargetPendingRecipients()}
-                className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-white px-3 py-2 text-xs font-semibold text-[var(--brand-color-2)] transition-colors hover:bg-[rgba(91,94,231,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  runConfirmedAction(
+                    `Resend campaign #${campaignId}? This will queue another delivery attempt.`,
+                    () => adminApi.resendCampaign(companyId, campaignId),
+                    'Campaign resend queued',
+                    { title: 'Resend campaign', confirmLabel: 'Queue resend' },
+                  )
+                }
+                className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Retarget pending ({pendingSenderIdCount})
+                Resend
               </button>
-            ) : null}
-
-            <button
-              type="button"
-              disabled={actionDisabled}
-              onClick={() =>
-                runConfirmedAction(
-                  `Resend campaign #${campaignId}? This will queue another delivery attempt.`,
-                  () => adminApi.resendCampaign(companyId, campaignId),
-                  'Campaign resend queued',
-                  { title: 'Resend campaign', confirmLabel: 'Queue resend' },
-                )
-              }
-              className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Resend
-            </button>
             </div>
           </div>
         </section>
+        ) : null}
 
+        {activeTab === 'logs' ? (
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
           <div className="mb-3 border-b border-slate-100 pb-3">
             <h2 className="text-base font-semibold text-slate-900">Campaign logs</h2>
@@ -566,6 +626,7 @@ export default function CampaignDetailsPage() {
             </ul>
           )}
         </section>
+        ) : null}
         {confirmDialog}
       </div>
     </div>

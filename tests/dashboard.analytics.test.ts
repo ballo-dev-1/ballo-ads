@@ -9,16 +9,28 @@ import { buildDashboardKpiCards } from "@/app/admin/dashboard/analyticsViewModel
 test("mapDashboardAnalyticsOverviewResponse normalizes backend shape", () => {
   const mapped = mapDashboardAnalyticsOverviewResponse({
     GeneratedAt: "2026-03-12T10:00:00Z",
+    AppliedFilters: {
+      From: "2026-03-01T00:00:00Z",
+      To: "2026-03-12T10:00:00Z",
+      CompanyId: 4,
+      Channel: "Sms",
+    },
     ActiveCampaigns: 12,
     TotalCompanies: 8,
     ActiveClients: 240,
+    TotalMessagesSent: 1620,
     TotalRevenue: 9340.5,
     PaymentSuccessRate: 92.2,
   });
 
+  assert.equal(mapped.appliedFilters.from, "2026-03-01T00:00:00Z");
+  assert.equal(mapped.appliedFilters.to, "2026-03-12T10:00:00Z");
+  assert.equal(mapped.appliedFilters.companyId, 4);
+  assert.equal(mapped.appliedFilters.channel, "Sms");
   assert.equal(mapped.activeCampaigns, 12);
   assert.equal(mapped.totalCompanies, 8);
   assert.equal(mapped.activeClients, 240);
+  assert.equal(mapped.totalMessagesSent, 1620);
   assert.equal(mapped.totalRevenue, 9340.5);
   assert.equal(mapped.paymentSuccessRate, 92.2);
 });
@@ -48,9 +60,16 @@ test("buildDashboardKpiCards computes period deltas", () => {
   const cards = buildDashboardKpiCards(
     {
       generatedAt: "2026-03-12T10:00:00Z",
+      appliedFilters: {
+        from: "2026-03-05T00:00:00Z",
+        to: "2026-03-12T10:00:00Z",
+        companyId: null,
+        channel: "Sms",
+      },
       activeCampaigns: 10,
       totalCompanies: 4,
       activeClients: 120,
+      totalMessagesSent: 900,
       totalRevenue: 5400,
       paymentSuccessRate: 90,
       campaignPerformance: {
@@ -96,9 +115,16 @@ test("buildDashboardKpiCards computes period deltas", () => {
     },
     {
       generatedAt: "2026-03-12T10:00:00Z",
+      appliedFilters: {
+        from: "2026-02-26T00:00:00Z",
+        to: "2026-03-05T00:00:00Z",
+        companyId: null,
+        channel: "Sms",
+      },
       activeCampaigns: 8,
       totalCompanies: 4,
       activeClients: 100,
+      totalMessagesSent: 700,
       totalRevenue: 4000,
       paymentSuccessRate: 80,
       campaignPerformance: {
@@ -144,8 +170,9 @@ test("buildDashboardKpiCards computes period deltas", () => {
     },
   );
 
-  assert.equal(cards.length, 5);
+  assert.equal(cards.length, 6);
   assert.equal(cards[0].delta, 2);
-  assert.equal(cards[3].delta, 1400);
-  assert.equal(cards[4].delta, 10);
+  assert.equal(cards[3].delta, 200);
+  assert.equal(cards[4].delta, 1400);
+  assert.equal(cards[5].delta, 10);
 });

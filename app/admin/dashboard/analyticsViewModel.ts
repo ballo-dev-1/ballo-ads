@@ -17,17 +17,21 @@ export function buildDashboardKpiCards(
 ): DashboardKpiCard[] {
   const currentSafe = current ?? {
     generatedAt: "",
+    appliedFilters: { from: "", to: "", companyId: undefined, channel: undefined },
     activeCampaigns: 0,
     totalCompanies: 0,
     activeClients: 0,
+    totalMessagesSent: 0,
     totalRevenue: 0,
     paymentSuccessRate: 0,
   };
   const previousSafe = previous ?? {
     generatedAt: "",
+    appliedFilters: { from: "", to: "", companyId: undefined, channel: undefined },
     activeCampaigns: 0,
     totalCompanies: 0,
     activeClients: 0,
+    totalMessagesSent: 0,
     totalRevenue: 0,
     paymentSuccessRate: 0,
   };
@@ -52,6 +56,13 @@ export function buildDashboardKpiCards(
       label: "Active Clients",
       value: currentSafe.activeClients,
       delta: currentSafe.activeClients - previousSafe.activeClients,
+      unit: "count",
+    },
+    {
+      key: "total-messages-sent",
+      label: "Messages Sent",
+      value: currentSafe.totalMessagesSent,
+      delta: currentSafe.totalMessagesSent - previousSafe.totalMessagesSent,
       unit: "count",
     },
     {

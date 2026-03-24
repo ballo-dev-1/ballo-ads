@@ -295,9 +295,16 @@ export type ApmAlertsResponse = {
 
 export type DashboardAnalyticsOverviewResponse = {
   generatedAt: string;
+  appliedFilters: {
+    from: string;
+    to: string;
+    companyId?: number;
+    channel?: string;
+  };
   activeCampaigns: number;
   totalCompanies: number;
   activeClients: number;
+  totalMessagesSent: number;
   totalRevenue: number;
   paymentSuccessRate: number;
   campaignPerformance: DashboardAnalyticsCampaignPerformanceResponse;
@@ -1105,12 +1112,21 @@ export function mapDashboardAnalyticsOverviewResponse(
     ((r.CreditsFinance ?? r.creditsFinance) as Record<string, unknown> | undefined) ?? {};
   const audienceRaw = ((r.Audience ?? r.audience) as Record<string, unknown> | undefined) ?? {};
   const apiOpsRaw = ((r.ApiOps ?? r.apiOps) as Record<string, unknown> | undefined) ?? {};
+  const appliedFiltersRaw =
+    ((r.AppliedFilters ?? r.appliedFilters) as Record<string, unknown> | undefined) ?? {};
 
   return {
     generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    appliedFilters: {
+      from: String(appliedFiltersRaw.From ?? appliedFiltersRaw.from ?? ""),
+      to: String(appliedFiltersRaw.To ?? appliedFiltersRaw.to ?? ""),
+      companyId: ((appliedFiltersRaw.CompanyId ?? appliedFiltersRaw.companyId) as number | null | undefined) ?? undefined,
+      channel: ((appliedFiltersRaw.Channel ?? appliedFiltersRaw.channel) as string | null | undefined) ?? undefined,
+    },
     activeCampaigns: Number(r.ActiveCampaigns ?? r.activeCampaigns ?? 0),
     totalCompanies: Number(r.TotalCompanies ?? r.totalCompanies ?? 0),
     activeClients: Number(r.ActiveClients ?? r.activeClients ?? 0),
+    totalMessagesSent: Number(r.TotalMessagesSent ?? r.totalMessagesSent ?? 0),
     totalRevenue: Number(r.TotalRevenue ?? r.totalRevenue ?? 0),
     paymentSuccessRate: Number(r.PaymentSuccessRate ?? r.paymentSuccessRate ?? 0),
     campaignPerformance: mapDashboardAnalyticsCampaignPerformanceResponse(campaignPerformanceRaw),
