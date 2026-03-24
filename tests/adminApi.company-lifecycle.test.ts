@@ -103,3 +103,58 @@ test("purgeCompany uses DELETE on company endpoint", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test("getCompanyCampaignsAll maps recipients and delivery statuses", async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async () => {
+    return createJsonResponse([
+      {
+        Id: 42,
+        Name: "Campaign A",
+        CampaignMessage: "Hello",
+        CampaignPurpose: "SmsAdvert",
+        CampaignChannel: "Sms",
+        CompanyId: 7,
+        CreatorId: 9,
+        StartDate: "2026-03-20T10:00:00Z",
+        EndDate: "2026-03-21T10:00:00Z",
+        Status: "Active",
+        IsApproved: true,
+        Recipients: [
+          {
+            Id: 1,
+            Account: "260961000001",
+            Channel: "Sms",
+            MessageDispatched: true,
+            Status: "Sent",
+            AttemptCount: 1,
+          },
+          {
+            Id: 2,
+            Account: "260771000001",
+            Channel: "Sms",
+            MessageDispatched: false,
+            Status: "Failed",
+            AttemptCount: 2,
+            LastErrorCode: "carrier_reject",
+          },
+        ],
+      },
+    ]);
+  }) as typeof fetch;
+
+  try {
+    const campaigns = await adminApi.getCompanyCampaignsAll(7, {
+      pageSize: 10,
+      pageNumber: 1,
+    });
+
+    assert.equal(campaigns.length, 1);
+    assert.equal(campaigns[0].recipients?.length, 2);
+    assert.equal(campaigns[0].recipients?.[0].status, "Sent");
+    assert.equal(campaigns[0].recipients?.[1].status, "Failed");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

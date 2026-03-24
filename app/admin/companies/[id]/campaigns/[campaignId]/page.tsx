@@ -23,6 +23,7 @@ import {
   classNames,
   formatDateRange,
   getCampaignStatusClasses,
+  getRecipientStatusClasses,
 } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
@@ -163,6 +164,11 @@ export default function CampaignDetailsPage() {
   const pendingSenderIdCount = campaign.networkDispatchSummary?.pendingSenderIdCount ?? 0
   const canRetarget = pendingSenderIdCount > 0
   const canCancel = !normalizedStatus.includes('cancel')
+  const recipients = campaign.recipients ?? []
+  const sentRecipientsCount = recipients.filter((recipient) => recipient.status.toLowerCase() === 'sent').length
+  const failedRecipientsCount = recipients.filter((recipient) =>
+    recipient.status.toLowerCase().includes('failed'),
+  ).length
 
   return (
     <div className="flex-1 overflow-auto p-4 sm:p-6">
@@ -263,6 +269,69 @@ export default function CampaignDetailsPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Creator ID</p>
             <p className="mt-2 text-sm font-medium text-slate-800">{campaign.creatorId}</p>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Recipients</h2>
+              <p className="mt-1 text-xs text-slate-500">Delivery targets and per-recipient statuses.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700">
+                Total: {recipients.length}
+              </span>
+              <span className="rounded-full border border-emerald-300/80 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                Sent: {sentRecipientsCount}
+              </span>
+              <span className="rounded-full border border-red-300/80 bg-red-50 px-2.5 py-1 font-semibold text-red-700">
+                Failed: {failedRecipientsCount}
+              </span>
+            </div>
+          </div>
+          {recipients.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
+              No recipients found for this campaign.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-50 to-white text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <th className="whitespace-nowrap px-3 py-3">Recipient</th>
+                    <th className="whitespace-nowrap px-3 py-3">Name</th>
+                    <th className="whitespace-nowrap px-3 py-3">Channel</th>
+                    <th className="whitespace-nowrap px-3 py-3">Status</th>
+                    <th className="whitespace-nowrap px-3 py-3">Attempts</th>
+                    <th className="whitespace-nowrap px-3 py-3">Last error</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recipients.map((recipient) => (
+                    <tr key={recipient.id} className="border-t border-slate-100">
+                      <td className="px-3 py-3 font-medium text-slate-800">{recipient.account}</td>
+                      <td className="px-3 py-3 text-slate-700">{recipient.name || '—'}</td>
+                      <td className="px-3 py-3 text-slate-700">{recipient.channel}</td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={classNames(
+                            'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                            getRecipientStatusClasses(recipient.status),
+                          )}
+                        >
+                          {recipient.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">{recipient.attemptCount}</td>
+                      <td className="px-3 py-3 text-xs text-slate-600">
+                        {recipient.lastErrorCode || recipient.lastErrorMessage || '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">

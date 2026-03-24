@@ -484,6 +484,23 @@ export type NetworkDispatchSummary = {
   pendingNetworks: string[];
 };
 
+export type CampaignRecipientResponse = {
+  id: number;
+  account: string;
+  channel: string;
+  messageDispatched: boolean;
+  status: string;
+  attemptCount: number;
+  nextAttemptAt?: string;
+  claimedAt?: string;
+  lastErrorCode?: string;
+  lastErrorMessage?: string;
+  createdAt?: string;
+  purchaseOrderId?: number;
+  name?: string;
+  updatedAt?: string;
+};
+
 export type AdsCampaignResponse = {
   id: number;
   name: string;
@@ -497,6 +514,7 @@ export type AdsCampaignResponse = {
   status: string;
   mediaFileUrl?: string;
   isApproved: boolean;
+  recipients?: CampaignRecipientResponse[];
   networkDispatchSummary?: NetworkDispatchSummary;
 };
 
@@ -632,6 +650,7 @@ function mapAdsCampaignResponse(
     (r.NetworkDispatchSummary ?? r.networkDispatchSummary) as
       | Record<string, unknown>
       | undefined;
+  const recipientsRaw = (r.Recipients ?? r.recipients) as unknown;
 
   return {
     id: (r.Id ?? r.id) as number,
@@ -646,6 +665,29 @@ function mapAdsCampaignResponse(
     status: (r.Status ?? r.status) as string,
     mediaFileUrl: (r.MediaFileUrl ?? r.mediaFileUrl) as string | undefined,
     isApproved: (r.IsApproved ?? r.isApproved) as boolean,
+    recipients: Array.isArray(recipientsRaw)
+      ? recipientsRaw.map((item) => {
+          const recipient = (item ?? {}) as Record<string, unknown>;
+          return {
+            id: Number(recipient.Id ?? recipient.id ?? 0),
+            account: String(recipient.Account ?? recipient.account ?? ""),
+            channel: String(recipient.Channel ?? recipient.channel ?? ""),
+            messageDispatched: Boolean(
+              recipient.MessageDispatched ?? recipient.messageDispatched ?? false,
+            ),
+            status: String(recipient.Status ?? recipient.status ?? "Pending"),
+            attemptCount: Number(recipient.AttemptCount ?? recipient.attemptCount ?? 0),
+            nextAttemptAt: (recipient.NextAttemptAt ?? recipient.nextAttemptAt) as string | undefined,
+            claimedAt: (recipient.ClaimedAt ?? recipient.claimedAt) as string | undefined,
+            lastErrorCode: (recipient.LastErrorCode ?? recipient.lastErrorCode) as string | undefined,
+            lastErrorMessage: (recipient.LastErrorMessage ?? recipient.lastErrorMessage) as string | undefined,
+            createdAt: (recipient.CreatedAt ?? recipient.createdAt) as string | undefined,
+            purchaseOrderId: (recipient.PurchaseOrderId ?? recipient.purchaseOrderId) as number | undefined,
+            name: (recipient.Name ?? recipient.name) as string | undefined,
+            updatedAt: (recipient.UpdatedAt ?? recipient.updatedAt) as string | undefined,
+          } satisfies CampaignRecipientResponse;
+        })
+      : [],
     networkDispatchSummary: summaryRaw
       ? {
           sentCount: Number(
