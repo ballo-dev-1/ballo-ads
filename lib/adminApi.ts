@@ -438,6 +438,11 @@ export type TransactionsWalletBalanceResponse = {
   balance: number;
 };
 
+export type TumaniBalanceResponse = {
+  holderId: string;
+  balance: number;
+};
+
 export type AdsClientResponse = {
   id: number;
   email?: string;
@@ -1939,6 +1944,18 @@ export const adminApi = {
       `${BACKOFFICE}/transactions/wallet-balance`,
       { authToken },
     ),
+
+  getTumaniBalance: (authToken?: string) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/sms-providers/tumani/balance`,
+      { authToken },
+    ).then((r) => {
+      const holderId = String(
+        r.HolderId ?? r.holderId ?? r.HolderID ?? r.holderID ?? "",
+      )
+      const balance = Number(r.Balance ?? r.balance ?? 0)
+      return { holderId, balance } satisfies TumaniBalanceResponse
+    }),
 
   getMtnWhitelistedSenderIds: (authToken?: string) =>
     request<Record<string, unknown>[]>(`${BACKOFFICE}/mtn-whitelisted-sender-ids`, {

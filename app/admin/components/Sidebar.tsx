@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { LayoutDashboard, Users, Building2, Megaphone, Tags, ShieldCheck, UserCog, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
+import { LayoutDashboard, Users, Building2, Megaphone, Tags, UserCog, ShoppingCart, Receipt, PlugZap, Activity } from 'lucide-react'
 import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
 import { getAdminBasePath } from '@/lib/adminNamespace'
@@ -133,15 +133,15 @@ export default function Sidebar() {
             <span>Transactions</span>
           </button>
           <button
-            onClick={() => router.push(to('/whitelisted-sender-ids'))}
+            onClick={() => router.push(to('/sms-providers'))}
             className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-[7rem] transition-colors cursor-pointer ${
-              activeStartsWith('/whitelisted-sender-ids')
+              activeStartsWith('/sms-providers')
                 ? 'bg-[var(--brand-color-3)] text-white'
                 : 'hover:bg-[var(--brand-color-2)]/50'
             }`}
           >
-            <ShieldCheck className="w-5 h-5" />
-            <span>Whitelisted IDs</span>
+            <Megaphone className="w-5 h-5" />
+            <span>SMS Providers</span>
           </button>
           <button
             onClick={() => router.push(to('/api-management'))}
