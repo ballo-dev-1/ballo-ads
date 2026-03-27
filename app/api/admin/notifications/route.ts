@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/adminAuth'
-import { prisma } from '@/lib/prisma'
 import type { ReliabilityAlert } from '@/lib/adminApi'
 import { dedupeReliabilityAlerts, toNotificationRecordInput } from './reliabilityIngestion'
-import {
-  isNotificationTableMissingError,
-  isPrismaDatabaseUnavailableError,
-} from './prismaErrors'
+import { getCurrentAdminRoles } from '@/lib/adminClaims'
+import { createNotification, createNotificationFromEvent } from '@/lib/notifications/service'
+import type { NotificationEventType } from '@/lib/notifications/catalog'
+import { adminBackendFetch } from '@/lib/serverBackendApi'
+
+export const runtime = 'nodejs'
 
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 100
@@ -22,32 +23,50 @@ export async function GET(request: NextRequest) {
   )
   const cursor = searchParams.get('cursor') ?? undefined
   const readFilter = searchParams.get('read') // 'true' | 'false' | undefined (all)
+  const categoryFilter = searchParams.get('category') ?? undefined
+  const severityFilter = searchParams.get('severity') ?? undefined
+  const roles = await getCurrentAdminRoles()
 
-  const where =
-    readFilter === 'true'
-      ? { read: true }
-      : readFilter === 'false'
-        ? { read: false }
-        : undefined
-
-  let notifications
-  try {
-    notifications = await prisma.notification.findMany({
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      where,
-      orderBy: { createdAt: 'desc' },
-    })
-  } catch (err) {
-    if (isNotificationTableMissingError(err) || isPrismaDatabaseUnavailableError(err)) {
-      // Keep backoffice usable when notifications storage is unavailable.
-      return NextResponse.json({ notifications: [], nextCursor: null, degraded: true })
-    }
-    throw err
+  const qs = new URLSearchParams()
+  qs.set('limit', String(Math.min(MAX_LIMIT, limit + 50)))
+  if (readFilter === 'true' || readFilter === 'false') qs.set('read', readFilter)
+  if (categoryFilter) qs.set('category', categoryFilter)
+  if (severityFilter) qs.set('severity', severityFilter)
+  const backendRes = await adminBackendFetch(`Backoffice/notifications?${qs.toString()}`)
+  if (!backendRes.ok) {
+    return NextResponse.json({ notifications: [], nextCursor: null, degraded: true }, { status: 200 })
   }
+  const notifications = (await backendRes.json()) as Array<{
+    id: number | string
+    title: string
+    message: string
+    type: string
+    category?: string | null
+    severity?: string | null
+    read: boolean
+    link?: string | null
+    targetRoles?: string[] | null
+    createdAt?: string
+  }>
 
-  const hasMore = notifications.length > limit
-  const list = hasMore ? notifications.slice(0, limit) : notifications
+  const normalized = notifications.map((item) => ({
+    ...item,
+    id: String(item.id),
+    category: item.category ?? 'operations',
+    severity: item.severity ?? 'info',
+    targetRoles: item.targetRoles ?? [],
+  }))
+
+  const afterCursor =
+    cursor != null ? normalized.slice(Math.max(0, normalized.findIndex((x) => x.id === cursor) + 1)) : normalized
+
+  const filtered =
+    roles.length > 0
+      ? afterCursor.filter((item) => !item.targetRoles.length || item.targetRoles.some((r) => roles.includes(r)))
+      : afterCursor
+
+  const hasMore = filtered.length > limit
+  const list = hasMore ? filtered.slice(0, limit) : filtered
   const nextCursor = hasMore ? list[list.length - 1]?.id : null
 
   return NextResponse.json({
@@ -62,6 +81,18 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => ({}))) as {
     alerts?: ReliabilityAlert[]
+    eventType?: NotificationEventType
+    payload?: Record<string, string | number | boolean | null | undefined>
+  }
+
+  if (body.eventType) {
+    const result = await createNotificationFromEvent(body.eventType, body.payload ?? {}, {
+      source: "backoffice-event-route",
+    })
+    return NextResponse.json({
+      inserted: result.skipped ? 0 : 1,
+      skipped: result.skipped,
+    })
   }
 
   const alerts = Array.isArray(body.alerts) ? body.alerts : []
@@ -72,30 +103,30 @@ export async function POST(request: NextRequest) {
   const deduped = dedupeReliabilityAlerts(alerts)
   let inserted = 0
 
-  try {
-    for (const alert of deduped) {
-      const notification = toNotificationRecordInput(alert)
-      const existing = await prisma.notification.findFirst({
-        where: {
-          type: notification.type,
-          link: notification.link,
-        },
-        select: { id: true },
-      })
+  for (const alert of deduped) {
+    const notification = toNotificationRecordInput(alert)
 
-      if (existing) continue
-
-      await prisma.notification.create({
-        data: notification,
-      })
-      inserted += 1
-    }
-  } catch (err) {
-    if (isNotificationTableMissingError(err) || isPrismaDatabaseUnavailableError(err)) {
-      return NextResponse.json({ inserted: 0, degraded: true })
-    }
-    throw err
+    await createNotification({
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      category: notification.category,
+      severity: notification.severity,
+      link: notification.link,
+      dedupeKey: notification.dedupeKey,
+      cooldownSeconds: notification.cooldownSeconds,
+      targetRoles: notification.targetRoles,
+      entityType: notification.entityType,
+      entityId: notification.entityId,
+      metadata: notification.metadata,
+      source: notification.source,
+    })
+    inserted += 1
   }
 
   return NextResponse.json({ inserted })
+}
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 204 })
 }

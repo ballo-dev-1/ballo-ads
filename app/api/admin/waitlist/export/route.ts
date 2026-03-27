@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import sharp from 'sharp'
 import { requireAdminAuth } from '@/lib/adminAuth'
-import { prisma } from '@/lib/prisma'
+import { adminBackendFetch } from '@/lib/serverBackendApi'
 
 const ELEMENTS_SMALL_DIR = path.join(process.cwd(), 'public', 'elements small')
 
@@ -116,9 +116,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const entries = await prisma.waitlist.findMany({
-      orderBy: { createdAt: 'desc' },
-    })
+    const backendRes = await adminBackendFetch('Backoffice/waitlist/export')
+    const backendText = await backendRes.text()
+    const rawEntries = (backendText ? JSON.parse(backendText) : []) as Array<{
+      name: string
+      email: string
+      phone: string
+      createdAt: string | Date
+      updatedAt: string | Date
+    }>
+    const entries = rawEntries.map((item) => ({
+      ...item,
+      createdAt: new Date(item.createdAt),
+      updatedAt: new Date(item.updatedAt),
+    }))
+    if (!backendRes.ok) {
+      return NextResponse.json({ error: 'Failed to export waitlist. Please try again.' }, { status: backendRes.status })
+    }
 
     if (format === 'csv') {
       const csv = buildCsv(entries)

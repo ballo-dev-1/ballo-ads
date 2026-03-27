@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/adminAuth'
-import { prisma } from '@/lib/prisma'
-import {
-  isNotificationTableMissingError,
-  isPrismaDatabaseUnavailableError,
-} from '../prismaErrors'
+import { getCurrentAdminRoles } from '@/lib/adminClaims'
+import { adminBackendFetch } from '@/lib/serverBackendApi'
+
+export const runtime = 'nodejs'
 
 const POLL_INTERVAL_MS = 2000
 const HEARTBEAT_INTERVAL_MS = 20000
@@ -13,31 +12,9 @@ export async function GET(request: NextRequest) {
   const authError = await requireAdminAuth()
   if (authError) return authError
 
-  const lastEventId = request.headers.get('Last-Event-ID')
   let lastCreatedAt: Date = new Date(0)
-  if (lastEventId) {
-    try {
-      const lastNotif = await prisma.notification.findUnique({
-        where: { id: lastEventId },
-        select: { createdAt: true },
-      })
-      if (lastNotif) lastCreatedAt = lastNotif.createdAt
-    } catch (err) {
-      if (isNotificationTableMissingError(err)) {
-        return new NextResponse(
-          JSON.stringify({ error: 'Notifications table not set up. Run: npx prisma db push' }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
-      if (isPrismaDatabaseUnavailableError(err)) {
-        return new NextResponse(
-          JSON.stringify({ error: 'Notifications DB unavailable. Streaming disabled until database reconnects.' }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
-      throw err
-    }
-  }
+
+  const roles = await getCurrentAdminRoles()
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -59,47 +36,51 @@ export async function GET(request: NextRequest) {
       const poll = async (intervalRef: ReturnType<typeof setInterval> | null): Promise<void> => {
         if (closed) return
         try {
-          const newNotifications = await prisma.notification.findMany({
-            where: { createdAt: { gt: lastCreatedAt } },
-            orderBy: { createdAt: 'asc' },
-          })
+          const sinceIso = encodeURIComponent(lastCreatedAt.toISOString())
+          const res = await adminBackendFetch(`Backoffice/notifications/stream?createdAfter=${sinceIso}&limit=200`)
+          if (!res.ok) throw new Error(`Backend stream polling failed: ${res.status}`)
+          const newNotifications = (await res.json()) as Array<{
+            id: string | number
+            title: string
+            message: string
+            type: string
+            category: string | null
+            severity: string | null
+            read: boolean
+            link: string | null
+            targetRoles: string[] | null
+            createdAt: string
+          }>
           for (const n of newNotifications) {
+            const targetRoles = n.targetRoles ?? []
+            if (roles.length > 0 && targetRoles.length > 0 && !targetRoles.some((r) => roles.includes(r))) {
+              continue
+            }
+            const createdAt = new Date(n.createdAt)
             send(
               JSON.stringify({
-                id: n.id,
+                id: String(n.id),
                 title: n.title,
                 message: n.message,
                 type: n.type,
+                category: n.category ?? 'operations',
+                severity: n.severity ?? 'info',
                 read: n.read,
                 link: n.link,
-                createdAt: n.createdAt.toISOString(),
+                targetRoles,
+                createdAt: createdAt.toISOString(),
               }),
-              n.id
+              String(n.id)
             )
-            if (n.createdAt > lastCreatedAt) lastCreatedAt = n.createdAt
+            if (createdAt > lastCreatedAt) lastCreatedAt = createdAt
           }
         } catch (err) {
-          if (isNotificationTableMissingError(err)) {
-            if (!unavailableLogged) {
-              unavailableLogged = true
-              console.warn('Notifications SSE disabled: notification table does not exist. Run: npx prisma db push')
-            }
-            if (intervalRef) clearInterval(intervalRef)
-            closed = true
-            controller.close()
-            return
-          }
-          if (isPrismaDatabaseUnavailableError(err)) {
-            if (!unavailableLogged) {
-              unavailableLogged = true
-              console.warn('Notifications SSE paused: database is unreachable.')
-            }
-            if (intervalRef) clearInterval(intervalRef)
-            closed = true
-            controller.close()
-            return
-          }
+          if (!unavailableLogged) unavailableLogged = true
           console.error('SSE poll error:', err)
+          if (intervalRef) clearInterval(intervalRef)
+          closed = true
+          controller.close()
+          return
         }
       }
 
