@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { ChevronDown, Pencil, Trash2 } from 'lucide-react'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
 
 type PermissionGroup = {
   name: string
@@ -145,6 +146,9 @@ export default function BackofficeUsersPage() {
         lastName: createLastName.trim() || 'User',
         roles: createRoles,
       })
+      await notifyBackofficeEvent("backoffice_user_created", {
+        email: createEmail.trim(),
+      })
       toast.success('User created')
       setCreateOpen(false)
       setCreateEmail('')
@@ -171,6 +175,10 @@ export default function BackofficeUsersPage() {
     setError('')
     try {
       await adminApi.setUserRoles(id, editRoles)
+      await notifyBackofficeEvent("backoffice_user_roles_changed", {
+        subjectId: String(id),
+        status: "updated",
+      })
       toast.success('Roles updated')
       setEditId(null)
       load()
@@ -270,6 +278,10 @@ export default function BackofficeUsersPage() {
     setError('')
     try {
       await adminApi.setRolePermissions(id, editRolePerms)
+      await notifyBackofficeEvent("backoffice_role_permissions_changed", {
+        subjectId: String(id),
+        status: "updated",
+      })
       toast.success('Permissions updated')
       setEditRoleId(null)
       setEditRolePerms([])

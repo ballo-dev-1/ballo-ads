@@ -28,6 +28,7 @@ type SortOption =
   | 'oldest_first'
   | 'name_az'
   | 'name_za'
+type ReviewTab = 'pending' | 'approved' | 'rejected'
 
 function getDateMs(value?: string) {
   if (!value) return Number.NaN
@@ -57,6 +58,7 @@ export default function CampaignsPage() {
   const [approvalFilter, setApprovalFilter] = useState<'all' | 'approved' | 'not_approved'>('all')
   const [companyFilter, setCompanyFilter] = useState('all')
   const [sortBy, setSortBy] = useState<SortOption>('most_recently_sent')
+  const [reviewTab, setReviewTab] = useState<ReviewTab>('pending')
 
   useEffect(() => {
     let cancelled = false
@@ -131,6 +133,11 @@ export default function CampaignsPage() {
     const normalizedQuery = searchQuery.trim().toLowerCase()
 
     const filtered = campaigns.filter((campaign) => {
+      const normalizedStatus = campaign.status.toLowerCase()
+      if (reviewTab === 'pending' && campaign.isApproved) return false
+      if (reviewTab === 'approved' && !campaign.isApproved) return false
+      if (reviewTab === 'rejected' && (campaign.isApproved || !normalizedStatus.includes('cancel'))) return false
+
       if (companyFilter !== 'all' && campaign.companyName !== companyFilter) return false
       if (statusFilter !== 'all' && campaign.status !== statusFilter) return false
       if (channelFilter !== 'all' && campaign.campaignChannel !== channelFilter) return false
@@ -156,7 +163,7 @@ export default function CampaignsPage() {
       if (sortBy === 'name_az') return a.name.localeCompare(b.name)
       return b.name.localeCompare(a.name)
     })
-  }, [approvalFilter, campaigns, channelFilter, companyFilter, searchQuery, sortBy, statusFilter])
+  }, [approvalFilter, campaigns, channelFilter, companyFilter, reviewTab, searchQuery, sortBy, statusFilter])
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -181,6 +188,42 @@ export default function CampaignsPage() {
             </div>
           }
         />
+
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setReviewTab('pending')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              reviewTab === 'pending'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Pending
+          </button>
+          <button
+            type="button"
+            onClick={() => setReviewTab('approved')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              reviewTab === 'approved'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Approved
+          </button>
+          <button
+            type="button"
+            onClick={() => setReviewTab('rejected')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              reviewTab === 'rejected'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Rejected
+          </button>
+        </div>
 
         <section className="rounded-xl border border-gray-200/80 bg-white p-4 mb-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">

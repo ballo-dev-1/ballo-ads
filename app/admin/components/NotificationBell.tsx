@@ -20,6 +20,13 @@ function formatTime(createdAt: string) {
   return d.toLocaleDateString()
 }
 
+function severityBadgeClass(severity?: string) {
+  if (severity === 'critical') return 'bg-red-50 text-red-700'
+  if (severity === 'high') return 'bg-amber-50 text-amber-700'
+  if (severity === 'warning') return 'bg-yellow-50 text-yellow-700'
+  return 'bg-slate-100 text-slate-700'
+}
+
 export default function NotificationBell() {
   const { notifications, unreadCount, loading, markAsRead, markAllRead } = useNotifications()
   const [open, setOpen] = useState(false)
@@ -103,11 +110,18 @@ export default function NotificationBell() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-medium text-gray-900 text-sm">{n.title}</p>
-                        {n.type === 'reliability_alert' && (
-                          <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">
-                            Reliability
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {n.category ? (
+                            <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+                              {n.category}
+                            </span>
+                          ) : null}
+                          {n.severity ? (
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${severityBadgeClass(n.severity)}`}>
+                              {n.severity}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                       <p className="text-gray-600 text-xs mt-0.5 line-clamp-2">{n.message}</p>
                       <p className="text-gray-400 text-xs mt-1">{formatTime(n.createdAt)}</p>

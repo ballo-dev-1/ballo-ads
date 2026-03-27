@@ -28,6 +28,8 @@ import {
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
+import type { NotificationEventType } from '@/lib/notifications/catalog'
 
 type CampaignDetailsResponse = AdsCampaignResponse & {
   attachments?: string[]
@@ -66,6 +68,13 @@ export default function CampaignDetailsPage() {
       ])
       setCampaign(campaignData)
       setLogs(logsData)
+      if (!campaignData.isApproved) {
+        await notifyBackofficeEvent("campaign_approval_request", {
+          companyId,
+          campaignId,
+          campaignName: campaignData.name,
+        })
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load campaign')
     } finally {
@@ -77,12 +86,17 @@ export default function CampaignDetailsPage() {
     loadCampaign()
   }, [companyId, campaignId, env])
 
-  const runAction = async (fn: () => Promise<AdsCampaignResponse>, success: string) => {
+  const runAction = async (
+    fn: () => Promise<AdsCampaignResponse>,
+    success: string,
+    onSuccess?: () => Promise<void>,
+  ) => {
     setActionLoading(true)
     try {
       const updated = await fn()
       setCampaign((previous) => (previous ? { ...previous, ...updated } : updated))
       toast.success(success)
+      if (onSuccess) await onSuccess()
       const logsData = await adminApi.getCampaignLogs(companyId, campaignId)
       setLogs(logsData)
     } catch (e: unknown) {
@@ -96,6 +110,10 @@ export default function CampaignDetailsPage() {
     message: string,
     fn: () => Promise<AdsCampaignResponse>,
     success: string,
+    event?: {
+      type: NotificationEventType
+      payload?: Record<string, string | number | boolean | null | undefined>
+    },
     options?: { title?: string; confirmLabel?: string; tone?: 'default' | 'danger' },
   ) => {
     const approved = await confirm({
@@ -105,7 +123,15 @@ export default function CampaignDetailsPage() {
       tone: options?.tone,
     })
     if (!approved) return
-    await runAction(fn, success)
+    await runAction(fn, success, async () => {
+      if (!event) return
+      await notifyBackofficeEvent(event.type, {
+        companyId,
+        campaignId,
+        campaignName: campaign?.name ?? `Campaign ${campaignId}`,
+        ...event.payload,
+      })
+    })
   }
 
   const handleRetargetPendingRecipients = async () => {
@@ -498,6 +524,7 @@ export default function CampaignDetailsPage() {
                     `Approve campaign #${campaignId}?`,
                     () => adminApi.approveCampaign(companyId, campaignId, true),
                     'Campaign approved',
+                    { type: "campaign_approval_decision", payload: { status: "approved" } },
                     { title: 'Approve campaign', confirmLabel: 'Approve' },
                   )
                 }
@@ -513,6 +540,7 @@ export default function CampaignDetailsPage() {
                     `Reject campaign #${campaignId}?`,
                     () => adminApi.approveCampaign(companyId, campaignId, false),
                     'Campaign rejected',
+                    { type: "campaign_approval_decision", payload: { status: "rejected" } },
                     { title: 'Reject campaign', confirmLabel: 'Reject', tone: 'danger' },
                   )
                 }
@@ -528,6 +556,7 @@ export default function CampaignDetailsPage() {
                     `Activate campaign #${campaignId}?`,
                     () => adminApi.activateCampaign(companyId, campaignId),
                     'Campaign activated',
+                    { type: "campaign_activated" },
                     { title: 'Activate campaign', confirmLabel: 'Activate' },
                   )
                 }
@@ -543,6 +572,7 @@ export default function CampaignDetailsPage() {
                     `Cancel campaign #${campaignId}?`,
                     () => adminApi.cancelCampaign(companyId, campaignId),
                     'Campaign cancelled',
+                    { type: "campaign_cancelled" },
                     { title: 'Cancel campaign', confirmLabel: 'Cancel campaign', tone: 'danger' },
                   )
                 }
@@ -568,6 +598,7 @@ export default function CampaignDetailsPage() {
                     `Resend campaign #${campaignId}? This will queue another delivery attempt.`,
                     () => adminApi.resendCampaign(companyId, campaignId),
                     'Campaign resend queued',
+                    undefined,
                     { title: 'Resend campaign', confirmLabel: 'Queue resend' },
                   )
                 }

@@ -26,12 +26,16 @@ import {
   adminApi,
   type AdsCampaignResponse,
   type CompanyLeanResponse,
+  type CompanyMemberResponse,
+  type CompanyMemberRole,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
+import CompanyAnalyticsPanel from '@/app/admin/companies/[id]/components/CompanyAnalyticsPanel'
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -213,6 +217,13 @@ export default function CompanyDetailsPage() {
         const data = await adminApi.getCompanyById(numericId)
         if (!cancelled) {
           setCompany(data)
+          if (data.senderId && !data.isApprovedSenderId) {
+            await notifyBackofficeEvent("sender_id_approval_request", {
+              companyId: data.id,
+              companyName: data.name ?? "Company",
+              senderId: data.senderId,
+            })
+          }
         }
       } catch (e: unknown) {
         if (!cancelled) {
@@ -305,6 +316,12 @@ export default function CompanyDetailsPage() {
       } else {
         setRejectedSenderId(!approve)
       }
+      await notifyBackofficeEvent("sender_id_approval_decision", {
+        companyId: company.id,
+        companyName: company.name ?? "Company",
+        senderId: company.senderId ?? "",
+        status: approve ? "approved" : "rejected",
+      })
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to approve/reject sender ID')
     } finally {
@@ -363,6 +380,12 @@ export default function CompanyDetailsPage() {
       )
       setCompany(updated)
       toast.success(approve ? `${label} approved` : `${label} revoked`)
+      await notifyBackofficeEvent("sender_id_approval_decision", {
+        companyId: company.id,
+        companyName: company.name ?? "Company",
+        senderId: company.senderId ?? "",
+        status: approve ? `${network.toLowerCase()}_approved` : `${network.toLowerCase()}_revoked`,
+      })
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to update network sender ID approval')
     } finally {
@@ -485,6 +508,14 @@ export default function CompanyDetailsPage() {
     const ratio = Math.round((approvedCampaignsCount / campaigns.length) * 100)
     return `${ratio}%`
   }, [approvedCampaignsCount, campaigns.length])
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'members' | 'campaigns'>('overview')
+  const [members, setMembers] = useState<CompanyMemberResponse[]>([])
+  const [membersLoading, setMembersLoading] = useState(false)
+  const [membersError, setMembersError] = useState('')
+  const [memberActionLoading, setMemberActionLoading] = useState<number | null>(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<CompanyMemberRole>('Member')
+  const [inviteLoading, setInviteLoading] = useState(false)
 
   const breadcrumb = (
     <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
@@ -549,17 +580,11 @@ export default function CompanyDetailsPage() {
 
   const heroActions = company ? (
     <div className="flex flex-wrap items-center gap-2">
-      <Link
-        href={`${basePath}/companies/${company.id}/analytics`}
-        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
-      >
-        View analytics
-      </Link>
       <button
         type="button"
         onClick={handleDeactivateCompany}
         disabled={lifecycleLoading || !company.isActive}
-        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-full bg-amber-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-amber-300 disabled:text-amber-50 disabled:shadow-none"
       >
         {lifecycleLoading ? 'Working...' : company.isActive ? 'Deactivate' : 'Deactivated'}
       </button>
@@ -567,12 +592,99 @@ export default function CompanyDetailsPage() {
         type="button"
         onClick={handlePurgeCompany}
         disabled={lifecycleLoading}
-        className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300 disabled:text-red-50 disabled:shadow-none"
       >
         Purge
       </button>
     </div>
   ) : null
+
+  useEffect(() => {
+    if (!company || activeTab !== 'members') return
+    let cancelled = false
+    const loadMembers = async () => {
+      setMembersLoading(true)
+      setMembersError('')
+      try {
+        const data = await adminApi.getCompanyMembers(company.id)
+        if (!cancelled) setMembers(data)
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setMembers([])
+          setMembersError(e instanceof Error ? e.message : 'Failed to load members')
+        }
+      } finally {
+        if (!cancelled) setMembersLoading(false)
+      }
+    }
+    loadMembers()
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, company, env])
+
+  const handleChangeMemberRole = async (member: CompanyMemberResponse, nextRole: CompanyMemberRole) => {
+    if (!company || nextRole === member.role) return
+    const approved = await confirm({
+      title: 'Change member role',
+      description: `Change role to ${nextRole} for ${member.user?.email ?? 'this member'}?`,
+      confirmLabel: 'Update role',
+    })
+    if (!approved) return
+    setMemberActionLoading(member.id)
+    try {
+      const updated = await adminApi.updateCompanyMemberRole(company.id, member.id, nextRole)
+      setMembers((prev) => prev.map((item) => (item.id === member.id ? updated : item)))
+      toast.success('Role updated')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update role')
+    } finally {
+      setMemberActionLoading(null)
+    }
+  }
+
+  const handleRemoveMember = async (member: CompanyMemberResponse) => {
+    if (!company) return
+    const approved = await confirm({
+      title: 'Remove member',
+      description: `Remove ${member.user?.email ?? 'this member'} from the company?`,
+      confirmLabel: 'Remove',
+      tone: 'danger',
+    })
+    if (!approved) return
+    setMemberActionLoading(member.id)
+    try {
+      await adminApi.removeCompanyMember(company.id, member.id)
+      setMembers((prev) => prev.filter((item) => item.id !== member.id))
+      toast.success('Member removed')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to remove member')
+    } finally {
+      setMemberActionLoading(null)
+    }
+  }
+
+  const handleInviteMember = async () => {
+    if (!company) return
+    const email = inviteEmail.trim()
+    if (!email) {
+      toast.error('Email is required')
+      return
+    }
+    setInviteLoading(true)
+    try {
+      await adminApi.createCompanyInvite(company.id, { email, role: inviteRole })
+      setInviteEmail('')
+      setInviteRole('Member')
+      toast.success('Invite sent')
+      const refreshed = await adminApi.getCompanyMembers(company.id)
+      setMembers(refreshed)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to send invite')
+    } finally {
+      setInviteLoading(false)
+    }
+  }
 
   if (invalidId) {
     return (
@@ -669,6 +781,54 @@ export default function CompanyDetailsPage() {
           />
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'overview'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('analytics')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'analytics'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Analytics
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('members')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'members'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Members
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('campaigns')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'campaigns'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Campaigns
+          </button>
+        </div>
+
+        {activeTab === 'overview' ? (
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <SectionCard
@@ -692,6 +852,16 @@ export default function CompanyDetailsPage() {
                 <DetailRow label="Physical address" value={company.physicalAddress} />
                 <DetailRow label="Industry" value={company.industry} />
                 <DetailRow label="Description" value={company.description} />
+                <DetailRow
+                  label="Registration document"
+                  value={company.registrationDocumentUrl}
+                  href={company.registrationDocumentUrl}
+                />
+                <DetailRow
+                  label="Signature image"
+                  value={company.signatureImageUrl}
+                  href={company.signatureImageUrl}
+                />
               </dl>
             </SectionCard>
 
@@ -914,7 +1084,106 @@ export default function CompanyDetailsPage() {
             </SectionCard>
           </div>
         </div>
+        ) : null}
 
+        {activeTab === 'members' ? (
+          <SectionCard
+            title="Members"
+            subtitle="Company member listing and roles"
+          >
+            <div className="space-y-4">
+              <div className="grid gap-2 md:grid-cols-[1fr_170px_auto]">
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="Invite by email"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-[var(--brand-color-2)]/40 transition focus:ring-2"
+                />
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as CompanyMemberRole)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-gray-700"
+                >
+                  <option value="Member">Member</option>
+                  <option value="Admin">Admin</option>
+                  <option value="SuperAdmin">SuperAdmin</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={handleInviteMember}
+                  disabled={inviteLoading}
+                  className="rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {inviteLoading ? 'Inviting...' : 'Invite'}
+                </button>
+              </div>
+
+              {membersError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {membersError}
+                </div>
+              ) : null}
+
+              {membersLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
+                </div>
+              ) : members.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
+                  No members found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white/90 p-4">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-slate-50 to-white text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        <th className="px-3 py-3">Name</th>
+                        <th className="px-3 py-3">Email</th>
+                        <th className="px-3 py-3">Role</th>
+                        <th className="px-3 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {members.map((member) => (
+                        <tr key={member.id} className="border-t border-slate-100">
+                          <td className="px-3 py-3">{`${member.user?.firstName ?? ''} ${member.user?.lastName ?? ''}`.trim() || '—'}</td>
+                          <td className="px-3 py-3">{member.user?.email ?? '—'}</td>
+                          <td className="px-3 py-3">
+                            <select
+                              value={member.role}
+                              disabled={memberActionLoading === member.id}
+                              onChange={(e) => handleChangeMemberRole(member, e.target.value as CompanyMemberRole)}
+                              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-gray-700"
+                            >
+                              <option value="Member">Member</option>
+                              <option value="Admin">Admin</option>
+                              <option value="SuperAdmin">SuperAdmin</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-3">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMember(member)}
+                              disabled={memberActionLoading === member.id}
+                              className="rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {memberActionLoading === member.id ? 'Working...' : 'Remove'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </SectionCard>
+        ) : null}
+
+        {activeTab === 'analytics' ? <CompanyAnalyticsPanel companyId={company.id} /> : null}
+
+        {activeTab === 'campaigns' ? (
         <SectionCard
           title="Campaigns"
           subtitle={`${campaigns.length} total, ${approvedCampaignsCount} approved`}
@@ -992,6 +1261,7 @@ export default function CompanyDetailsPage() {
             </div>
           )}
         </SectionCard>
+        ) : null}
 
         {senderIdModalOpen ? (
           <div

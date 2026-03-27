@@ -11,6 +11,7 @@ import { ChevronDown, ChevronUp, ChevronsUpDown, Filter, Search } from 'lucide-r
 
 type SortKey = 'name' | 'email' | 'industry' | 'verified' | 'lifecycle' | 'senderId'
 type SortDir = 'asc' | 'desc'
+type ReviewTab = 'pending' | 'approved' | 'rejected'
 
 
 function SenderIdStatusBadge({
@@ -76,6 +77,7 @@ export default function CompaniesPage() {
   const [filterPendingVerification, setFilterPendingVerification] = useState(true)
   const [filterActive, setFilterActive] = useState(true)
   const [filterDeactivated, setFilterDeactivated] = useState(true)
+  const [reviewTab, setReviewTab] = useState<ReviewTab>('pending')
   const [filtersPopoverOpen, setFiltersPopoverOpen] = useState(false)
   const filtersPopoverRef = useRef<HTMLDivElement>(null)
 
@@ -162,6 +164,10 @@ export default function CompaniesPage() {
   const filteredAndSortedCompanies = useMemo(() => {
     const search = query.trim().toLowerCase()
     let list = companies.filter((company) => {
+      if (reviewTab === 'pending' && (company.isCompanyVerified || !company.isActive)) return false
+      if (reviewTab === 'approved' && !company.isCompanyVerified) return false
+      if (reviewTab === 'rejected' && company.isActive) return false
+
       if (industryFilter && company.industry !== industryFilter) return false
 
       const noVerificationFilter = !filterVerified && !filterPendingVerification
@@ -227,6 +233,7 @@ export default function CompaniesPage() {
     return list
   }, [
     companies,
+    reviewTab,
     industryFilter,
     filterVerified,
     filterPendingVerification,
@@ -275,6 +282,42 @@ export default function CompaniesPage() {
             </div>
           }
         />
+
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setReviewTab('pending')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              reviewTab === 'pending'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Pending
+          </button>
+          <button
+            type="button"
+            onClick={() => setReviewTab('approved')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              reviewTab === 'approved'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Approved
+          </button>
+          <button
+            type="button"
+            onClick={() => setReviewTab('rejected')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              reviewTab === 'rejected'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Rejected
+          </button>
+        </div>
 
         {createOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

@@ -13,6 +13,7 @@ import {
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
 
 const CHANNEL_OPTIONS = ['Sms', 'Email', 'WhatsApp', 'WhatsAppUtility'] as const
 
@@ -166,6 +167,11 @@ export default function ApiManagementPage() {
         isTestKey: clientForm.isTestKey,
       })
       setLastCreatedKey(created)
+      await notifyBackofficeEvent("manual_credit_allocation", {
+        companyId,
+        companyName: selectedCompany?.name ?? "Company",
+        amount: "api_client_created",
+      })
       toast.success('API client created')
       setClientForm({
         name: '',
@@ -198,6 +204,10 @@ export default function ApiManagementPage() {
     try {
       const rotated = await adminApi.rotateCompanyApiClientKey(companyId, apiClientId)
       setLastCreatedKey(rotated)
+      await notifyBackofficeEvent("api_key_rotated", {
+        companyId,
+        companyName: selectedCompany?.name ?? "Company",
+      })
       toast.success('API key rotated')
       await loadApiClients(companyId)
       await loadCreditBalance(companyId)
@@ -222,6 +232,10 @@ export default function ApiManagementPage() {
     setRevokingId(apiClientId)
     try {
       await adminApi.revokeCompanyApiClient(companyId, apiClientId)
+      await notifyBackofficeEvent("api_key_revoked", {
+        companyId,
+        companyName: selectedCompany?.name ?? "Company",
+      })
       toast.success('API client revoked')
       await loadApiClients(companyId)
       await loadUsage(companyId, usageFilterApiClientId)
@@ -275,6 +289,11 @@ export default function ApiManagementPage() {
         whatsAppUtilityCount,
         notes: allocationForm.notes.trim() || undefined,
         durationDays,
+      })
+      await notifyBackofficeEvent("manual_credit_allocation", {
+        companyId,
+        companyName: selectedCompany?.name ?? "Company",
+        amount: String(smsCount + emailCount + whatsAppCount + whatsAppUtilityCount),
       })
       toast.success('Credits allocated successfully')
       setAllocationForm({

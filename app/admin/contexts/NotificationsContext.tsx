@@ -10,14 +10,23 @@ import {
   type ReactNode,
 } from 'react'
 import { adminApi } from '@/lib/adminApi'
+import {
+  listenForAdminForegroundPush,
+  subscribeAdminPush,
+  unsubscribeAdminPush,
+} from "@/lib/firebase/fcm-service";
 
 export type NotificationItem = {
   id: string
   title: string
   message: string
   type: string
+  category?: string
+  severity?: 'info' | 'warning' | 'high' | 'critical'
   read: boolean
   link: string | null
+  targetRoles?: string[]
+  metadata?: Record<string, unknown>
   createdAt: string
 }
 
@@ -97,6 +106,25 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [fetchList])
 
   useEffect(() => {
+    let isMounted = true;
+
+    const setupPush = async () => {
+      const { error } = await subscribeAdminPush();
+      if (error && isMounted) {
+        // Keep existing notification channels active even when push setup fails.
+        console.warn("[notifications][push] setup skipped:", error);
+      }
+    };
+
+    void setupPush();
+
+    return () => {
+      isMounted = false;
+      void unsubscribeAdminPush();
+    };
+  }, []);
+
+  useEffect(() => {
     const id = window.setInterval(() => {
       void syncReliabilityAlerts()
     }, 30000)
@@ -131,6 +159,19 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       eventSourceRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    let off: () => void = () => {};
+    listenForAdminForegroundPush(() => {
+      void fetchList();
+    })
+      .then((unsub) => {
+        off = unsub;
+      })
+      .catch(() => undefined);
+
+    return () => off();
+  }, [fetchList]);
 
   const markAsRead = useCallback(async (id: string) => {
     try {

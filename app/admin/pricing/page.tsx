@@ -11,6 +11,7 @@ import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { ChevronDown, ChevronUp, ChevronsUpDown, Filter } from 'lucide-react'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
 
 type SortKey = 'platform' | 'range' | 'amountPerMessage' | 'duration' | 'status' | 'createdAt'
 type SortDir = 'asc' | 'desc'
@@ -89,6 +90,10 @@ export default function PricingPage() {
       createDurationRef.current = null
       const created = await adminApi.createPricingModel(payload)
       setModels((prev) => [created, ...prev])
+      await notifyBackofficeEvent("dispatch_control_changed", {
+        channel: created.platform,
+        status: "pricing_created",
+      })
       setForm(initialCreateForm)
       createDurationRef.current = null
     } catch (e: unknown) {
@@ -168,6 +173,10 @@ export default function PricingPage() {
             finalModel = pendingEnable
               ? await adminApi.enablePricingModel(editingId)
               : await adminApi.disablePricingModel(editingId)
+            await notifyBackofficeEvent("dispatch_control_changed", {
+              channel: finalModel.platform,
+              status: finalModel.isEnabled ? "pricing_enabled" : "pricing_disabled",
+            })
           } catch (toggleError: unknown) {
             setModels((prev) => prev.map((m) => (m.id === editingId ? updated : m)))
             setEditForm({

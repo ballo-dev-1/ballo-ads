@@ -10,6 +10,7 @@ import AdminHero from '@/app/admin/components/AdminHero'
 import { Pencil } from 'lucide-react'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
 
 const STATUS_OPTIONS = ['Pending', 'Active', 'Failed', 'Depleted', 'Expired'] as const
 
@@ -75,6 +76,18 @@ export default function PurchaseOrdersPage() {
     setStatusSaving(true)
     try {
       await adminApi.updatePurchaseOrderStatus(modalOrder.id, nextStatus)
+      if (nextStatus.toLowerCase() === "failed") {
+        await notifyBackofficeEvent("purchase_order_failed", {
+          companyId: modalOrder.company?.id ?? 0,
+          companyName: modalOrder.company?.name ?? "Company",
+          amount: String(modalOrder.smsCount ?? 0),
+        })
+      } else if (nextStatus.toLowerCase() === "expired") {
+        await notifyBackofficeEvent("purchase_order_expired", {
+          companyId: modalOrder.company?.id ?? 0,
+          companyName: modalOrder.company?.name ?? "Company",
+        })
+      }
       toast.success('Status updated')
       closeModal()
       load()

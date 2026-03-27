@@ -19,6 +19,7 @@ import {
   dashboardApmRouteForPathname,
 } from './reliabilitySummary'
 import { buildDashboardKpiCards, summarizeTrendTotals } from './analyticsViewModel'
+import { dashboardStatsWarningMessage } from './fetchStatus'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 
 interface WaitlistStats {
@@ -74,6 +75,10 @@ export default function Dashboard() {
   const [trends, setTrends] = useState<DashboardAnalyticsTrendsResponse | null>(null)
   const [funnel, setFunnel] = useState<DashboardAnalyticsFunnelResponse | null>(null)
   const [moderation, setModeration] = useState<DashboardAnalyticsModerationResponse | null>(null)
+  const [dashboardWarning, setDashboardWarning] = useState('')
+  const [dashboardFailureDetails, setDashboardFailureDetails] = useState<
+    Array<{ key: string; status?: number; message: string }>
+  >([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
@@ -82,6 +87,8 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true)
+      setDashboardWarning('')
+      setDashboardFailureDetails([])
       try {
         const isLifetime = rangePreset === 'lifetime'
         const rangeDays = rangePreset === '7d' ? 7 : rangePreset === '40d' ? 40 : 90
@@ -106,9 +113,22 @@ export default function Dashboard() {
           adminApi.getApmAlerts(),
           adminApi.getDispatchControls(),
         ])
-        const [overviewCurrentRes, overviewPreviousRes, trendsRes, funnelRes, moderationRes] = await Promise.allSettled([
-          adminApi.getDashboardAnalyticsOverview(analyticsParams),
-          adminApi.getDashboardAnalyticsOverview(previousParams),
+
+        const settle = async <T,>(p: Promise<T>): Promise<PromiseSettledResult<T>> => {
+          try {
+            const value = await p
+            return { status: 'fulfilled', value }
+          } catch (reason) {
+            return { status: 'rejected', reason }
+          }
+        }
+
+        // Important: fetch overview (current/previous) sequentially to avoid backend DbContext
+        // concurrency issues in some deployments.
+        const overviewCurrentRes = await settle(adminApi.getDashboardAnalyticsOverview(analyticsParams))
+        const overviewPreviousRes = await settle(adminApi.getDashboardAnalyticsOverview(previousParams))
+
+        const [trendsRes, funnelRes, moderationRes] = await Promise.allSettled([
           adminApi.getDashboardAnalyticsTrends({ ...analyticsParams, bucket: 'day' }),
           adminApi.getDashboardAnalyticsFunnel(analyticsParams),
           adminApi.getDashboardAnalyticsModeration(analyticsParams),
@@ -142,8 +162,58 @@ export default function Dashboard() {
         setTrends(trendsRes.status === 'fulfilled' ? trendsRes.value : null)
         setFunnel(funnelRes.status === 'fulfilled' ? funnelRes.value : null)
         setModeration(moderationRes.status === 'fulfilled' ? moderationRes.value : null)
+        const failureFor = (key: string, reason: unknown): { key: string; status?: number; message: string } => {
+          const r = reason as { message?: unknown; status?: unknown } | null | undefined
+          const status = typeof r?.status === 'number' ? r.status : undefined
+          const message = typeof r?.message === 'string' ? r.message : 'Request failed'
+          return { key, status, message }
+        }
+
+        const failures = [
+          waitlistRes.status === 'rejected'
+            ? failureFor('queue volume (waitlist)', waitlistRes.reason)
+            : null,
+          ordersRes.status === 'rejected'
+            ? failureFor('order intake (purchase orders)', ordersRes.reason)
+            : null,
+          alertsRes.status === 'rejected'
+            ? failureFor('reliability alerts (apm alerts)', alertsRes.reason)
+            : null,
+          dispatchRes.status === 'rejected'
+            ? failureFor('dispatch controls', dispatchRes.reason)
+            : null,
+          overviewCurrentRes.status === 'rejected' ? failureFor('analytics/overview (current)', overviewCurrentRes.reason) : null,
+          overviewPreviousRes.status === 'rejected' ? failureFor('analytics/overview (previous)', overviewPreviousRes.reason) : null,
+          trendsRes.status === 'rejected' ? failureFor('analytics/trends', trendsRes.reason) : null,
+          funnelRes.status === 'rejected' ? failureFor('analytics/funnel', funnelRes.reason) : null,
+          moderationRes.status === 'rejected' ? failureFor('analytics/moderation', moderationRes.reason) : null,
+        ].filter((x): x is { key: string; status?: number; message: string } => x !== null)
+
+        setDashboardFailureDetails(failures)
+        if (failures.length > 0) {
+          failures.forEach((f) => console.warn(`[dashboard] ${f.key} failed`, f))
+        }
+
+        setDashboardWarning(
+          dashboardStatsWarningMessage([
+            waitlistRes,
+            ordersRes,
+            alertsRes,
+            dispatchRes,
+            overviewCurrentRes,
+            overviewPreviousRes,
+            trendsRes,
+            funnelRes,
+            moderationRes,
+          ]),
+        )
       } catch (err) {
         console.error('Error fetching dashboard data:', err)
+        setDashboardWarning('Unable to load dashboard stats right now.')
+        const r = err as { message?: unknown; status?: unknown } | null | undefined
+        const status = typeof r?.status === 'number' ? r.status : undefined
+        const message = typeof r?.message === 'string' ? r.message : 'Request failed'
+        setDashboardFailureDetails([{ key: 'dashboard', status, message }])
       } finally {
         setLoading(false)
       }
@@ -183,6 +253,24 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-6">
+            {dashboardWarning ? (
+              <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-yellow-800 shadow-sm">
+                {dashboardWarning}
+                {dashboardFailureDetails.length > 0 ? (
+                  <div className="mt-2 text-xs leading-relaxed text-yellow-900/90">
+                    <div className="font-semibold">Failures</div>
+                    <div className="mt-1">
+                      {dashboardFailureDetails.map((f) => (
+                        <div key={f.key}>
+                          {f.key}
+                          {typeof f.status === 'number' ? ` (status ${f.status})` : null}: {f.message}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <section className="relative overflow-hidden rounded-[28px] border border-[#d8e0ff] bg-[linear-gradient(135deg,#edf2ff_0%,#e8f0ff_45%,#eff5ff_100%)] px-6 py-7 shadow-[0_20px_45px_rgba(65,96,197,0.12)] md:px-8 md:py-8">
               <div className="pointer-events-none absolute -top-24 right-[12%] h-48 w-48 rounded-full bg-[radial-gradient(circle,_rgba(102,133,255,0.32)_0%,_rgba(102,133,255,0)_70%)]" />
               <div className="pointer-events-none absolute -bottom-20 left-10 h-40 w-40 rounded-full bg-[radial-gradient(circle,_rgba(113,226,255,0.24)_0%,_rgba(113,226,255,0)_72%)]" />

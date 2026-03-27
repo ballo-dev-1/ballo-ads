@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { User, LogOut, ChevronDown } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import { getAdminBasePath } from '@/lib/adminNamespace'
+import { unsubscribeAdminPush } from '@/lib/firebase/fcm-service'
 
 export default function AdminHeader() {
   const router = useRouter()
@@ -25,6 +26,7 @@ export default function AdminHeader() {
 
   const handleLogout = async () => {
     try {
+      await unsubscribeAdminPush()
       await fetch('/api/admin/logout', { method: 'POST' })
       setOpen(false)
       router.push(`${basePath}/login`)

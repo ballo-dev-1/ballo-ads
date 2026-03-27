@@ -6,8 +6,9 @@ import { adminApi, type TumaniBalanceResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 import MtnWhitelistedSenderIdsPanel from '@/app/admin/components/MtnWhitelistedSenderIdsPanel'
+import SmsProviderRoutesPanel from '@/app/admin/components/SmsProviderRoutesPanel'
 
-type SmsProviderTab = 'tumani' | 'mtn'
+type SmsProviderTab = 'tumani' | 'mtn' | 'routes'
 type MtnInnerTab = 'whitelisted'
 
 export default function SmsProvidersClient() {
@@ -82,6 +83,17 @@ export default function SmsProvidersClient() {
           >
             MTN
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('routes')}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              activeTab === 'routes'
+                ? 'bg-[#0e0e39] text-white'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            Routing rules
+          </button>
         </div>
 
         {activeTab === 'tumani' ? (
@@ -111,7 +123,7 @@ export default function SmsProvidersClient() {
               <div className="text-sm text-gray-500">No Tumani balance data yet.</div>
             )}
           </section>
-        ) : (
+        ) : activeTab === 'mtn' ? (
           <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">MTN provider</h2>
@@ -135,6 +147,10 @@ export default function SmsProvidersClient() {
             {activeMtnInnerTab === 'whitelisted' ? (
               <MtnWhitelistedSenderIdsPanel />
             ) : null}
+          </section>
+        ) : (
+          <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">
+            <SmsProviderRoutesPanel />
           </section>
         )}
       </div>

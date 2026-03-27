@@ -479,6 +479,8 @@ export type CompanyLeanResponse = {
   youtubeUrl?: string;
   senderId?: string;
   profileImageUrl?: string;
+  registrationDocumentUrl?: string;
+  signatureImageUrl?: string;
   isApprovedSenderId: boolean;
   isApprovedSenderIdMtn?: boolean;
   isApprovedSenderIdAirtel?: boolean;
@@ -486,6 +488,39 @@ export type CompanyLeanResponse = {
   isApprovedSenderIdZedmobile?: boolean;
   isActive: boolean;
   deactivatedAt?: string;
+};
+
+export type CompanyMemberRole = "Member" | "Admin" | "SuperAdmin";
+
+export type CompanyMemberResponse = {
+  id: number;
+  role: CompanyMemberRole;
+  companyRoleId?: number;
+  companyRoleName?: string;
+  user?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+    email?: string;
+  };
+};
+
+export type CreateCompanyInviteRequest = {
+  email: string;
+  role: CompanyMemberRole;
+  roleId?: number;
+};
+
+export type CreateCompanyInviteResponse = {
+  id: number;
+  companyId: number;
+  companyName: string;
+  email: string;
+  role: CompanyMemberRole;
+  status: string;
+  expiresAt: string;
+  token: string;
 };
 
 export type NetworkDispatchSummary = {
@@ -592,6 +627,25 @@ export type MtnWhitelistedSenderIdRequest = {
   senderId: string;
 };
 
+export type SmsProviderRouteResponse = {
+  id: number;
+  providerKey: string;
+  predicateType: string;
+  predicateValue?: string | null;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SmsProviderRouteRequest = {
+  providerKey: string;
+  predicateType: string;
+  predicateValue?: string | null;
+  priority: number;
+  isActive: boolean;
+};
+
 /** Normalize company response from backend (PascalCase or camelCase) to CompanyLeanResponse */
 function mapCompanyLeanResponse(
   r: Record<string, unknown>,
@@ -617,6 +671,10 @@ function mapCompanyLeanResponse(
     profileImageUrl: (r.ProfileImageUrl ?? r.profileImageUrl) as
       | string
       | undefined,
+    registrationDocumentUrl: (r.RegistrationDocumentUrl ??
+      r.registrationDocumentUrl) as string | undefined,
+    signatureImageUrl: (r.SignatureImageUrl ??
+      r.signatureImageUrl) as string | undefined,
     isApprovedSenderId: (r.IsApprovedSenderId ??
       r.isApprovedSenderId) as boolean,
     isApprovedSenderIdMtn: (r.IsApprovedSenderIdMtn ??
@@ -744,6 +802,25 @@ function mapCampaignLogResponse(
   };
 }
 
+function mapCompanyMemberResponse(r: Record<string, unknown>): CompanyMemberResponse {
+  const userRaw = (r.User ?? r.user) as Record<string, unknown> | undefined;
+  return {
+    id: Number(r.Id ?? r.id ?? 0),
+    role: String(r.Role ?? r.role ?? "Member") as CompanyMemberRole,
+    companyRoleId: (r.CompanyRoleId ?? r.companyRoleId) as number | undefined,
+    companyRoleName: (r.CompanyRoleName ?? r.companyRoleName) as string | undefined,
+    user: userRaw
+      ? {
+          id: Number(userRaw.Id ?? userRaw.id ?? 0),
+          firstName: (userRaw.FirstName ?? userRaw.firstName) as string | undefined,
+          lastName: (userRaw.LastName ?? userRaw.lastName) as string | undefined,
+          phoneNumber: (userRaw.PhoneNumber ?? userRaw.phoneNumber) as string | undefined,
+          email: (userRaw.Email ?? userRaw.email) as string | undefined,
+        }
+      : undefined,
+  };
+}
+
 /** PATCH Backoffice/pricing/{id} expects camelCase EditPricingModelRequest fields. */
 function editPricingRequestToBody(
   p: EditPricingModelRequest,
@@ -779,6 +856,21 @@ function mapMtnWhitelistedSenderIdResponse(
     id: (r.Id ?? r.id) as number,
     senderId: (r.SenderId ?? r.senderId) as string,
     createdAt: (r.CreatedAt ?? r.createdAt) as string,
+  };
+}
+
+function mapSmsProviderRouteResponse(
+  r: Record<string, unknown>,
+): SmsProviderRouteResponse {
+  return {
+    id: (r.Id ?? r.id) as number,
+    providerKey: (r.ProviderKey ?? r.providerKey) as string,
+    predicateType: (r.PredicateType ?? r.predicateType) as string,
+    predicateValue: (r.PredicateValue ?? r.predicateValue) as string | null | undefined,
+    priority: Number(r.Priority ?? r.priority ?? 0),
+    isActive: Boolean(r.IsActive ?? r.isActive ?? true),
+    createdAt: (r.CreatedAt ?? r.createdAt) as string,
+    updatedAt: (r.UpdatedAt ?? r.updatedAt) as string,
   };
 }
 
@@ -1531,6 +1623,53 @@ export const adminApi = {
       },
     ).then(mapCompanyLeanResponse),
 
+  getCompanyMembers: (companyId: number, authToken?: string) =>
+    request<Record<string, unknown>[]>(
+      `${BACKOFFICE}/companies/${companyId}/members`,
+      { authToken },
+    ).then((list) => list.map(mapCompanyMemberResponse)),
+
+  updateCompanyMemberRole: (
+    companyId: number,
+    memberId: number,
+    role: CompanyMemberRole,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/members/${memberId}/role`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+        authToken,
+      },
+    ).then(mapCompanyMemberResponse),
+
+  removeCompanyMember: (companyId: number, memberId: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/companies/${companyId}/members/${memberId}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  createCompanyInvite: (
+    companyId: number,
+    payload: CreateCompanyInviteRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/companies/${companyId}/invites`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }).then((r) => ({
+      id: Number(r.Id ?? r.id ?? 0),
+      companyId: Number(r.CompanyId ?? r.companyId ?? 0),
+      companyName: String(r.CompanyName ?? r.companyName ?? ""),
+      email: String(r.Email ?? r.email ?? ""),
+      role: String(r.Role ?? r.role ?? "Member") as CompanyMemberRole,
+      status: String(r.Status ?? r.status ?? "Pending"),
+      expiresAt: String(r.ExpiresAt ?? r.expiresAt ?? ""),
+      token: String(r.Token ?? r.token ?? ""),
+    })),
+
   approveCampaign: (
     companyId: number,
     campaignId: number,
@@ -1985,6 +2124,53 @@ export const adminApi = {
 
   removeMtnWhitelistedSenderId: (id: number, authToken?: string) =>
     request<void>(`${BACKOFFICE}/mtn-whitelisted-sender-ids/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  getSmsProviderRoutes: (authToken?: string) =>
+    request<Record<string, unknown>[]>(`${BACKOFFICE}/sms-provider-routes`, {
+      authToken,
+    }).then((list) => list.map(mapSmsProviderRouteResponse)),
+
+  addSmsProviderRoute: (
+    payload: SmsProviderRouteRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/sms-provider-routes`, {
+      method: "POST",
+      body: JSON.stringify({
+        ProviderKey: payload.providerKey,
+        PredicateType: payload.predicateType,
+        PredicateValue: payload.predicateValue,
+        Priority: payload.priority,
+        IsActive: payload.isActive,
+      }),
+      authToken,
+    }).then(mapSmsProviderRouteResponse),
+
+  updateSmsProviderRoute: (
+    id: number,
+    payload: SmsProviderRouteRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/sms-provider-routes/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          ProviderKey: payload.providerKey,
+          PredicateType: payload.predicateType,
+          PredicateValue: payload.predicateValue,
+          Priority: payload.priority,
+          IsActive: payload.isActive,
+        }),
+        authToken,
+      },
+    ).then(mapSmsProviderRouteResponse),
+
+  removeSmsProviderRoute: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/sms-provider-routes/${id}`, {
       method: "DELETE",
       authToken,
     }),

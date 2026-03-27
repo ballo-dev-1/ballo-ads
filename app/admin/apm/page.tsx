@@ -38,6 +38,7 @@ import {
 } from './reliabilityViewModel'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
+import { notifyBackofficeEvent } from '@/lib/notifications/client'
 
 function severityBadge(severity: ApmSeverity) {
   const base =
@@ -408,6 +409,10 @@ export default function ApmPage() {
       )
       setDispatchControls(updated)
       setDispatchControlsError('')
+      await notifyBackofficeEvent("dispatch_control_changed", {
+        channel: "global",
+        status: willPause ? "paused" : "resumed",
+      })
     } catch (err) {
       setDispatchControlsError(err instanceof Error ? err.message : 'Failed to update global pause')
     } finally {
@@ -440,6 +445,10 @@ export default function ApmPage() {
       )
       setDispatchControls(updated)
       setDispatchControlsError('')
+      await notifyBackofficeEvent("dispatch_control_changed", {
+        channel,
+        status: willPause ? "paused" : "resumed",
+      })
     } catch (err) {
       setDispatchControls(previous)
       setDispatchControlsError(err instanceof Error ? err.message : 'Failed to update channel pause')
@@ -514,6 +523,10 @@ export default function ApmPage() {
       } else {
         await adminApi.cancelSchedulerRecurringJob(job.jobId)
       }
+      await notifyBackofficeEvent("scheduler_job_control_changed", {
+        jobId: job.jobId,
+        status: action,
+      })
       await loadSchedulerJobs()
       await load({ silent: true })
     } catch (err) {
