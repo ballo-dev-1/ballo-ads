@@ -343,6 +343,68 @@ export type DashboardAnalyticsModerationResponse = {
   medianReviewHours: number;
 };
 
+export type DashboardAnalyticsCohortRetentionPoint = {
+  monthIndex: number;
+  retentionRate: number;
+  activeUsers: number;
+};
+
+export type DashboardAnalyticsRetentionCohort = {
+  cohortMonth: string;
+  cohortSize: number;
+  retentionPoints: DashboardAnalyticsCohortRetentionPoint[];
+};
+
+export type DashboardAnalyticsRetentionResponse = {
+  cohorts: DashboardAnalyticsRetentionCohort[];
+};
+
+export type DashboardAnalyticsForecastPoint = {
+  bucketStart: string;
+  actualValue: number;
+  predictedValue: number;
+  lowerBound: number;
+  upperBound: number;
+};
+
+export type DashboardAnalyticsForecastResponse = {
+  bucket: "day" | "week";
+  points: DashboardAnalyticsForecastPoint[];
+};
+
+export type BiAnomalySeverity = "low" | "medium" | "high" | "critical";
+
+export type DashboardAnalyticsAnomalyAlert = {
+  alertId: string;
+  metric: string;
+  severity: BiAnomalySeverity;
+  expectedValue: number;
+  actualValue: number;
+  deviationPercent: number;
+  observedAt: string;
+};
+
+export type DashboardAnalyticsAnomaliesResponse = {
+  generatedAt: string;
+  alerts: DashboardAnalyticsAnomalyAlert[];
+};
+
+export type DashboardAnalyticsDrilldownRow = {
+  bucketStart: string;
+  companyId?: number;
+  companyName?: string;
+  channel?: string;
+  revenue: number;
+  messagesSent: number;
+  conversions: number;
+  conversionRate: number;
+  failureRate: number;
+};
+
+export type DashboardAnalyticsDrilldownResponse = {
+  rows: DashboardAnalyticsDrilldownRow[];
+};
+
 export type DashboardAnalyticsBreakdownPoint = {
   label: string;
   value: number;
@@ -1282,6 +1344,109 @@ function mapDashboardAnalyticsModerationResponse(
     rejectedCount: Number(r.RejectedCount ?? r.rejectedCount ?? 0),
     approvalRate: Number(r.ApprovalRate ?? r.approvalRate ?? 0),
     medianReviewHours: Number(r.MedianReviewHours ?? r.medianReviewHours ?? 0),
+  };
+}
+
+export function mapDashboardAnalyticsRetentionResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsRetentionResponse {
+  const cohortsRaw = (r.Cohorts ?? r.cohorts) as unknown;
+  return {
+    cohorts: Array.isArray(cohortsRaw)
+      ? cohortsRaw.map((item) => {
+          const cohort = (item ?? {}) as Record<string, unknown>;
+          const pointsRaw = (cohort.RetentionPoints ?? cohort.retentionPoints) as unknown;
+          return {
+            cohortMonth: String(cohort.CohortMonth ?? cohort.cohortMonth ?? ""),
+            cohortSize: Number(cohort.CohortSize ?? cohort.cohortSize ?? 0),
+            retentionPoints: Array.isArray(pointsRaw)
+              ? pointsRaw.map((point) => {
+                  const p = (point ?? {}) as Record<string, unknown>;
+                  return {
+                    monthIndex: Number(p.MonthIndex ?? p.monthIndex ?? 0),
+                    retentionRate: Number(p.RetentionRate ?? p.retentionRate ?? 0),
+                    activeUsers: Number(p.ActiveUsers ?? p.activeUsers ?? 0),
+                  };
+                })
+              : [],
+          };
+        })
+      : [],
+  };
+}
+
+export function mapDashboardAnalyticsForecastResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsForecastResponse {
+  const pointsRaw = (r.Points ?? r.points) as unknown;
+  return {
+    bucket: String(r.Bucket ?? r.bucket ?? "day") === "week" ? "week" : "day",
+    points: Array.isArray(pointsRaw)
+      ? pointsRaw.map((item) => {
+          const p = (item ?? {}) as Record<string, unknown>;
+          return {
+            bucketStart: String(p.BucketStart ?? p.bucketStart ?? ""),
+            actualValue: Number(p.ActualValue ?? p.actualValue ?? 0),
+            predictedValue: Number(p.PredictedValue ?? p.predictedValue ?? 0),
+            lowerBound: Number(p.LowerBound ?? p.lowerBound ?? 0),
+            upperBound: Number(p.UpperBound ?? p.upperBound ?? 0),
+          };
+        })
+      : [],
+  };
+}
+
+export function mapDashboardAnalyticsAnomaliesResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsAnomaliesResponse {
+  const alertsRaw = (r.Alerts ?? r.alerts) as unknown;
+  return {
+    generatedAt: String(r.GeneratedAt ?? r.generatedAt ?? ""),
+    alerts: Array.isArray(alertsRaw)
+      ? alertsRaw.map((item) => {
+          const alert = (item ?? {}) as Record<string, unknown>;
+          const severity = String(alert.Severity ?? alert.severity ?? "low");
+          return {
+            alertId: String(alert.AlertId ?? alert.alertId ?? ""),
+            metric: String(alert.Metric ?? alert.metric ?? ""),
+            severity: (severity === "critical" ||
+            severity === "high" ||
+            severity === "medium"
+              ? severity
+              : "low") as BiAnomalySeverity,
+            expectedValue: Number(alert.ExpectedValue ?? alert.expectedValue ?? 0),
+            actualValue: Number(alert.ActualValue ?? alert.actualValue ?? 0),
+            deviationPercent: Number(
+              alert.DeviationPercent ?? alert.deviationPercent ?? 0,
+            ),
+            observedAt: String(alert.ObservedAt ?? alert.observedAt ?? ""),
+          };
+        })
+      : [],
+  };
+}
+
+function mapDashboardAnalyticsDrilldownResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsDrilldownResponse {
+  const rowsRaw = (r.Rows ?? r.rows) as unknown;
+  return {
+    rows: Array.isArray(rowsRaw)
+      ? rowsRaw.map((item) => {
+          const row = (item ?? {}) as Record<string, unknown>;
+          return {
+            bucketStart: String(row.BucketStart ?? row.bucketStart ?? ""),
+            companyId: ((row.CompanyId ?? row.companyId) as number | null | undefined) ?? undefined,
+            companyName: ((row.CompanyName ?? row.companyName) as string | null | undefined) ?? undefined,
+            channel: ((row.Channel ?? row.channel) as string | null | undefined) ?? undefined,
+            revenue: Number(row.Revenue ?? row.revenue ?? 0),
+            messagesSent: Number(row.MessagesSent ?? row.messagesSent ?? 0),
+            conversions: Number(row.Conversions ?? row.conversions ?? 0),
+            conversionRate: Number(row.ConversionRate ?? row.conversionRate ?? 0),
+            failureRate: Number(row.FailureRate ?? row.failureRate ?? 0),
+          };
+        })
+      : [],
   };
 }
 
@@ -2569,6 +2734,102 @@ export const adminApi = {
       : `${BACKOFFICE}/analytics/moderation`;
     return request<Record<string, unknown>>(path, { authToken }).then(
       mapDashboardAnalyticsModerationResponse,
+    );
+  },
+
+  getDashboardAnalyticsRetention: (
+    params: {
+      from?: string;
+      to?: string;
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/retention?${qs}`
+      : `${BACKOFFICE}/analytics/retention`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsRetentionResponse,
+    );
+  },
+
+  getDashboardAnalyticsForecast: (
+    params: {
+      from?: string;
+      to?: string;
+      bucket?: "day" | "week";
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.bucket) search.set("bucket", params.bucket);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/forecast?${qs}`
+      : `${BACKOFFICE}/analytics/forecast`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsForecastResponse,
+    );
+  },
+
+  getDashboardAnalyticsAnomalies: (
+    params: {
+      from?: string;
+      to?: string;
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/anomalies?${qs}`
+      : `${BACKOFFICE}/analytics/anomalies`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsAnomaliesResponse,
+    );
+  },
+
+  getDashboardAnalyticsDrilldown: (
+    params: {
+      from?: string;
+      to?: string;
+      bucket?: "day" | "week";
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.bucket) search.set("bucket", params.bucket);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/drilldown?${qs}`
+      : `${BACKOFFICE}/analytics/drilldown`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsDrilldownResponse,
     );
   },
 };

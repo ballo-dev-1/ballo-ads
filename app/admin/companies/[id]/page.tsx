@@ -981,7 +981,7 @@ export default function CompanyDetailsPage() {
         </div>
 
         {activeTab === 'overview' ? (
-        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(380px,0.8fr)]">
           <div className="space-y-6">
             <SectionCard
               title="Submission Details"
@@ -1146,7 +1146,7 @@ export default function CompanyDetailsPage() {
             </SectionCard>
           </div>
 
-          <div className="xl:sticky xl:top-6 xl:self-start">
+          <div className="xl:ml-auto xl:w-full xl:max-w-[560px] xl:sticky xl:top-6 xl:self-start">
             <SectionCard
               title="Submission review & sender ID"
               subtitle="Review company submission, then manage sender ID controls"

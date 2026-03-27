@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState } from 'react'
 import {
   LayoutDashboard,
+  BarChart3,
   Users,
   Building2,
   Megaphone,
@@ -36,6 +37,7 @@ export default function Sidebar() {
 
   const items = [
     { label: 'Dashboard', suffix: '/dashboard', icon: LayoutDashboard, isActive: active('/dashboard') || pathname === basePath },
+    { label: 'BI Dashboard', suffix: '/bi-dashboard', icon: BarChart3, isActive: activeStartsWith('/bi-dashboard') },
     { label: 'Companies', suffix: '/companies', icon: Building2, isActive: activeStartsWith('/companies') },
     { label: 'Campaigns', suffix: '/campaigns', icon: Megaphone, isActive: activeStartsWith('/campaigns') },
     { label: 'Pricing', suffix: '/pricing', icon: Tags, isActive: activeStartsWith('/pricing') },
