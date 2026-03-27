@@ -4,6 +4,7 @@ import type { ReliabilityAlert } from '@/lib/adminApi'
 import { dedupeReliabilityAlerts, toNotificationRecordInput } from './reliabilityIngestion'
 import { getCurrentAdminRoles } from '@/lib/adminClaims'
 import { createNotification, createNotificationFromEvent } from '@/lib/notifications/service'
+import { isNotificationVisibleToRoles } from '@/lib/notifications/roles'
 import type { NotificationEventType } from '@/lib/notifications/catalog'
 import { adminBackendFetch } from '@/lib/serverBackendApi'
 
@@ -60,10 +61,9 @@ export async function GET(request: NextRequest) {
   const afterCursor =
     cursor != null ? normalized.slice(Math.max(0, normalized.findIndex((x) => x.id === cursor) + 1)) : normalized
 
-  const filtered =
-    roles.length > 0
-      ? afterCursor.filter((item) => !item.targetRoles.length || item.targetRoles.some((r) => roles.includes(r)))
-      : afterCursor
+  const filtered = afterCursor.filter((item) =>
+    isNotificationVisibleToRoles(item.targetRoles, roles)
+  )
 
   const hasMore = filtered.length > limit
   const list = hasMore ? filtered.slice(0, limit) : filtered

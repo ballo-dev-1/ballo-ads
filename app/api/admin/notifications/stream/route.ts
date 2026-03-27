@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/adminAuth'
 import { getCurrentAdminRoles } from '@/lib/adminClaims'
+import { isNotificationVisibleToRoles } from '@/lib/notifications/roles'
 import { adminBackendFetch } from '@/lib/serverBackendApi'
 
 export const runtime = 'nodejs'
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
           }>
           for (const n of newNotifications) {
             const targetRoles = n.targetRoles ?? []
-            if (roles.length > 0 && targetRoles.length > 0 && !targetRoles.some((r) => roles.includes(r))) {
+            if (!isNotificationVisibleToRoles(targetRoles, roles)) {
               continue
             }
             const createdAt = new Date(n.createdAt)

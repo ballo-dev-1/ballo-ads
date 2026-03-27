@@ -28,6 +28,7 @@ import {
   type CompanyLeanResponse,
   type CompanyMemberResponse,
   type CompanyMemberRole,
+  type CompanyReviewStatus,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
@@ -174,6 +175,31 @@ function StatCard({
       <p className="mt-1 text-base font-semibold text-slate-800">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </article>
+  )
+}
+
+function ReviewStatusPill({ status }: { status: CompanyReviewStatus }) {
+  if (status === 'Approved') {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+        <BadgeCheck className="h-3.5 w-3.5" />
+        Approved
+      </span>
+    )
+  }
+  if (status === 'Rejected') {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-300/80 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+        <ShieldX className="h-3.5 w-3.5" />
+        Rejected
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+      <Clock3 className="h-3.5 w-3.5" />
+      Pending
+    </span>
   )
 }
 
@@ -443,37 +469,49 @@ export default function CompanyDetailsPage() {
     }
   }
 
-  const [verifyLoading, setVerifyLoading] = useState(false)
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const reviewStatus: CompanyReviewStatus =
+    company?.reviewStatus ?? (company?.isCompanyVerified ? 'Approved' : 'Pending')
 
-  const handleProfileVerificationClick = async () => {
-    if (!company) {
-      return
-    }
+  const handleSetReviewStatus = async (status: CompanyReviewStatus) => {
+    if (!company) return
     if (!company.isActive) {
-      toast.error('Cannot change verification for a deactivated company')
+      toast.error('Cannot review a deactivated company')
       return
     }
-    const nextAction = company.isCompanyVerified ? 'unverify' : 'verify'
+
+    let reason: string | undefined
+    if (status === 'Rejected') {
+      const entered = window.prompt('Provide rejection reason (required):', company.reviewReason ?? '')
+      if (entered == null) return
+      const trimmed = entered.trim()
+      if (!trimmed) {
+        toast.error('Rejection reason is required')
+        return
+      }
+      reason = trimmed
+    }
+
     const approved = await confirm({
-      title: nextAction === 'verify' ? 'Verify company' : 'Unverify company',
-      description: `${nextAction === 'verify' ? 'Verify' : 'Unverify'} this company profile?`,
-      confirmLabel: nextAction === 'verify' ? 'Verify' : 'Unverify',
-      tone: nextAction === 'verify' ? 'default' : 'danger',
+      title: `Set review to ${status}`,
+      description:
+        status === 'Rejected'
+          ? `Reject this company submission with reason: "${reason}"`
+          : `Mark this company submission as ${status.toLowerCase()}?`,
+      confirmLabel: status,
+      tone: status === 'Rejected' ? 'danger' : 'default',
     })
-    if (!approved) {
-      return
-    }
+    if (!approved) return
 
-    setVerifyLoading(true)
-
+    setReviewLoading(true)
     try {
-      const updated = await adminApi.verifyCompany(company.id, !company.isCompanyVerified)
+      const updated = await adminApi.reviewCompany(company.id, { status, reason })
       setCompany((prev) => (prev ? { ...prev, ...updated } : null))
-      toast.success(company.isCompanyVerified ? 'Company unverified' : 'Company verified')
+      toast.success(`Review set to ${status}`)
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to update verification')
+      toast.error(e instanceof Error ? e.message : 'Failed to update review')
     } finally {
-      setVerifyLoading(false)
+      setReviewLoading(false)
     }
   }
 
@@ -545,6 +583,12 @@ export default function CompanyDetailsPage() {
       const updated = await adminApi.deactivateCompany(company.id, reason)
       setCompany((prev) => (prev ? { ...prev, ...updated } : null))
       toast.success('Company deactivated')
+      await notifyBackofficeEvent("company_deactivated", {
+        companyId: company.id,
+        companyName: company.name ?? "Company",
+        actorName: "Backoffice Admin",
+        status: "deactivated",
+      })
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to deactivate company')
     } finally {
@@ -569,6 +613,12 @@ export default function CompanyDetailsPage() {
     setLifecycleLoading(true)
     try {
       await adminApi.purgeCompany(company.id, 'Backoffice purge')
+      await notifyBackofficeEvent("company_purged", {
+        companyId: company.id,
+        companyName: company.name ?? "Company",
+        actorName: "Backoffice Admin",
+        status: "purged",
+      })
       toast.success('Company purged')
       router.push(`${basePath}/companies`)
     } catch (e: unknown) {
@@ -756,9 +806,9 @@ export default function CompanyDetailsPage() {
             icon={<SignalHigh className="h-4 w-4" />}
           />
           <StatCard
-            label="Verification"
-            value={company.isCompanyVerified ? 'Verified' : 'Not verified'}
-            hint={company.isCompanyVerified ? 'Public profile is trusted' : 'Awaiting verification'}
+            label="Submission review"
+            value={reviewStatus}
+            hint={reviewStatus === 'Rejected' ? (company.reviewReason ?? 'Reason required') : 'Backoffice decision'}
             icon={<ShieldCheck className="h-4 w-4" />}
           />
           <StatCard
@@ -833,36 +883,91 @@ export default function CompanyDetailsPage() {
           <div className="space-y-6">
             <SectionCard
               title="Overview"
-              subtitle="Core profile details for this company"
+              subtitle="Core submission details for this company"
             >
-              <dl className="space-y-0">
-                <DetailRow label="Name" value={company.name} icon={<Building2 className="h-3.5 w-3.5" />} />
-                <DetailRow
-                  label="Email"
-                  value={company.email}
-                  href={company.email ? `mailto:${company.email}` : undefined}
-                  icon={<Mail className="h-3.5 w-3.5" />}
-                />
-                <DetailRow
-                  label="Phone"
-                  value={company.phoneNumber}
-                  href={company.phoneNumber ? `tel:${company.phoneNumber}` : undefined}
-                  icon={<Phone className="h-3.5 w-3.5" />}
-                />
-                <DetailRow label="Physical address" value={company.physicalAddress} />
-                <DetailRow label="Industry" value={company.industry} />
-                <DetailRow label="Description" value={company.description} />
-                <DetailRow
-                  label="Registration document"
-                  value={company.registrationDocumentUrl}
-                  href={company.registrationDocumentUrl}
-                />
-                <DetailRow
-                  label="Signature image"
-                  value={company.signatureImageUrl}
-                  href={company.signatureImageUrl}
-                />
-              </dl>
+              <div className="space-y-5">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
+                        Submission review status
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Use the controls on the right panel to approve, reject, or keep pending.
+                      </p>
+                    </div>
+                    <ReviewStatusPill status={reviewStatus} />
+                  </div>
+                  {reviewStatus === 'Rejected' && company.reviewReason ? (
+                    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      <span className="font-semibold">Rejection reason:</span> {company.reviewReason}
+                    </div>
+                  ) : null}
+                </div>
+
+                <dl className="space-y-0">
+                  <DetailRow label="Name" value={company.name} icon={<Building2 className="h-3.5 w-3.5" />} />
+                  <DetailRow
+                    label="Email"
+                    value={company.email}
+                    href={company.email ? `mailto:${company.email}` : undefined}
+                    icon={<Mail className="h-3.5 w-3.5" />}
+                  />
+                  <DetailRow
+                    label="Phone"
+                    value={company.phoneNumber}
+                    href={company.phoneNumber ? `tel:${company.phoneNumber}` : undefined}
+                    icon={<Phone className="h-3.5 w-3.5" />}
+                  />
+                  <DetailRow label="Physical address" value={company.physicalAddress} />
+                  <DetailRow label="Industry" value={company.industry} />
+                  <DetailRow label="Description" value={company.description} />
+                </dl>
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Submission documents"
+              subtitle="Files provided during company onboarding review"
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate-500">
+                    Registration document
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {company.registrationDocumentUrl ? 'Attached' : 'Not provided'}
+                  </p>
+                  {company.registrationDocumentUrl ? (
+                    <a
+                      href={company.registrationDocumentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
+                    >
+                      Open document
+                    </a>
+                  ) : null}
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate-500">
+                    Signature image
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {company.signatureImageUrl ? 'Attached' : 'Not provided'}
+                  </p>
+                  {company.signatureImageUrl ? (
+                    <a
+                      href={company.signatureImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
+                    >
+                      Open image
+                    </a>
+                  ) : null}
+                </div>
+              </div>
             </SectionCard>
 
             <SectionCard
@@ -887,8 +992,8 @@ export default function CompanyDetailsPage() {
 
           <div className="xl:sticky xl:top-6 xl:self-start">
             <SectionCard
-              title="Verification & sender ID"
-              subtitle="Approve verification status and sender ID controls"
+              title="Submission review & sender ID"
+              subtitle="Review company submission, then manage sender ID controls"
             >
               <dl className="space-y-0">
                 <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
@@ -920,36 +1025,51 @@ export default function CompanyDetailsPage() {
                 <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
                   <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    Company verified
+                    Submission review
                   </dt>
                   <dd className="text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {company.isCompanyVerified ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                          <BadgeCheck className="h-3.5 w-3.5" />
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                          <ShieldX className="h-3.5 w-3.5" />
-                          Not verified
-                        </span>
-                      )}
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                      <ReviewStatusPill status={reviewStatus} />
 
                       <button
                         type="button"
-                        onClick={handleProfileVerificationClick}
-                        disabled={verifyLoading || !company.isActive}
+                        onClick={() => handleSetReviewStatus('Approved')}
+                        disabled={reviewLoading || !company.isActive}
                         className={classNames(
                           buttonBase,
-                          company.isCompanyVerified
-                            ? 'border border-slate-300 bg-slate-100 text-slate-700 shadow-sm hover:bg-slate-200'
-                            : 'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                          'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200 min-w-[88px] justify-center',
                         )}
                       >
-                        {verifyLoading ? 'Updating...' : company.isCompanyVerified ? 'Unverify' : 'Verify'}
+                        {reviewLoading ? 'Updating...' : 'Approve'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetReviewStatus('Pending')}
+                        disabled={reviewLoading || !company.isActive}
+                        className={classNames(
+                          buttonBase,
+                          'border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200 min-w-[88px] justify-center',
+                        )}
+                      >
+                        {reviewLoading ? 'Updating...' : 'Pending'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetReviewStatus('Rejected')}
+                        disabled={reviewLoading || !company.isActive}
+                        className={classNames(
+                          buttonBase,
+                          'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200 min-w-[88px] justify-center',
+                        )}
+                      >
+                        {reviewLoading ? 'Updating...' : 'Reject'}
                       </button>
                     </div>
+                    {reviewStatus === 'Rejected' && company.reviewReason ? (
+                      <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        Rejection reason: {company.reviewReason}
+                      </p>
+                    ) : null}
                   </dd>
                 </div>
 

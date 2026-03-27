@@ -20,6 +20,24 @@ test("buildNotificationFromEvent maps campaign approval request", () => {
   assert.deepEqual(event.targetRoles.sort(), ["admin", "super_admin"]);
 });
 
+test("buildNotificationFromEvent maps company lifecycle events", () => {
+  const deactivated = buildNotificationFromEvent("company_deactivated", {
+    companyId: 5,
+    companyName: "Mwanambulob Inc.",
+    actorName: "Backoffice Admin",
+  });
+  assert.equal(deactivated.severity, "high");
+  assert.match(deactivated.link ?? "", /companies\/5/);
+
+  const purged = buildNotificationFromEvent("company_purged", {
+    companyId: 5,
+    companyName: "Mwanambulob Inc.",
+    actorName: "Backoffice Admin",
+  });
+  assert.equal(purged.severity, "critical");
+  assert.equal(purged.link, "/admin/companies");
+});
+
 test("shouldDispatchPushForSeverity true for high/critical only", () => {
   assert.equal(shouldDispatchPushForSeverity("critical"), true);
   assert.equal(shouldDispatchPushForSeverity("high"), true);

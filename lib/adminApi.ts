@@ -486,9 +486,13 @@ export type CompanyLeanResponse = {
   isApprovedSenderIdAirtel?: boolean;
   isApprovedSenderIdZamtel?: boolean;
   isApprovedSenderIdZedmobile?: boolean;
+  reviewStatus?: CompanyReviewStatus;
+  reviewReason?: string;
   isActive: boolean;
   deactivatedAt?: string;
 };
+
+export type CompanyReviewStatus = "Pending" | "Approved" | "Rejected";
 
 export type CompanyMemberRole = "Member" | "Admin" | "SuperAdmin";
 
@@ -685,6 +689,8 @@ function mapCompanyLeanResponse(
       r.isApprovedSenderIdZamtel) as boolean | undefined,
     isApprovedSenderIdZedmobile: (r.IsApprovedSenderIdZedmobile ??
       r.isApprovedSenderIdZedmobile) as boolean | undefined,
+    reviewStatus: (r.ReviewStatus ?? r.reviewStatus) as CompanyReviewStatus | undefined,
+    reviewReason: (r.ReviewReason ?? r.reviewReason) as string | undefined,
     isActive: Boolean(r.IsActive ?? r.isActive ?? true),
     deactivatedAt: (r.DeactivatedAt ?? r.deactivatedAt) as string | undefined,
   };
@@ -1580,6 +1586,17 @@ export const adminApi = {
       `${BACKOFFICE}/companies/${id}/verify?verify=${verify}`,
       { method: "PATCH", authToken },
     ).then(mapCompanyLeanResponse),
+
+  reviewCompany: (
+    id: number,
+    payload: { status: CompanyReviewStatus; reason?: string },
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(`${BACKOFFICE}/companies/${id}/review`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+      authToken,
+    }).then(mapCompanyLeanResponse),
 
   approveCompanySenderId: (
     companyId: number,

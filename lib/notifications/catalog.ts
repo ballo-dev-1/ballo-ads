@@ -26,6 +26,8 @@ export type NotificationEventType =
   | "backoffice_user_created"
   | "backoffice_user_roles_changed"
   | "backoffice_role_permissions_changed"
+  | "company_deactivated"
+  | "company_purged"
   | "reliability_alert";
 
 export type NotificationTemplate = {
@@ -241,6 +243,32 @@ export function buildNotificationFromEvent(
         link: `/admin/backoffice-users`,
         dedupeKey: `${type}:${asString(payload.subjectId, "unknown")}:${status}`,
         targetRoles: ["super_admin"],
+      };
+    case "company_deactivated":
+      return {
+        type,
+        category: "operations",
+        severity: "high",
+        title: "Company deactivated",
+        message: `${actorName} deactivated ${companyName}.`,
+        link: `/admin/companies/${companyId}`,
+        dedupeKey: `${type}:${companyId}`,
+        targetRoles: ["admin", "super_admin", "operations"],
+        entityType: "company",
+        entityId: String(companyId),
+      };
+    case "company_purged":
+      return {
+        type,
+        category: "operations",
+        severity: "critical",
+        title: "Company purged",
+        message: `${actorName} permanently purged ${companyName}.`,
+        link: "/admin/companies",
+        dedupeKey: `${type}:${companyId}`,
+        targetRoles: ["admin", "super_admin", "operations"],
+        entityType: "company",
+        entityId: String(companyId),
       };
     case "reliability_alert":
       return {
