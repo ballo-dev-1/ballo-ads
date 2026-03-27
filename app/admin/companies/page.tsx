@@ -3,63 +3,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { adminApi, type CompanyLeanResponse } from '@/lib/adminApi'
+import { adminApi, type CompanyLeanResponse, type CompanyReviewStatus } from '@/lib/adminApi'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
-import { ChevronDown, ChevronUp, ChevronsUpDown, Filter, Search } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Filter, MoreHorizontal, Search, Rows3, Grid2X2 } from 'lucide-react'
 
 type SortKey = 'name' | 'email' | 'industry' | 'verified' | 'lifecycle' | 'senderId'
 type SortDir = 'asc' | 'desc'
 type ReviewTab = 'pending' | 'approved' | 'rejected'
+type ViewMode = 'list' | 'grid'
 
-
-function SenderIdStatusBadge({
-  company,
-  rejectedInSession,
-}: {
-  company: CompanyLeanResponse
-  rejectedInSession?: boolean
-}) {
-  if (!company.senderId) {
-    return (
-      <span
-        className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200/80"
-        title="Company has not set a sender ID."
-      >
-        No sender ID
-      </span>
-    )
-  }
-  if (company.isApprovedSenderId) {
-    return (
-      <span
-        className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80"
-        title="Sender ID approved for use."
-      >
-        Approved
-      </span>
-    )
-  }
-  if (rejectedInSession) {
-    return (
-      <span
-        className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200/80"
-        title="Sender ID was rejected by admin."
-      >
-        Rejected
-      </span>
-    )
-  }
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/80"
-      title="Awaiting admin approval. Open company details to approve or reject."
-    >
-      Pending
-    </span>
-  )
+function getCompanyReviewStatus(company: CompanyLeanResponse): 'Pending' | 'Approved' | 'Rejected' {
+  if (company.reviewStatus) return company.reviewStatus
+  return company.isCompanyVerified ? 'Approved' : 'Pending'
 }
+
 
 export default function CompaniesPage() {
   const router = useRouter()
@@ -80,6 +39,10 @@ export default function CompaniesPage() {
   const [reviewTab, setReviewTab] = useState<ReviewTab>('pending')
   const [filtersPopoverOpen, setFiltersPopoverOpen] = useState(false)
   const filtersPopoverRef = useRef<HTMLDivElement>(null)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [bulkActionsOpen, setBulkActionsOpen] = useState(false)
+  const [rowMenu, setRowMenu] = useState<{ companyId: number; top: number; left: number } | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   useEffect(() => {
     const load = async () => {
@@ -164,9 +127,10 @@ export default function CompaniesPage() {
   const filteredAndSortedCompanies = useMemo(() => {
     const search = query.trim().toLowerCase()
     let list = companies.filter((company) => {
-      if (reviewTab === 'pending' && (company.isCompanyVerified || !company.isActive)) return false
-      if (reviewTab === 'approved' && !company.isCompanyVerified) return false
-      if (reviewTab === 'rejected' && company.isActive) return false
+      const reviewStatus = getCompanyReviewStatus(company)
+      if (reviewTab === 'pending' && reviewStatus !== 'Pending') return false
+      if (reviewTab === 'approved' && reviewStatus !== 'Approved') return false
+      if (reviewTab === 'rejected' && reviewStatus !== 'Rejected') return false
 
       if (industryFilter && company.industry !== industryFilter) return false
 
@@ -261,6 +225,47 @@ export default function CompaniesPage() {
     )
   }
 
+  const reviewCounts = useMemo(() => {
+    const pending = companies.filter((c) => getCompanyReviewStatus(c) === 'Pending').length
+    const approved = companies.filter((c) => getCompanyReviewStatus(c) === 'Approved').length
+    const rejected = companies.filter((c) => getCompanyReviewStatus(c) === 'Rejected').length
+    return { pending, approved, rejected }
+  }, [companies])
+
+  const handleSetCompanyReviewStatus = async (company: CompanyLeanResponse, status: CompanyReviewStatus) => {
+    let reason: string | undefined
+    if (status === 'Rejected') {
+      const entered = window.prompt('Provide rejection reason (required):', company.reviewReason ?? '')
+      if (entered == null) return
+      reason = entered.trim()
+      if (!reason) {
+        toast.error('Rejection reason is required')
+        return
+      }
+    }
+    try {
+      const updated = await adminApi.reviewCompany(company.id, { status, reason })
+      setCompanies((prev) => prev.map((item) => (item.id === company.id ? { ...item, ...updated } : item)))
+      toast.success(`${company.name} set to ${status}`)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update review')
+    }
+  }
+
+  const handleBulkAction = async (action: 'approve' | 'reject' | 'export') => {
+    if (selectedIds.length === 0) return
+    if (action === 'export') {
+      toast.success(`Export started for ${selectedIds.length} selected`)
+      setBulkActionsOpen(false)
+      return
+    }
+    const selected = companies.filter((company) => selectedIds.includes(company.id))
+    for (const company of selected) {
+      await handleSetCompanyReviewStatus(company, action === 'approve' ? 'Approved' : 'Rejected')
+    }
+    setBulkActionsOpen(false)
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
@@ -287,35 +292,35 @@ export default function CompaniesPage() {
           <button
             type="button"
             onClick={() => setReviewTab('pending')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
               reviewTab === 'pending'
                 ? 'bg-[#0e0e39] text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            Pending
+            Pending <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">{reviewCounts.pending}</span>
           </button>
           <button
             type="button"
             onClick={() => setReviewTab('approved')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
               reviewTab === 'approved'
                 ? 'bg-[#0e0e39] text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            Approved
+            Approved <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">{reviewCounts.approved}</span>
           </button>
           <button
             type="button"
             onClick={() => setReviewTab('rejected')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
               reviewTab === 'rejected'
                 ? 'bg-[#0e0e39] text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            Rejected
+            Rejected <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">{reviewCounts.rejected}</span>
           </button>
         </div>
 
@@ -451,7 +456,33 @@ export default function CompaniesPage() {
           </div>
         ) : (
           <div className="bg-transparent rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-4 px-5 py-4 border-b border-gray-200 bg-gray-50">
+            <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setBulkActionsOpen((o) => !o)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  Actions
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+                {bulkActionsOpen ? (
+                  <div className="absolute left-0 top-full z-50 mt-2 w-44 rounded-xl border border-gray-200 bg-white p-1 shadow-xl">
+                    <button type="button" onClick={() => handleBulkAction('approve')} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">
+                      Approve
+                    </button>
+                    <button type="button" onClick={() => handleBulkAction('reject')} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">
+                      Reject
+                    </button>
+                    <button type="button" onClick={() => handleBulkAction('export')} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">
+                      Export
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
+                {selectedIds.length} selected
+              </div>
               <div className="relative" ref={filtersPopoverRef}>
                 <button
                   type="button"
@@ -542,34 +573,7 @@ export default function CompaniesPage() {
                   </div>
                 )}
               </div>
-              <div className="h-8 w-px bg-gray-200 shrink-0" aria-hidden />
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Sort</span>
-                <label htmlFor="company-sort-by" className="sr-only">Sort by</label>
-                <select
-                  id="company-sort-by"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
-                >
-                  <option value="name">Name</option>
-                  <option value="email">Email</option>
-                  <option value="industry">Industry</option>
-                  <option value="verified">Verification</option>
-                  <option value="lifecycle">Lifecycle</option>
-                  <option value="senderId">Sender ID</option>
-                </select>
-                <select
-                  aria-label="Sort direction"
-                  value={sortDir}
-                  onChange={(e) => setSortDir(e.target.value as SortDir)}
-                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
-                >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
-                </select>
-              </div>
-              <div className="relative min-w-[220px] flex-1 max-w-md">
+              <div className="relative min-w-[220px] flex-1 max-w-[420px]">
                 <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <label htmlFor="companies-search" className="sr-only">Search companies</label>
                 <input
@@ -581,32 +585,81 @@ export default function CompaniesPage() {
                   className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
                 />
               </div>
-              <span className="text-sm text-gray-500 ml-auto shrink-0">
-                Showing {filteredAndSortedCompanies.length} of {companies.length}
-              </span>
+              <select
+                value={reviewTab}
+                onChange={(e) => setReviewTab(e.target.value as ReviewTab)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+              >
+                <option value="pending">Status: Pending</option>
+                <option value="approved">Status: Approved</option>
+                <option value="rejected">Status: Rejected</option>
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortKey)}
+                className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+              >
+                <option value="name">Name (A-Z)</option>
+                <option value="email">Email</option>
+                <option value="industry">Industry</option>
+                <option value="verified">Status</option>
+                <option value="lifecycle">Lifecycle</option>
+                <option value="senderId">Sender ID</option>
+              </select>
+              <div className="ml-auto inline-flex items-center rounded-lg border border-gray-300 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`inline-flex items-center justify-center rounded-md p-2 transition ${
+                    viewMode === 'list'
+                      ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  aria-label="List view"
+                  title="List view"
+                >
+                  <Rows3 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`inline-flex items-center justify-center rounded-md p-2 transition ${
+                    viewMode === 'grid'
+                      ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  aria-label="Grid view"
+                  title="Grid view"
+                >
+                  <Grid2X2 className="h-4 w-4" />
+                </button>
+              </div>
+              <span className="text-sm font-semibold text-gray-700">{filteredAndSortedCompanies.length} results</span>
             </div>
             <div className="p-4 overflow-x-auto">
+            {viewMode === 'list' ? (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                  <th className="text-left py-3.5 px-4">
+                    <input
+                      type="checkbox"
+                      checked={filteredAndSortedCompanies.length > 0 && filteredAndSortedCompanies.every((c) => selectedIds.includes(c.id))}
+                      onChange={(event) =>
+                        setSelectedIds(
+                          event.target.checked ? filteredAndSortedCompanies.map((company) => company.id) : [],
+                        )
+                      }
+                    />
+                  </th>
                   <th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort('name')}
                       className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
                     >
-                      Name
+                      Company
                       <SortIcon column="name" />
-                    </button>
-                  </th>
-                  <th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    <button
-                      type="button"
-                      onClick={() => handleSort('email')}
-                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
-                    >
-                      Email
-                      <SortIcon column="email" />
                     </button>
                   </th>
                   <th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Phone</th>
@@ -640,7 +693,7 @@ export default function CompaniesPage() {
                       <SortIcon column="senderId" />
                     </button>
                   </th>
-                  <th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-600 uppercase tracking-wider">Sender ID status</th>
+                  <th className="text-left py-3.5 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -670,21 +723,21 @@ export default function CompaniesPage() {
                       }}
                       className="border-b border-gray-100 hover:bg-[var(--brand-color-2)]/5 transition-colors cursor-pointer group"
                     >
-                      <td className="py-3.5 px-5 text-sm font-medium text-gray-900 group-hover:text-[var(--brand-color-2)] transition-colors">
-                        {company.name}
+                      <td className="py-3.5 px-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(company.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(event) =>
+                            setSelectedIds((prev) =>
+                              event.target.checked ? [...prev, company.id] : prev.filter((id) => id !== company.id),
+                            )
+                          }
+                        />
                       </td>
-                      <td className="py-3.5 px-5 text-sm">
-                        {company.email ? (
-                          <a
-                            href={`mailto:${company.email}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-[var(--brand-color-2)] hover:text-[var(--brand-color-1)] hover:underline underline-offset-1"
-                          >
-                            {company.email}
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
+                      <td className="py-3.5 px-5 text-sm font-medium text-gray-900 group-hover:text-[var(--brand-color-2)] transition-colors">
+                        <div>{company.name}</div>
+                        <div className="text-xs font-normal text-gray-500">{company.email || '—'}</div>
                       </td>
                       <td className="py-3.5 px-5 text-sm">
                         {company.phoneNumber ? (
@@ -700,23 +753,27 @@ export default function CompaniesPage() {
                         )}
                       </td>
                       <td className="py-3.5 px-5 text-sm">
-                        {company.isCompanyVerified ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                            Verified
+                        {getCompanyReviewStatus(company) === 'Approved' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                            Approved
+                          </span>
+                        ) : getCompanyReviewStatus(company) === 'Rejected' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200/80">
+                            Rejected
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/80">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/80">
                             Pending
                           </span>
                         )}
                       </td>
                       <td className="py-3.5 px-5 text-sm">
                         {company.isActive ? (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
                             Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300/80">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300/80">
                             Deactivated
                           </span>
                         )}
@@ -724,17 +781,171 @@ export default function CompaniesPage() {
                       <td className="py-3.5 px-5 text-sm text-gray-700">
                         {company.senderId || <span className="text-gray-400">Not set</span>}
                       </td>
-                      <td className="py-3.5 px-5 text-sm">
-                        <SenderIdStatusBadge company={company} />
+                      <td className="relative py-3.5 px-4 text-sm">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            const rect = event.currentTarget.getBoundingClientRect()
+                            setRowMenu((prev) =>
+                              prev?.companyId === company.id
+                                ? null
+                                : {
+                                    companyId: company.id,
+                                    top: rect.bottom + 8,
+                                    left: rect.right - 176,
+                                  },
+                            )
+                          }}
+                          className="rounded-lg bg-white p-2 text-gray-600 hover:bg-gray-100"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+            ) : filteredAndSortedCompanies.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-gray-500 font-medium">
+                  {companies.length === 0 ? 'No companies found' : 'No companies match the current filters'}
+                </p>
+                {companies.length === 0 ? (
+                  <p className="text-sm text-gray-400 mt-1">Companies will appear here once they register</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredAndSortedCompanies.map((company) => (
+                  <article
+                    key={company.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => router.push(`${basePath}/companies/${company.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        router.push(`${basePath}/companies/${company.id}`)
+                      }
+                    }}
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[var(--brand-color-2)]/40 hover:shadow-md cursor-pointer"
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(company.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(event) =>
+                          setSelectedIds((prev) =>
+                            event.target.checked ? [...prev, company.id] : prev.filter((id) => id !== company.id),
+                          )
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          const rect = event.currentTarget.getBoundingClientRect()
+                          setRowMenu((prev) =>
+                            prev?.companyId === company.id
+                              ? null
+                              : {
+                                  companyId: company.id,
+                                  top: rect.bottom + 8,
+                                  left: rect.right - 176,
+                                },
+                          )
+                        }}
+                        className="rounded-lg bg-white p-2 text-gray-600 hover:bg-gray-100"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-900">{company.name}</h3>
+                    <p className="mt-0.5 text-sm text-gray-500">{company.email || '—'}</p>
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-gray-500">Phone</span>
+                        {company.phoneNumber ? (
+                          <a
+                            href={`tel:${company.phoneNumber}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-[var(--brand-color-2)] hover:text-[var(--brand-color-1)] hover:underline underline-offset-1"
+                          >
+                            {company.phoneNumber}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-gray-500">Verified</span>
+                        {getCompanyReviewStatus(company) === 'Approved' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                            Approved
+                          </span>
+                        ) : getCompanyReviewStatus(company) === 'Rejected' ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200/80">
+                            Rejected
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/80">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-gray-500">Lifecycle</span>
+                        {company.isActive ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300/80">
+                            Deactivated
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-gray-500">Sender ID</span>
+                        <span className="text-gray-700">{company.senderId || 'Not set'}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
             </div>
           </div>
         )}
+        {rowMenu ? (
+          <div
+            className="fixed inset-0 z-[200]"
+            onClick={() => setRowMenu(null)}
+          >
+            <div
+              className="fixed z-[210] w-44 rounded-xl border border-gray-200 bg-white p-1 shadow-xl"
+              style={{ top: rowMenu.top, left: rowMenu.left }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {(() => {
+                const company = companies.find((item) => item.id === rowMenu.companyId)
+                if (!company) return null
+                return (
+                  <>
+                    <button type="button" onClick={() => { router.push(`${basePath}/companies/${company.id}`); setRowMenu(null) }} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">View details</button>
+                    <button type="button" onClick={() => { void handleSetCompanyReviewStatus(company, 'Approved'); setRowMenu(null) }} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">Approve</button>
+                    <button type="button" onClick={() => { void handleSetCompanyReviewStatus(company, 'Rejected'); setRowMenu(null) }} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">Reject</button>
+                    <button type="button" onClick={() => { router.push(`${basePath}/companies/${company.id}`); setRowMenu(null) }} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">Edit company</button>
+                    <button type="button" onClick={() => { router.push(`${basePath}/companies/${company.id}`); setRowMenu(null) }} className="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-gray-100">Assign Sender ID</button>
+                  </>
+                )
+              })()}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

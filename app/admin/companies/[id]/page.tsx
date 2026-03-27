@@ -4,7 +4,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
+  AlertTriangle,
   BadgeCheck,
+  BriefcaseBusiness,
   Building2,
   CalendarDays,
   ChevronRight,
@@ -12,14 +14,21 @@ import {
   CircleDashed,
   CircleX,
   Clock3,
-  Link2,
+  Facebook,
+  FileText,
+  Globe,
+  Instagram,
+  Linkedin,
   Mail,
+  MapPin,
   Megaphone,
   Phone,
   ShieldCheck,
   ShieldX,
   SignalHigh,
-  X,
+  Signature,
+  Twitter,
+  Youtube,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -41,6 +50,9 @@ import CompanyAnalyticsPanel from '@/app/admin/companies/[id]/components/Company
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
 }
+
+type NetworkKey = 'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile'
+type NetworkAction = 'Approve' | 'Reject' | 'Hold'
 
 function SenderIdStatusBadge({
   company,
@@ -76,12 +88,7 @@ function SenderIdStatusBadge({
     )
   }
 
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/80 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-      <Clock3 className="h-3.5 w-3.5" />
-      Pending
-    </span>
-  )
+  return null
 }
 
 function DetailRow({
@@ -111,13 +118,15 @@ function DetailRow({
   )
 
   return (
-    <div className="grid gap-1 border-b border-gray-100 py-3 last:border-0 last:pb-0 sm:grid-cols-[150px_1fr] sm:gap-4">
-      <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
-        {icon}
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-200/80 py-3.5 last:border-0 last:pb-0">
+      <dt className="inline-flex min-w-0 items-center gap-2.5 text-base font-medium text-slate-800">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+          {icon ?? <CircleDashed className="h-3.5 w-3.5" />}
+        </span>
         {label}
       </dt>
-      <dd className="text-sm text-gray-800">
-        {isEmpty ? <span className="italic text-gray-400">—</span> : content}
+      <dd className="min-w-0 text-right text-base text-slate-700">
+        {isEmpty ? <span className="text-slate-400">Not provided</span> : content}
       </dd>
     </div>
   )
@@ -129,28 +138,43 @@ function SectionCard({
   children,
   className = '',
   rightSlot,
+  variant = 'default',
 }: {
   title: string
   subtitle?: string
   children: React.ReactNode
   className?: string
   rightSlot?: React.ReactNode
+  variant?: 'default' | 'overview'
 }) {
+  const isOverview = variant === 'overview'
+
   return (
     <section
       className={classNames(
-        'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_14px_35px_rgba(15,23,42,0.08)]',
+        isOverview
+          ? 'overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm'
+          : 'overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_14px_35px_rgba(15,23,42,0.08)]',
         className,
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
+      <div
+        className={classNames(
+          'flex flex-wrap items-start justify-between gap-3 border-b border-slate-100',
+          isOverview ? 'bg-white px-5 py-4' : 'bg-gradient-to-r from-slate-50 to-white px-5 py-4',
+        )}
+      >
         <div>
           <h2 className="text-sm font-semibold tracking-tight text-slate-800">{title}</h2>
-          {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
+          {subtitle ? (
+            <p className={classNames('mt-1', isOverview ? 'text-sm text-slate-500' : 'text-xs text-slate-500')}>
+              {subtitle}
+            </p>
+          ) : null}
         </div>
         {rightSlot}
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className={classNames(isOverview ? 'px-5 py-3' : 'px-5 py-4')}>{children}</div>
     </section>
   )
 }
@@ -216,9 +240,15 @@ export default function CompanyDetailsPage() {
   const [senderIdActionLoading, setSenderIdActionLoading] = useState(false)
   const [networkSenderIdActionLoading, setNetworkSenderIdActionLoading] = useState(false)
   const [rejectedSenderId, setRejectedSenderId] = useState(false)
-  const [senderIdModalOpen, setSenderIdModalOpen] = useState(false)
   const [senderIdInputValue, setSenderIdInputValue] = useState('')
   const [senderIdUpdateLoading, setSenderIdUpdateLoading] = useState(false)
+  const [bulkNetworkAction, setBulkNetworkAction] = useState<NetworkAction>('Approve')
+  const [networkActions, setNetworkActions] = useState<Record<NetworkKey, NetworkAction>>({
+    Mtn: 'Approve',
+    Airtel: 'Approve',
+    Zamtel: 'Approve',
+    Zedmobile: 'Approve',
+  })
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
   const [lifecycleLoading, setLifecycleLoading] = useState(false)
@@ -419,20 +449,6 @@ export default function CompanyDetailsPage() {
     }
   }
 
-  const startSenderIdEdit = () => {
-    if (company && !company.isActive) {
-      toast.error('Cannot edit sender ID for a deactivated company')
-      return
-    }
-    setSenderIdInputValue(company?.senderId ?? '')
-    setSenderIdModalOpen(true)
-  }
-
-  const cancelSenderIdEdit = () => {
-    setSenderIdModalOpen(false)
-    setSenderIdInputValue('')
-  }
-
   const handleUpdateSenderId = async () => {
     if (!company) {
       return
@@ -459,8 +475,7 @@ export default function CompanyDetailsPage() {
     try {
       const updated = await adminApi.updateCompanySenderId(company.id, value)
       setCompany((prev) => (prev ? { ...prev, ...updated } : null))
-      setSenderIdModalOpen(false)
-      setSenderIdInputValue('')
+      setSenderIdInputValue(updated.senderId ?? '')
       toast.success(value ? 'Sender ID updated' : 'Sender ID cleared')
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to update sender ID')
@@ -554,6 +569,93 @@ export default function CompanyDetailsPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<CompanyMemberRole>('Member')
   const [inviteLoading, setInviteLoading] = useState(false)
+  const [documentPreview, setDocumentPreview] = useState<{
+    title: string
+    url: string
+    kind: 'image' | 'document'
+  } | null>(null)
+
+  const senderIdValue = company?.senderId ?? ''
+  useEffect(() => {
+    setSenderIdInputValue(senderIdValue)
+  }, [senderIdValue])
+
+  const networkRows = useMemo(
+    () =>
+      [
+        {
+          key: 'Mtn' as const,
+          label: 'MTN',
+          link: 'https://www.mtn.zm/',
+          logoSrc: 'https://www.google.com/s2/favicons?domain_url=https%3A%2F%2Fwww.mtn.zm%2F&sz=128',
+          approved: company?.isApprovedSenderIdMtn ?? false,
+        },
+        {
+          key: 'Airtel' as const,
+          label: 'Airtel',
+          link: 'https://commons.wikimedia.org/wiki/File:Bharti_Airtel_Logo.svg',
+          logoSrc: 'https://upload.wikimedia.org/wikipedia/commons/f/fb/Bharti_Airtel_Logo.svg',
+          approved: company?.isApprovedSenderIdAirtel ?? false,
+        },
+        {
+          key: 'Zamtel' as const,
+          label: 'Zamtel',
+          link: 'https://upload.wikimedia.org/wikipedia/en/a/a1/ZAMTEL_LOGO.gif',
+          logoSrc: 'https://upload.wikimedia.org/wikipedia/en/a/a1/ZAMTEL_LOGO.gif',
+          approved: company?.isApprovedSenderIdZamtel ?? false,
+        },
+        {
+          key: 'Zedmobile' as const,
+          label: 'Zedmobile',
+          link: 'https://play-lh.googleusercontent.com/5TdLGU6zf9J9MppdR9ROoTMaLyxlUkivwfIEDu7Q929pllvdVT1yCkbXJ81p9fgt8Ow',
+          logoSrc:
+            'https://play-lh.googleusercontent.com/5TdLGU6zf9J9MppdR9ROoTMaLyxlUkivwfIEDu7Q929pllvdVT1yCkbXJ81p9fgt8Ow',
+          approved: company?.isApprovedSenderIdZedmobile ?? false,
+        },
+      ] as const,
+    [
+      company?.isApprovedSenderIdAirtel,
+      company?.isApprovedSenderIdMtn,
+      company?.isApprovedSenderIdZamtel,
+      company?.isApprovedSenderIdZedmobile,
+    ],
+  )
+
+  useEffect(() => {
+    setNetworkActions((prev) => ({
+      Mtn: prev.Mtn === 'Hold' ? 'Hold' : (networkRows[0].approved ? 'Reject' : 'Approve'),
+      Airtel: prev.Airtel === 'Hold' ? 'Hold' : (networkRows[1].approved ? 'Reject' : 'Approve'),
+      Zamtel: prev.Zamtel === 'Hold' ? 'Hold' : (networkRows[2].approved ? 'Reject' : 'Approve'),
+      Zedmobile: prev.Zedmobile === 'Hold' ? 'Hold' : (networkRows[3].approved ? 'Reject' : 'Approve'),
+    }))
+  }, [networkRows])
+
+  const applyNetworkAction = async (network: NetworkKey, action: NetworkAction) => {
+    if (!company) return
+    if (!company.isActive) {
+      toast.error('Cannot change sender approval for a deactivated company')
+      return
+    }
+    if (!company.senderId) {
+      toast.error('Set a sender ID before approving it per network')
+      return
+    }
+    if (action === 'Hold') {
+      toast.success('Network left on hold')
+      return
+    }
+    await handleApproveNetworkSenderId(network, action === 'Approve')
+  }
+
+  const handleApproveAllNetworks = async () => {
+    if (!company) return
+    for (const item of networkRows) {
+      if (bulkNetworkAction === 'Hold') continue
+      const shouldApprove = bulkNetworkAction === 'Approve'
+      if (item.approved === shouldApprove) continue
+      await applyNetworkAction(item.key, bulkNetworkAction)
+    }
+  }
 
   const breadcrumb = (
     <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
@@ -882,11 +984,12 @@ export default function CompanyDetailsPage() {
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <SectionCard
-              title="Overview"
-              subtitle="Core submission details for this company"
+              title="Submission Details"
+              subtitle="Core information about this company"
+              variant="overview"
             >
-              <div className="space-y-5">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
@@ -919,9 +1022,21 @@ export default function CompanyDetailsPage() {
                     href={company.phoneNumber ? `tel:${company.phoneNumber}` : undefined}
                     icon={<Phone className="h-3.5 w-3.5" />}
                   />
-                  <DetailRow label="Physical address" value={company.physicalAddress} />
-                  <DetailRow label="Industry" value={company.industry} />
-                  <DetailRow label="Description" value={company.description} />
+                  <DetailRow
+                    label="Address"
+                    value={company.physicalAddress}
+                    icon={<MapPin className="h-3.5 w-3.5" />}
+                  />
+                  <DetailRow
+                    label="Industry"
+                    value={company.industry}
+                    icon={<BriefcaseBusiness className="h-3.5 w-3.5" />}
+                  />
+                  <DetailRow
+                    label="Description"
+                    value={company.description}
+                    icon={<FileText className="h-3.5 w-3.5" />}
+                  />
                 </dl>
               </div>
             </SectionCard>
@@ -929,42 +1044,57 @@ export default function CompanyDetailsPage() {
             <SectionCard
               title="Submission documents"
               subtitle="Files provided during company onboarding review"
+              variant="overview"
             >
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate-500">
-                    Registration document
+              <div className="grid gap-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                  <div className="flex items-center gap-2 text-[22px] font-semibold text-slate-700">
+                    <FileText className="h-5 w-5 text-slate-500" />
+                    <p>Registration Document</p>
+                  </div>
+                  <p className="mt-1 text-base text-slate-500">
+                    {company.registrationDocumentUrl ? 'Uploaded' : 'Not uploaded'}
                   </p>
-                  <p className="mt-2 text-sm text-slate-700">
-                    {company.registrationDocumentUrl ? 'Attached' : 'Not provided'}
-                  </p>
+                  <p className="mt-3 text-sm text-slate-600">Upload a registration document for verification</p>
                   {company.registrationDocumentUrl ? (
-                    <a
-                      href={company.registrationDocumentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDocumentPreview({
+                          title: 'Registration document',
+                          url: company.registrationDocumentUrl as string,
+                          kind: 'document',
+                        })
+                      }
                       className="mt-3 inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
                     >
-                      Open document
-                    </a>
+                      View document
+                    </button>
                   ) : null}
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate-500">
-                    Signature image
+                <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                  <div className="flex items-center gap-2 text-[22px] font-semibold text-slate-700">
+                    <Signature className="h-5 w-5 text-slate-500" />
+                    <p>Signature Image</p>
+                  </div>
+                  <p className="mt-1 text-base text-slate-500">
+                    {company.signatureImageUrl ? 'Uploaded' : 'Not uploaded'}
                   </p>
-                  <p className="mt-2 text-sm text-slate-700">
-                    {company.signatureImageUrl ? 'Attached' : 'Not provided'}
-                  </p>
+                  <p className="mt-3 text-sm text-slate-600">Upload a signature image for verification</p>
                   {company.signatureImageUrl ? (
-                    <a
-                      href={company.signatureImageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDocumentPreview({
+                          title: 'Signature image',
+                          url: company.signatureImageUrl as string,
+                          kind: 'image',
+                        })
+                      }
                       className="mt-3 inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
                     >
-                      Open image
-                    </a>
+                      View image
+                    </button>
                   ) : null}
                 </div>
               </div>
@@ -973,19 +1103,45 @@ export default function CompanyDetailsPage() {
             <SectionCard
               title="Links & social"
               subtitle="Public URLs associated with this company"
+              variant="overview"
             >
               <dl className="space-y-0">
                 <DetailRow
                   label="Website"
                   value={company.websiteUrl}
                   href={company.websiteUrl}
-                  icon={<Link2 className="h-3.5 w-3.5" />}
+                  icon={<Globe className="h-3.5 w-3.5" />}
                 />
-                <DetailRow label="Facebook" value={company.facebookUrl} href={company.facebookUrl} />
-                <DetailRow label="Twitter" value={company.twitterUrl} href={company.twitterUrl} />
-                <DetailRow label="LinkedIn" value={company.linkedInUrl} href={company.linkedInUrl} />
-                <DetailRow label="Instagram" value={company.instagramUrl} href={company.instagramUrl} />
-                <DetailRow label="YouTube" value={company.youtubeUrl} href={company.youtubeUrl} />
+                <DetailRow
+                  label="Facebook"
+                  value={company.facebookUrl}
+                  href={company.facebookUrl}
+                  icon={<Facebook className="h-3.5 w-3.5" />}
+                />
+                <DetailRow
+                  label="Twitter"
+                  value={company.twitterUrl}
+                  href={company.twitterUrl}
+                  icon={<Twitter className="h-3.5 w-3.5" />}
+                />
+                <DetailRow
+                  label="LinkedIn"
+                  value={company.linkedInUrl}
+                  href={company.linkedInUrl}
+                  icon={<Linkedin className="h-3.5 w-3.5" />}
+                />
+                <DetailRow
+                  label="Instagram"
+                  value={company.instagramUrl}
+                  href={company.instagramUrl}
+                  icon={<Instagram className="h-3.5 w-3.5" />}
+                />
+                <DetailRow
+                  label="YouTube"
+                  value={company.youtubeUrl}
+                  href={company.youtubeUrl}
+                  icon={<Youtube className="h-3.5 w-3.5" />}
+                />
               </dl>
             </SectionCard>
           </div>
@@ -995,63 +1151,50 @@ export default function CompanyDetailsPage() {
               title="Submission review & sender ID"
               subtitle="Review company submission, then manage sender ID controls"
             >
-              <dl className="space-y-0">
-                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    Lifecycle
-                  </dt>
-                  <dd className="text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={classNames(
-                          'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
-                          company.isActive
-                            ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-300/80 bg-slate-100 text-slate-700',
-                        )}
-                      >
-                        {company.isActive ? 'Active' : 'Deactivated'}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={classNames(
+                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
+                        company.isActive
+                          ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-300/80 bg-slate-100 text-slate-700',
+                      )}
+                    >
+                      {company.isActive ? 'Active' : 'Deactivated'}
+                    </span>
+                    {!company.isActive && company.deactivatedAt ? (
+                      <span className="text-xs text-slate-500">
+                        Deactivated at {new Date(company.deactivatedAt).toLocaleString()}
                       </span>
-                      {!company.isActive && company.deactivatedAt ? (
-                        <span className="text-xs text-slate-500">
-                          Deactivated at {new Date(company.deactivatedAt).toLocaleString()}
-                        </span>
-                      ) : null}
-                    </div>
-                  </dd>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
-                    <ShieldCheck className="h-3.5 w-3.5" />
-                    Submission review
-                  </dt>
-                  <dd className="text-sm">
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                <div className="rounded-xl border border-slate-200">
+                  <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                    <h3 className="text-base font-semibold text-slate-900">Submission review</h3>
+                  </div>
+                  <div className="space-y-3 px-4 py-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-slate-700">Status:</span>
                       <ReviewStatusPill status={reviewStatus} />
-
+                    </div>
+                    <p className="text-sm text-slate-600">
+                      Review company details before granting access.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleSetReviewStatus('Approved')}
                         disabled={reviewLoading || !company.isActive}
                         className={classNames(
                           buttonBase,
-                          'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200 min-w-[88px] justify-center',
+                          'min-w-[96px] justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
                         )}
                       >
                         {reviewLoading ? 'Updating...' : 'Approve'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetReviewStatus('Pending')}
-                        disabled={reviewLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200 min-w-[88px] justify-center',
-                        )}
-                      >
-                        {reviewLoading ? 'Updating...' : 'Pending'}
                       </button>
                       <button
                         type="button"
@@ -1059,148 +1202,213 @@ export default function CompanyDetailsPage() {
                         disabled={reviewLoading || !company.isActive}
                         className={classNames(
                           buttonBase,
-                          'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200 min-w-[88px] justify-center',
+                          'min-w-[96px] justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
                         )}
                       >
                         {reviewLoading ? 'Updating...' : 'Reject'}
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetReviewStatus('Pending')}
+                        disabled={reviewLoading || !company.isActive}
+                        className={classNames(
+                          buttonBase,
+                          'min-w-[96px] justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
+                        )}
+                      >
+                        {reviewLoading ? 'Updating...' : 'Request changes'}
+                      </button>
                     </div>
                     {reviewStatus === 'Rejected' && company.reviewReason ? (
-                      <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                      <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                         Rejection reason: {company.reviewReason}
                       </p>
                     ) : null}
-                  </dd>
+                  </div>
                 </div>
 
-                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender ID</dt>
-                  <dd className="text-sm">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={classNames('font-medium', company.senderId ? 'text-gray-800' : 'italic text-gray-400')}>
-                        {company.senderId || '—'}
-                      </span>
+                <div className="space-y-2 border-t border-slate-100 pt-2">
+                  <label htmlFor="sender-id-inline-input" className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
+                    Sender ID
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      id="sender-id-inline-input"
+                      type="text"
+                      value={senderIdInputValue}
+                      onChange={(event) => setSenderIdInputValue(event.target.value)}
+                      placeholder="Enter sender ID"
+                      disabled={senderIdUpdateLoading || !company.isActive}
+                      className="min-w-[220px] flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--brand-color-2)]/40 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleUpdateSenderId}
+                      disabled={senderIdUpdateLoading || !company.isActive}
+                      className={classNames(
+                        buttonBase,
+                        'border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] text-white hover:bg-[var(--brand-color-1)]',
+                      )}
+                    >
+                      {senderIdUpdateLoading ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
+                    <span className="text-xs text-slate-500">Max 11 characters, no spaces.</span>
+                  </div>
+                </div>
+
+                {!company.senderId ? (
+                  <div className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Sender ID must be configured before approval.</span>
+                  </div>
+                ) : null}
+
+                <div className="rounded-xl border border-slate-200">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                    <h3 className="text-base font-semibold text-slate-900">Network Sender ID Approvals</h3>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={bulkNetworkAction}
+                        onChange={(event) => setBulkNetworkAction(event.target.value as NetworkAction)}
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
+                      >
+                        <option value="Approve">Approve All</option>
+                        <option value="Reject">Reject All</option>
+                        <option value="Hold">Hold All</option>
+                      </select>
                       <button
                         type="button"
-                        onClick={startSenderIdEdit}
-                        className={classNames(
-                          buttonBase,
-                          'border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50',
-                        )}
-                        disabled={!company.isActive}
+                        onClick={handleApproveAllNetworks}
+                        disabled={networkSenderIdActionLoading || !company.isActive}
+                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {company.senderId ? 'Edit' : 'Set sender ID'}
+                        Apply
                       </button>
                     </div>
-                  </dd>
-                </div>
-
-                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Sender status</dt>
-                  <dd className="text-sm">
-                    <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
-                  </dd>
-                </div>
-
-                <div className="grid gap-2 border-b border-gray-100 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">
-                    Network sender ID approvals
-                  </dt>
-                  <dd className="text-sm">
-                    <div className="space-y-2">
-                      {(
-                        [
-                          { key: 'Mtn' as const, label: 'MTN', approved: company.isApprovedSenderIdMtn ?? false },
-                          { key: 'Airtel' as const, label: 'Airtel', approved: company.isApprovedSenderIdAirtel ?? false },
-                          { key: 'Zamtel' as const, label: 'Zamtel', approved: company.isApprovedSenderIdZamtel ?? false },
-                          { key: 'Zedmobile' as const, label: 'Zedmobile', approved: company.isApprovedSenderIdZedmobile ?? false },
-                        ] as const
-                      ).map((item) => (
-                        <div key={item.key} className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-slate-700">{item.label}</span>
-                            <span
-                              className={classNames(
-                                'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
-                                item.approved
-                                  ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
-                                  : 'border-amber-300/80 bg-amber-50 text-amber-700',
-                              )}
-                            >
-                              {item.approved ? 'Approved' : 'Pending'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              disabled={networkSenderIdActionLoading || !company.isActive}
-                              onClick={() => handleApproveNetworkSenderId(item.key, !item.approved)}
-                              className={classNames(
-                                buttonBase,
-                                item.approved
-                                  ? 'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200'
-                                  : 'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
-                              )}
-                            >
-                              {networkSenderIdActionLoading ? 'Updating...' : item.approved ? 'Revoke' : 'Approve'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      <p className="text-xs text-slate-500">
-                        Used when platform requires sender ID approval per network.
-                      </p>
-                    </div>
-                  </dd>
-                </div>
-
-                {company.senderId && (
-                  <div className="grid gap-2 py-3 sm:grid-cols-[150px_1fr] sm:gap-4">
-                    <dt className="text-[11px] font-semibold uppercase tracking-[0.11em] text-gray-500">Actions</dt>
-                    <dd className="text-sm">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {senderIdActionLoading ? (
-                          <span className="text-xs text-slate-500">Updating...</span>
-                        ) : null}
-
-                        <button
-                          type="button"
-                          disabled={senderIdActionLoading || !company.isActive}
-                          onClick={() => handleApproveSenderId(true)}
-                          className={classNames(
-                            buttonBase,
-                            'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
-                          )}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          disabled={senderIdActionLoading || !company.isActive}
-                          onClick={handleSetSenderIdPending}
-                          className={classNames(
-                            buttonBase,
-                            'border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
-                          )}
-                        >
-                          Pending
-                        </button>
-                        <button
-                          type="button"
-                          disabled={senderIdActionLoading || !company.isActive}
-                          onClick={() => handleApproveSenderId(false)}
-                          className={classNames(
-                            buttonBase,
-                            'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
-                          )}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </dd>
                   </div>
-                )}
-              </dl>
+                  <div className="p-4">
+                    <div className="overflow-x-auto rounded-lg border border-slate-200">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
+                            <th className="px-3 py-2">Network</th>
+                            <th className="px-3 py-2">Status</th>
+                            <th className="px-3 py-2">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {networkRows.map((item) => (
+                            <tr key={item.key} className="border-t border-slate-100 first:border-t-0">
+                              <td className="px-3 py-2.5">
+                                <a
+                                  href={item.link}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-2 text-slate-800 hover:text-[var(--brand-color-2)]"
+                                >
+                                  <img
+                                    src={item.logoSrc}
+                                    alt={`${item.label} logo`}
+                                    className="h-5 w-5 rounded-full border border-slate-200 object-contain bg-white"
+                                  />
+                                  <span className="font-medium">{item.label}</span>
+                                </a>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <span
+                                  className={classNames(
+                                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold',
+                                    item.approved
+                                      ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
+                                      : 'border-amber-300/80 bg-amber-50 text-amber-700',
+                                  )}
+                                >
+                                  {item.approved ? 'Approved' : 'Pending'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <div className="flex items-center gap-2">
+                                  <select
+                                    value={networkActions[item.key]}
+                                    onChange={(event) =>
+                                      setNetworkActions((prev) => ({
+                                        ...prev,
+                                        [item.key]: event.target.value as NetworkAction,
+                                      }))
+                                    }
+                                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                                    disabled={networkSenderIdActionLoading || !company.isActive}
+                                  >
+                                    <option value="Approve">Approve</option>
+                                    <option value="Reject">Reject</option>
+                                    <option value="Hold">Hold</option>
+                                  </select>
+                                  <button
+                                    type="button"
+                                    disabled={networkSenderIdActionLoading || !company.isActive}
+                                    onClick={() => applyNetworkAction(item.key, networkActions[item.key])}
+                                    className={classNames(
+                                      buttonBase,
+                                      'justify-center rounded-md border border-emerald-400 bg-emerald-500 text-white hover:bg-emerald-600',
+                                    )}
+                                  >
+                                    {networkSenderIdActionLoading ? 'Applying...' : 'Apply'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Sender ID must be configured before approval. Each network may require separate sender ID approval.
+                    </p>
+                  </div>
+                </div>
+
+                {company.senderId ? (
+                  <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                    {senderIdActionLoading ? <span className="text-xs text-slate-500">Updating...</span> : null}
+                    <button
+                      type="button"
+                      disabled={senderIdActionLoading || !company.isActive}
+                      onClick={() => handleApproveSenderId(true)}
+                      className={classNames(
+                        buttonBase,
+                        'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                      )}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={senderIdActionLoading || !company.isActive}
+                      onClick={() => handleApproveSenderId(false)}
+                      className={classNames(
+                        buttonBase,
+                        'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
+                      )}
+                    >
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      disabled={senderIdActionLoading || !company.isActive}
+                      onClick={handleSetSenderIdPending}
+                      className={classNames(
+                        buttonBase,
+                        'border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
+                      )}
+                    >
+                      Request changes
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </SectionCard>
           </div>
         </div>
@@ -1383,81 +1591,56 @@ export default function CompanyDetailsPage() {
         </SectionCard>
         ) : null}
 
-        {senderIdModalOpen ? (
+        {documentPreview ? (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[1px]"
-            onClick={cancelSenderIdEdit}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4"
+            onClick={() => setDocumentPreview(null)}
           >
             <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="sender-id-modal-title"
-              className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
-                <div>
-                  <h3 id="sender-id-modal-title" className="text-base font-semibold text-slate-900">
-                    Update Sender ID
-                  </h3>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Edit the sender ID for this company.
-                  </p>
+              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                <h3 className="text-sm font-semibold text-slate-900">{documentPreview.title}</h3>
+                <button
+                  type="button"
+                  onClick={() => setDocumentPreview(null)}
+                  className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="space-y-3 p-4">
+                <div className="h-[70vh] overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                  {documentPreview.kind === 'image' ? (
+                    <img
+                      src={documentPreview.url}
+                      alt={documentPreview.title}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={documentPreview.url}
+                      title={documentPreview.title}
+                      className="h-full w-full bg-white"
+                    />
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={cancelSenderIdEdit}
-                  className="inline-flex rounded-lg border border-slate-200 p-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-                  aria-label="Close sender ID modal"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-3 px-5 py-4">
-                <label htmlFor="sender-id-input" className="text-xs font-semibold uppercase tracking-[0.11em] text-slate-500">
-                  Sender ID
-                </label>
-                <input
-                  id="sender-id-input"
-                  type="text"
-                  value={senderIdInputValue}
-                  onChange={(event) => setSenderIdInputValue(event.target.value)}
-                  placeholder="Enter sender ID"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-[var(--brand-color-2)]/40 transition focus:ring-2"
-                  disabled={senderIdUpdateLoading}
-                  autoFocus
-                />
-                <p className="text-xs text-slate-500">Leave empty to clear the sender ID.</p>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
-                <button
-                  type="button"
-                  onClick={cancelSenderIdEdit}
-                  disabled={senderIdUpdateLoading}
-                  className={classNames(
-                    buttonBase,
-                    'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
-                  )}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUpdateSenderId}
-                  disabled={senderIdUpdateLoading}
-                  className={classNames(
-                    buttonBase,
-                    'border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] text-white hover:bg-[var(--brand-color-1)]',
-                  )}
-                >
-                  {senderIdUpdateLoading ? 'Saving...' : 'Save changes'}
-                </button>
+                <div className="flex justify-end">
+                  <a
+                    href={documentPreview.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  >
+                    Open in new tab
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         ) : null}
+
         {confirmDialog}
       </div>
     </div>

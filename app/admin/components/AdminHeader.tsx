@@ -36,34 +36,34 @@ export default function AdminHeader() {
   }
 
   return (
-    <header className="flex items-center justify-end gap-4 px-6 py-2 shrink-0">
+    <div className="fixed right-6 top-6 z-40 flex items-center justify-end gap-3">
       <NotificationBell />
       <div className="relative" ref={popoverRef}>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+          className="flex h-11 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 cursor-pointer"
           aria-label="Profile menu"
         >
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-gray-600" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100">
+            <User className="h-5 w-5 text-gray-600" />
           </div>
-          <ChevronDown className="w-4 h-4 text-gray-600" />
+          <ChevronDown className="h-4 w-4 text-gray-500" />
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+          <div className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
             <button
               type="button"
               onClick={handleLogout}
               className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="h-4 w-4" />
               <span>Logout</span>
             </button>
           </div>
         )}
       </div>
-    </header>
+    </div>
   )
 }
