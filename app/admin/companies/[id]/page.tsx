@@ -52,7 +52,8 @@ function classNames(...classes: Array<string | false | null | undefined>) {
 }
 
 type NetworkKey = 'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile'
-type NetworkAction = 'Approve' | 'Reject' | 'Hold'
+/** Per-network sender ID state shown in the Action dropdown (server truth + optional Hold). */
+type NetworkStatus = 'Pending' | 'Approved' | 'Hold'
 
 function SenderIdStatusBadge({
   company,
@@ -242,12 +243,12 @@ export default function CompanyDetailsPage() {
   const [rejectedSenderId, setRejectedSenderId] = useState(false)
   const [senderIdInputValue, setSenderIdInputValue] = useState('')
   const [senderIdUpdateLoading, setSenderIdUpdateLoading] = useState(false)
-  const [bulkNetworkAction, setBulkNetworkAction] = useState<NetworkAction>('Approve')
-  const [networkActions, setNetworkActions] = useState<Record<NetworkKey, NetworkAction>>({
-    Mtn: 'Approve',
-    Airtel: 'Approve',
-    Zamtel: 'Approve',
-    Zedmobile: 'Approve',
+  const [bulkNetworkStatus, setBulkNetworkStatus] = useState<NetworkStatus>('Pending')
+  const [networkStatuses, setNetworkStatuses] = useState<Record<NetworkKey, NetworkStatus>>({
+    Mtn: 'Pending',
+    Airtel: 'Pending',
+    Zamtel: 'Pending',
+    Zedmobile: 'Pending',
   })
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
@@ -396,6 +397,7 @@ export default function CompanyDetailsPage() {
   const handleApproveNetworkSenderId = async (
     network: 'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile',
     approve: boolean,
+    options?: { skipConfirm?: boolean },
   ) => {
     if (!company) return
     if (!company.isActive) {
@@ -418,14 +420,16 @@ export default function CompanyDetailsPage() {
     }
 
     const label = networkLabelMap[network]
-    const approved = await confirm({
-      title: `${approve ? 'Approve' : 'Revoke'} sender ID for ${label}`,
-      description: `${approve ? 'Approve' : 'Revoke'} network sender ID approval for this company (${company.senderId}).`,
-      confirmLabel: approve ? 'Approve' : 'Revoke',
-      tone: approve ? 'default' : 'danger',
-    })
+    if (!options?.skipConfirm) {
+      const approved = await confirm({
+        title: `${approve ? 'Approve' : 'Revoke'} sender ID for ${label}`,
+        description: `${approve ? 'Approve' : 'Revoke'} network sender ID approval for this company (${company.senderId}).`,
+        confirmLabel: approve ? 'Approve' : 'Revoke',
+        tone: approve ? 'default' : 'danger',
+      })
 
-    if (!approved) return
+      if (!approved) return
+    }
 
     setNetworkSenderIdActionLoading(true)
     try {
@@ -622,15 +626,19 @@ export default function CompanyDetailsPage() {
   )
 
   useEffect(() => {
-    setNetworkActions((prev) => ({
-      Mtn: prev.Mtn === 'Hold' ? 'Hold' : (networkRows[0].approved ? 'Reject' : 'Approve'),
-      Airtel: prev.Airtel === 'Hold' ? 'Hold' : (networkRows[1].approved ? 'Reject' : 'Approve'),
-      Zamtel: prev.Zamtel === 'Hold' ? 'Hold' : (networkRows[2].approved ? 'Reject' : 'Approve'),
-      Zedmobile: prev.Zedmobile === 'Hold' ? 'Hold' : (networkRows[3].approved ? 'Reject' : 'Approve'),
+    setNetworkStatuses((prev) => ({
+      Mtn: prev.Mtn === 'Hold' ? 'Hold' : networkRows[0].approved ? 'Approved' : 'Pending',
+      Airtel: prev.Airtel === 'Hold' ? 'Hold' : networkRows[1].approved ? 'Approved' : 'Pending',
+      Zamtel: prev.Zamtel === 'Hold' ? 'Hold' : networkRows[2].approved ? 'Approved' : 'Pending',
+      Zedmobile: prev.Zedmobile === 'Hold' ? 'Hold' : networkRows[3].approved ? 'Approved' : 'Pending',
     }))
   }, [networkRows])
 
-  const applyNetworkAction = async (network: NetworkKey, action: NetworkAction) => {
+  const applyNetworkStatus = async (
+    network: NetworkKey,
+    status: NetworkStatus,
+    options?: { skipConfirm?: boolean },
+  ) => {
     if (!company) return
     if (!company.isActive) {
       toast.error('Cannot change sender approval for a deactivated company')
@@ -640,21 +648,82 @@ export default function CompanyDetailsPage() {
       toast.error('Set a sender ID before approving it per network')
       return
     }
-    if (action === 'Hold') {
+    if (status === 'Hold') {
       toast.success('Network left on hold')
       return
     }
-    await handleApproveNetworkSenderId(network, action === 'Approve')
+    await handleApproveNetworkSenderId(network, status === 'Approved', options)
   }
 
-  const handleApproveAllNetworks = async () => {
+  const handleApproveAllNetworks = async (
+    status: NetworkStatus,
+    options?: { skipConfirm?: boolean },
+  ) => {
     if (!company) return
     for (const item of networkRows) {
-      if (bulkNetworkAction === 'Hold') continue
-      const shouldApprove = bulkNetworkAction === 'Approve'
+      if (status === 'Hold') continue
+      const shouldApprove = status === 'Approved'
       if (item.approved === shouldApprove) continue
-      await applyNetworkAction(item.key, bulkNetworkAction)
+      await applyNetworkStatus(item.key, status, options)
     }
+  }
+
+  const networkLabelForKey = (key: NetworkKey) =>
+    networkRows.find((r) => r.key === key)?.label ?? key
+
+  const confirmAndApplyRowNetworkStatus = async (key: NetworkKey, next: NetworkStatus) => {
+    const prev = networkStatuses[key]
+    if (next === prev || !company) return
+    const label = networkLabelForKey(key)
+    const ok = await confirm({
+      title: `Update ${label}`,
+      description:
+        next === 'Hold'
+          ? `Leave ${label} on hold? No approval change will be sent for this network.`
+          : next === 'Approved'
+            ? `Approve sender ID for ${label} for this company (${company.senderId ?? ''})?`
+            : `Set ${label} to pending and revoke sender ID approval for this company (${company.senderId ?? ''})?`,
+      confirmLabel:
+        next === 'Pending' ? 'Revoke' : next === 'Approved' ? 'Approve' : 'Confirm',
+      tone: next === 'Pending' ? 'danger' : 'default',
+    })
+    if (!ok) return
+    setNetworkStatuses((p) => ({ ...p, [key]: next }))
+    await applyNetworkStatus(key, next, { skipConfirm: true })
+  }
+
+  const confirmAndApplyBulkNetworkStatus = async (next: NetworkStatus) => {
+    if (!company) return
+    const prev = bulkNetworkStatus
+    if (next === prev) return
+    const actionLabel =
+      next === 'Approved'
+        ? 'approve all networks that are not yet approved'
+        : next === 'Pending'
+          ? 'set all approved networks back to pending (revoke approval)'
+          : 'mark every network as on hold'
+    const ok = await confirm({
+      title: 'Apply to all networks',
+      description:
+        next === 'Hold'
+          ? 'Mark every network as on hold? No approval API calls will be made for bulk hold.'
+          : `${actionLabel.charAt(0).toUpperCase() + actionLabel.slice(1)}. Sender ID: ${company.senderId ?? '(none)'}.`,
+      confirmLabel: next === 'Hold' ? 'Confirm' : 'Apply',
+      tone: next === 'Pending' ? 'danger' : 'default',
+    })
+    if (!ok) return
+    setBulkNetworkStatus(next)
+    if (next === 'Hold') {
+      setNetworkStatuses({
+        Mtn: 'Hold',
+        Airtel: 'Hold',
+        Zamtel: 'Hold',
+        Zedmobile: 'Hold',
+      })
+      toast.success('All networks marked on hold')
+      return
+    }
+    await handleApproveAllNetworks(next, { skipConfirm: true })
   }
 
   const breadcrumb = (
@@ -1269,25 +1338,18 @@ export default function CompanyDetailsPage() {
                 <div className="rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
                     <h3 className="text-base font-semibold text-slate-900">Network Sender ID Approvals</h3>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={bulkNetworkAction}
-                        onChange={(event) => setBulkNetworkAction(event.target.value as NetworkAction)}
-                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
-                      >
-                        <option value="Approve">Approve All</option>
-                        <option value="Reject">Reject All</option>
-                        <option value="Hold">Hold All</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={handleApproveAllNetworks}
-                        disabled={networkSenderIdActionLoading || !company.isActive}
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Apply
-                      </button>
-                    </div>
+                    <select
+                      value={bulkNetworkStatus}
+                      onChange={(event) =>
+                        void confirmAndApplyBulkNetworkStatus(event.target.value as NetworkStatus)
+                      }
+                      disabled={networkSenderIdActionLoading || !company.isActive}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option value="Pending">Pending All</option>
+                      <option value="Approved">Approved All</option>
+                      <option value="Hold">Hold All</option>
+                    </select>
                   </div>
                   <div className="p-4">
                     <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -1295,7 +1357,6 @@ export default function CompanyDetailsPage() {
                         <thead>
                           <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
                             <th className="px-3 py-2">Network</th>
-                            <th className="px-3 py-2">Status</th>
                             <th className="px-3 py-2">Action</th>
                           </tr>
                         </thead>
@@ -1318,46 +1379,21 @@ export default function CompanyDetailsPage() {
                                 </a>
                               </td>
                               <td className="px-3 py-2.5">
-                                <span
-                                  className={classNames(
-                                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold',
-                                    item.approved
-                                      ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
-                                      : 'border-amber-300/80 bg-amber-50 text-amber-700',
-                                  )}
+                                <select
+                                  value={networkStatuses[item.key]}
+                                  onChange={(event) =>
+                                    void confirmAndApplyRowNetworkStatus(
+                                      item.key,
+                                      event.target.value as NetworkStatus,
+                                    )
+                                  }
+                                  className="min-w-[9.5rem] rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                                  disabled={networkSenderIdActionLoading || !company.isActive}
                                 >
-                                  {item.approved ? 'Approved' : 'Pending'}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <div className="flex items-center gap-2">
-                                  <select
-                                    value={networkActions[item.key]}
-                                    onChange={(event) =>
-                                      setNetworkActions((prev) => ({
-                                        ...prev,
-                                        [item.key]: event.target.value as NetworkAction,
-                                      }))
-                                    }
-                                    className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700"
-                                    disabled={networkSenderIdActionLoading || !company.isActive}
-                                  >
-                                    <option value="Approve">Approve</option>
-                                    <option value="Reject">Reject</option>
-                                    <option value="Hold">Hold</option>
-                                  </select>
-                                  <button
-                                    type="button"
-                                    disabled={networkSenderIdActionLoading || !company.isActive}
-                                    onClick={() => applyNetworkAction(item.key, networkActions[item.key])}
-                                    className={classNames(
-                                      buttonBase,
-                                      'justify-center rounded-md border border-emerald-400 bg-emerald-500 text-white hover:bg-emerald-600',
-                                    )}
-                                  >
-                                    {networkSenderIdActionLoading ? 'Applying...' : 'Apply'}
-                                  </button>
-                                </div>
+                                  <option value="Pending">Pending</option>
+                                  <option value="Approved">Approved</option>
+                                  <option value="Hold">Hold</option>
+                                </select>
                               </td>
                             </tr>
                           ))}
