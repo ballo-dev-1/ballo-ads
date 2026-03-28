@@ -14,7 +14,7 @@ export default function AdminLayout({
       <div className="admin-shell flex h-screen bg-gray-50 overflow-hidden">
         <Toaster position="top-center" />
         <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden pl-10">
+        <div className="flex-1 flex flex-col overflow-hidden pl-5">
           <NotificationsProvider>
             <AdminHeader />
             {children}

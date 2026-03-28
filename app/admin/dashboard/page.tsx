@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   adminApi,
   type ApmAlertsResponse,
@@ -21,6 +21,9 @@ import {
 import { buildDashboardKpiCards, summarizeTrendTotals } from './analyticsViewModel'
 import { dashboardStatsWarningMessage } from './fetchStatus'
 import { getAdminBasePath } from '@/lib/adminNamespace'
+import AdminHero from '@/app/admin/components/AdminHero'
+import BiDashboardTabContent from './BiDashboardTabContent'
+import { normalizeDashboardTab, type DashboardTab } from './tabState'
 
 interface WaitlistStats {
   total: number
@@ -82,7 +85,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const basePath = getAdminBasePath(pathname)
+  const [activeTab, setActiveTab] = useState<DashboardTab>('operations')
+
+  useEffect(() => {
+    setActiveTab(normalizeDashboardTab(searchParams?.get('tab')))
+  }, [searchParams])
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -247,6 +256,13 @@ export default function Dashboard() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-auto p-6">
+        <AdminHero
+          className="mb-6"
+          eyebrow="Backoffice"
+          title="Dashboard"
+          description="Monitor operations, analytics, and system health at a glance."
+          variant="blue"
+        />
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
@@ -271,6 +287,33 @@ export default function Dashboard() {
                 ) : null}
               </div>
             ) : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('operations')}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
+                  activeTab === 'operations'
+                    ? 'bg-[#0e0e39] text-white'
+                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Operations Stats
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('bi')}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
+                  activeTab === 'bi'
+                    ? 'bg-[#0e0e39] text-white'
+                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                BI Stats
+              </button>
+            </div>
+
+            {activeTab === 'operations' ? (
+              <>
             <section className="relative overflow-hidden rounded-[28px] border border-[#d8e0ff] bg-[linear-gradient(135deg,#edf2ff_0%,#e8f0ff_45%,#eff5ff_100%)] px-6 py-7 shadow-[0_20px_45px_rgba(65,96,197,0.12)] md:px-8 md:py-8">
               <div className="pointer-events-none absolute -top-24 right-[12%] h-48 w-48 rounded-full bg-[radial-gradient(circle,_rgba(102,133,255,0.32)_0%,_rgba(102,133,255,0)_70%)]" />
               <div className="pointer-events-none absolute -bottom-20 left-10 h-40 w-40 rounded-full bg-[radial-gradient(circle,_rgba(113,226,255,0.24)_0%,_rgba(113,226,255,0)_72%)]" />
@@ -688,6 +731,10 @@ export default function Dashboard() {
                 </table>
               </div>
             </div>
+              </>
+            ) : (
+              <BiDashboardTabContent />
+            )}
           </div>
         )}
       </div>

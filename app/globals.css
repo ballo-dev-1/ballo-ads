@@ -89,3 +89,28 @@ body {
   border-top-right-radius: 0.95rem;
   border-bottom-right-radius: 0.95rem;
 }
+
+/* Sidebar: fade + slide when expanding (labels / wordmark) */
+@keyframes admin-sidebar-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-0.45rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.admin-sidebar-reveal {
+  opacity: 0;
+  animation: admin-sidebar-reveal 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-sidebar-reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

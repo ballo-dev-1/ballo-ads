@@ -7,7 +7,7 @@ import NotificationBell from './NotificationBell'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 import { unsubscribeAdminPush } from '@/lib/firebase/fcm-service'
 
-export default function AdminHeader() {
+export function HeaderActions({ className = '' }: { className?: string }) {
   const router = useRouter()
   const pathname = usePathname()
   const basePath = getAdminBasePath(pathname)
@@ -36,13 +36,13 @@ export default function AdminHeader() {
   }
 
   return (
-    <div className="fixed right-6 top-6 z-40 flex items-center justify-end gap-3">
+    <div className={`flex items-center justify-end gap-3 ${className}`.trim()}>
       <NotificationBell />
       <div className="relative" ref={popoverRef}>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex h-11 items-center gap-2 rounded-full border border-gray-200 bg-white px-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 cursor-pointer"
+          className="flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 bg-white px-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100"
           aria-label="Profile menu"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100">
@@ -56,7 +56,7 @@ export default function AdminHeader() {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 px-4 py-2.5 text-left text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-gray-700 transition-colors hover:bg-gray-50"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
@@ -64,6 +64,22 @@ export default function AdminHeader() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+export default function AdminHeader() {
+  const pathname = usePathname()
+  const basePath = getAdminBasePath(pathname)
+  const isLoginPage = pathname === `${basePath}/login`
+
+  if (isLoginPage) {
+    return null
+  }
+
+  return (
+    <div className="fixed right-9 top-8 z-40">
+      <HeaderActions />
     </div>
   )
 }
