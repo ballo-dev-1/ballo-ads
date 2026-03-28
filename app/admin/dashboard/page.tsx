@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   adminApi,
@@ -21,7 +21,6 @@ import {
 import { buildDashboardKpiCards, summarizeTrendTotals } from './analyticsViewModel'
 import { dashboardStatsWarningMessage } from './fetchStatus'
 import { getAdminBasePath } from '@/lib/adminNamespace'
-import AdminHero from '@/app/admin/components/AdminHero'
 import BiDashboardTabContent from './BiDashboardTabContent'
 import { normalizeDashboardTab, type DashboardTab } from './tabState'
 
@@ -58,7 +57,7 @@ function toIsoDaysAgo(days: number): string {
 
 type RangePreset = '7d' | '40d' | '90d' | 'lifetime'
 
-export default function Dashboard() {
+function Dashboard() {
   const { env } = useApiEnv()
   const [rangePreset, setRangePreset] = useState<RangePreset>('lifetime')
   const [channelFilter, setChannelFilter] = useState<'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility'>('All')
@@ -254,18 +253,11 @@ export default function Dashboard() {
   const trendTotals = summarizeTrendTotals(trends?.points ?? [])
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-auto p-6">
-        <AdminHero
-          className="mb-6"
-          eyebrow="Backoffice"
-          title="Dashboard"
-          description="Monitor operations, analytics, and system health at a glance."
-          variant="blue"
-        />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex-1 overflow-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-3)]" />
           </div>
         ) : (
           <div className="space-y-6">
@@ -287,14 +279,14 @@ export default function Dashboard() {
                 ) : null}
               </div>
             ) : null}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => setActiveTab('operations')}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`inline-flex items-center gap-2 text-[0.8125rem] font-semibold ${
                   activeTab === 'operations'
-                    ? 'bg-[#0e0e39] text-white'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    ? 'admin-btn-primary'
+                    : 'admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-5 py-2 text-[var(--admin-muted)] shadow-sm hover:border-[var(--admin-ui-accent)]/35 hover:text-[var(--admin-heading)] admin-dark:border-white/10 admin-dark:bg-white/5 admin-dark:text-slate-300 admin-dark:hover:border-[var(--brand-color-4)]/30 admin-dark:hover:bg-white/10'
                 }`}
               >
                 Operations Stats
@@ -302,10 +294,10 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => setActiveTab('bi')}
-                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
+                className={`inline-flex items-center gap-2 text-[0.8125rem] font-semibold ${
                   activeTab === 'bi'
-                    ? 'bg-[#0e0e39] text-white'
-                    : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    ? 'admin-btn-primary'
+                    : 'admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-5 py-2 text-[var(--admin-muted)] shadow-sm hover:border-[var(--admin-ui-accent)]/35 hover:text-[var(--admin-heading)] admin-dark:border-white/10 admin-dark:bg-white/5 admin-dark:text-slate-300 admin-dark:hover:border-[var(--brand-color-4)]/30 admin-dark:hover:bg-white/10'
                 }`}
               >
                 BI Stats
@@ -314,53 +306,67 @@ export default function Dashboard() {
 
             {activeTab === 'operations' ? (
               <>
-            <section className="relative overflow-hidden rounded-[28px] border border-[#d8e0ff] bg-[linear-gradient(135deg,#edf2ff_0%,#e8f0ff_45%,#eff5ff_100%)] px-6 py-7 shadow-[0_20px_45px_rgba(65,96,197,0.12)] md:px-8 md:py-8">
-              <div className="pointer-events-none absolute -top-24 right-[12%] h-48 w-48 rounded-full bg-[radial-gradient(circle,_rgba(102,133,255,0.32)_0%,_rgba(102,133,255,0)_70%)]" />
-              <div className="pointer-events-none absolute -bottom-20 left-10 h-40 w-40 rounded-full bg-[radial-gradient(circle,_rgba(113,226,255,0.24)_0%,_rgba(113,226,255,0)_72%)]" />
+            <section className="admin-liquid-card relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
+              <div className="pointer-events-none absolute -right-8 -top-24 h-56 w-56 rounded-full bg-[var(--brand-color-3)]/18 blur-3xl admin-dark:bg-[var(--brand-color-4)]/12" />
               <div className="relative">
-                <h1 className="text-3xl font-semibold text-gray-900 md:text-4xl">Operations Distribution</h1>
-                <p className="mt-1 text-sm text-gray-600 md:text-base">Live overview of order flow, queue activity, and reliability posture.</p>
-                <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="rounded-2xl border border-white/70 bg-white/80 p-4 backdrop-blur-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Queue volume</p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900">{formatCompact(waitlistStats.total)}</p>
-                    <p className="mt-1 text-sm text-gray-600">Waitlist Entries</p>
+                <h1 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white sm:text-xl">Operations overview</h1>
+                <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Order flow, queue activity, and reliability at a glance.</p>
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-4)_40%,var(--brand-color-3)_100%)] p-4 text-white shadow-lg shadow-black/15">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Queue volume</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(waitlistStats.total)}</p>
+                    <p className="mt-1 text-sm text-white/80">Waitlist entries</p>
+                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 24 L20 8 L40 20 L60 4 L80 18 L100 10 L120 14" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
                   </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/80 p-4 backdrop-blur-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Order intake</p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900">{formatCompact(totalOrders)}</p>
-                    <p className="mt-1 text-sm text-gray-600">Recent Purchase Orders</p>
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Order intake</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(totalOrders)}</p>
+                    <p className="mt-1 text-sm text-white/80">Recent purchase orders</p>
+                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 20 L24 12 L48 22 L72 6 L96 16 L120 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
                   </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/80 p-4 backdrop-blur-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Activation</p>
-                    <p className="mt-2 text-3xl font-bold text-emerald-700">{formatCompact(activeCount)}</p>
-                    <p className="mt-1 text-sm text-gray-600">{orderActivationRate}% of recent orders</p>
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,#6ee7b7_0%,#34d399_50%,#10b981_100%)] p-4 text-white shadow-lg shadow-emerald-500/20">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Activation</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(activeCount)}</p>
+                    <p className="mt-1 text-sm text-white/85">{orderActivationRate}% of recent orders</p>
+                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 28 L30 14 L55 22 L80 8 L105 18 L120 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
                   </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/80 p-4 backdrop-blur-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Pending review</p>
-                    <p className="mt-2 text-3xl font-bold text-amber-700">{formatCompact(pendingCount)}</p>
-                    <p className="mt-1 text-sm text-gray-600">{pendingRate}% awaiting action</p>
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,#fcd34d_0%,#fbbf24_50%,#f59e0b_100%)] p-4 text-white shadow-lg shadow-amber-500/20">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Pending review</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(pendingCount)}</p>
+                    <p className="mt-1 text-sm text-white/85">{pendingRate}% awaiting action</p>
+                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 10 L25 22 L50 8 L75 20 L100 6 L120 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
                   </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/80 p-4 backdrop-blur-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Reliability</p>
-                    <p className="mt-2 text-3xl font-bold text-violet-700">{formatCompact(reliabilitySummary.activeAlertsCount)}</p>
-                    <p className="mt-1 text-sm text-gray-600">Open alerts</p>
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_40%,var(--brand-color-2)_100%)] p-4 text-white shadow-lg shadow-black/20 sm:col-span-2 lg:col-span-1">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Reliability</p>
+                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(reliabilitySummary.activeAlertsCount)}</p>
+                    <p className="mt-1 text-sm text-white/80">Open alerts</p>
+                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 16 L22 24 L44 8 L66 20 L88 6 L110 14 L120 10" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
                   </div>
                 </div>
               </div>
             </section>
 
-            <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+            <section className="admin-liquid-card p-5 md:p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Executive Analytics</h2>
-                  <p className="text-sm text-gray-500">Period deltas for campaign, growth, and revenue indicators.</p>
+                  <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Executive analytics</h2>
+                  <p className="text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Period deltas for campaign, growth, and revenue indicators.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <select
                     value={rangePreset}
                     onChange={(event) => setRangePreset(event.target.value as RangePreset)}
-                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                    className="admin-liquid-transition rounded-full border-0 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] admin-dark:bg-[#1e2135] admin-dark:text-slate-200"
                   >
                     <option value="7d">Last 7 days</option>
                     <option value="40d">Last 40 days</option>
@@ -370,7 +376,7 @@ export default function Dashboard() {
                   <select
                     value={channelFilter}
                     onChange={(event) => setChannelFilter(event.target.value as 'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility')}
-                    className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                    className="admin-liquid-transition rounded-full border-0 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.08)] admin-dark:bg-[#1e2135] admin-dark:text-slate-200"
                   >
                     <option value="All">All channels</option>
                     <option value="Sms">SMS</option>
@@ -382,9 +388,9 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
-                {kpiCards.map((card) => {
+                {kpiCards.map((card, i) => {
                   const isPositive = card.delta >= 0
-                  const deltaClass = isPositive ? 'text-emerald-700' : 'text-rose-700'
+                  const deltaClass = isPositive ? 'text-emerald-100' : 'text-rose-100'
                   const valueText =
                     card.unit === 'currency'
                       ? `ZMW ${new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(card.value)}`
@@ -398,19 +404,32 @@ export default function Dashboard() {
                         ? `${Math.abs(card.delta).toFixed(2)}pp`
                         : Math.abs(card.delta).toString()
 
+                  const gradients = [
+                    'bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_100%)]',
+                    'bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_100%)]',
+                    'bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-3)_70%,var(--brand-color-2)_100%)]',
+                    'bg-[linear-gradient(145deg,var(--brand-color-2)_0%,var(--brand-color-1)_100%)]',
+                    'bg-[linear-gradient(145deg,#6ee7b7_0%,#059669_100%)]',
+                    'bg-[linear-gradient(145deg,#fde68a_0%,#d97706_100%)]',
+                  ] as const
+                  const g = gradients[i % gradients.length]
+
                   return (
-                    <div key={card.key} className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">{card.label}</p>
-                      <p className="mt-2 text-2xl font-semibold text-gray-900">{valueText}</p>
-                      <p className={`mt-1 text-sm font-medium ${deltaClass}`}>
+                    <div
+                      key={card.key}
+                      className={`rounded-[20px] p-4 text-white shadow-lg ${g} shadow-black/10`}
+                    >
+                      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">{card.label}</p>
+                      <p className="mt-2 text-2xl font-bold tabular-nums">{valueText}</p>
+                      <p className={`mt-1 text-sm font-semibold ${deltaClass}`}>
                         {isPositive ? '+' : '-'}
-                        {deltaText} vs previous period
+                        {deltaText} vs prev.
                       </p>
                     </div>
                   )
                 })}
               </div>
-              <p className="mt-3 text-xs text-gray-500">
+              <p className="mt-3 text-xs text-gray-500 admin-dark:text-slate-500">
                 Applied filters:{" "}
                 {overviewCurrent?.appliedFilters?.from
                   ? `${new Date(overviewCurrent.appliedFilters.from).toLocaleDateString()} - ${new Date(
@@ -423,36 +442,36 @@ export default function Dashboard() {
             </section>
 
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <div className="xl:col-span-2 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-900">Trend Snapshot</h2>
-                <p className="mt-1 text-sm text-gray-500">Aggregated totals for selected period.</p>
+              <div className="xl:col-span-2 admin-liquid-card p-6">
+                <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Trend snapshot</h2>
+                <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Aggregated totals for selected period.</p>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs uppercase text-gray-500">Campaigns</p>
-                    <p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.campaigns}</p>
+                  <div className="rounded-xl bg-[color:var(--admin-bg-canvas)] p-3 admin-dark:bg-white/5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)] admin-dark:text-slate-400">Campaigns</p>
+                    <p className="mt-1 text-base font-semibold text-[var(--admin-heading)] admin-dark:text-white">{trendTotals.campaigns}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs uppercase text-gray-500">Approved</p>
-                    <p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.approvedCampaigns}</p>
+                  <div className="rounded-xl bg-[color:var(--admin-bg-canvas)] p-3 admin-dark:bg-white/5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)] admin-dark:text-slate-400">Approved</p>
+                    <p className="mt-1 text-base font-semibold text-[var(--admin-heading)] admin-dark:text-white">{trendTotals.approvedCampaigns}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs uppercase text-gray-500">Active</p>
-                    <p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.activeCampaigns}</p>
+                  <div className="rounded-xl bg-[color:var(--admin-bg-canvas)] p-3 admin-dark:bg-white/5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)] admin-dark:text-slate-400">Active</p>
+                    <p className="mt-1 text-base font-semibold text-[var(--admin-heading)] admin-dark:text-white">{trendTotals.activeCampaigns}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs uppercase text-gray-500">Orders</p>
-                    <p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.purchaseOrders}</p>
+                  <div className="rounded-xl bg-[color:var(--admin-bg-canvas)] p-3 admin-dark:bg-white/5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)] admin-dark:text-slate-400">Orders</p>
+                    <p className="mt-1 text-base font-semibold text-[var(--admin-heading)] admin-dark:text-white">{trendTotals.purchaseOrders}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs uppercase text-gray-500">Transactions</p>
-                    <p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.transactions}</p>
+                  <div className="rounded-xl bg-[color:var(--admin-bg-canvas)] p-3 admin-dark:bg-white/5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)] admin-dark:text-slate-400">Transactions</p>
+                    <p className="mt-1 text-base font-semibold text-[var(--admin-heading)] admin-dark:text-white">{trendTotals.transactions}</p>
                   </div>
                 </div>
-                <div className="mt-5 overflow-x-auto rounded-2xl border border-gray-100 bg-transparent p-4">
-                  <table className="w-full min-w-[560px]">
-                    <thead className="bg-gray-50">
+                <div className="mt-5 overflow-x-auto rounded-xl border border-[color:var(--admin-card-border)] bg-[color:var(--admin-bg-canvas)] p-4 admin-dark:border-white/10 admin-dark:bg-white/[0.04]">
+                  <table className="admin-table-plain w-full min-w-[560px]">
+                    <thead className="bg-transparent">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs uppercase text-gray-500">Bucket</th>
+                        <th className="px-4 py-2 text-left text-xs uppercase tracking-wide text-gray-500">Bucket</th>
                         <th className="px-4 py-2 text-left text-xs uppercase text-gray-500">Campaigns</th>
                         <th className="px-4 py-2 text-left text-xs uppercase text-gray-500">Approved</th>
                         <th className="px-4 py-2 text-left text-xs uppercase text-gray-500">Orders</th>
@@ -461,7 +480,7 @@ export default function Dashboard() {
                     </thead>
                     <tbody>
                       {(trends?.points ?? []).slice(-7).map((point) => (
-                        <tr key={point.bucketStart} className="border-t border-gray-100">
+                        <tr key={point.bucketStart}>
                           <td className="px-4 py-2 text-sm text-gray-700">{new Date(point.bucketStart).toLocaleDateString()}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{point.campaigns}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{point.approvedCampaigns}</td>
@@ -475,7 +494,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="admin-liquid-card p-5">
                   <h3 className="text-lg font-semibold text-gray-900">Campaign Funnel</h3>
                   <div className="mt-3 space-y-2 text-sm text-gray-700">
                     <p className="flex items-center justify-between"><span>Created</span><strong>{funnel?.created ?? 0}</strong></p>
@@ -487,7 +506,7 @@ export default function Dashboard() {
                     Completion rate: {(funnel?.completionRate ?? 0).toFixed(2)}%
                   </p>
                 </div>
-                <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div className="admin-liquid-card p-5">
                   <h3 className="text-lg font-semibold text-gray-900">Moderation Velocity</h3>
                   <div className="mt-3 space-y-2 text-sm text-gray-700">
                     <p className="flex items-center justify-between"><span>Pending approvals</span><strong>{moderation?.pendingApprovals ?? 0}</strong></p>
@@ -505,18 +524,18 @@ export default function Dashboard() {
             </section>
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="admin-liquid-card p-6">
                 <div className="mb-5 flex items-start justify-between">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900">Order Health</h2>
-                    <p className="mt-1 text-sm text-gray-500">Activation ratio in the latest order set.</p>
+                    <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Order Health</h2>
+                    <p className="mt-1 text-sm text-[var(--admin-muted)]">Activation ratio in the latest order set.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-5">
                   <div
                     className="grid h-32 w-32 place-items-center rounded-full"
                     style={{
-                      background: `conic-gradient(#4f46e5 ${orderActivationRate}%, #dbe4ff ${orderActivationRate}% 100%)`,
+                      background: `conic-gradient(#6c5dd3 ${orderActivationRate}%, #e8e4f6 ${orderActivationRate}% 100%)`,
                     }}
                   >
                     <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center shadow-inner">
@@ -541,10 +560,10 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="admin-liquid-card p-6">
                 <div className="mb-5">
-                  <h2 className="text-2xl font-semibold text-gray-900">Incident Updates</h2>
-                  <p className="mt-1 text-sm text-gray-500">Current reliability signal by severity.</p>
+                  <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Incident Updates</h2>
+                  <p className="mt-1 text-sm text-[var(--admin-muted)]">Current reliability signal by severity.</p>
                 </div>
                 <div className="flex h-36 items-end gap-3">
                   {incidentBars.map((bar) => {
@@ -561,15 +580,15 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="admin-liquid-card p-6">
                 <div className="mb-4">
-                  <h2 className="text-2xl font-semibold text-gray-900">Reliability Pulse</h2>
-                  <p className="mt-1 text-sm text-gray-500">Latest incident and control state.</p>
+                  <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Reliability Pulse</h2>
+                  <p className="mt-1 text-sm text-[var(--admin-muted)]">Latest incident and control state.</p>
                 </div>
                 <div className="rounded-2xl bg-[linear-gradient(145deg,#f6f8ff_0%,#fdfdff_100%)] p-4">
                   <svg viewBox="0 0 320 120" className="h-24 w-full">
-                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="#c8d6ff" strokeWidth="10" strokeLinecap="round" />
-                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="#5b63e9" strokeWidth="4" strokeLinecap="round" />
+                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="#e8e4f6" strokeWidth="10" strokeLinecap="round" />
+                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="#6c5dd3" strokeWidth="3" strokeLinecap="round" />
                   </svg>
                   <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-xl bg-white/90 p-3">
@@ -587,47 +606,47 @@ export default function Dashboard() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <div className="xl:col-span-2 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="xl:col-span-2 admin-liquid-card p-6">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
-                  <p className="text-sm text-gray-500">Fast routes for daily admin workflows</p>
+                  <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Quick Actions</h2>
+                  <p className="text-sm text-[var(--admin-muted)]">Fast routes for daily admin workflows</p>
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <button
                     onClick={() => router.push(`${basePath}/waitlist`)}
-                    className="group rounded-2xl border border-gray-200 bg-gray-50/60 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40"
+                    className="group admin-liquid-transition rounded-2xl border border-[color:var(--admin-card-border)] bg-white p-4 text-left shadow-sm hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <p className="font-semibold text-gray-900">View Waitlist</p>
-                    <p className="mt-1 text-sm text-gray-500">Manage all waitlist entries</p>
+                    <p className="font-semibold text-[var(--admin-heading)]">View Waitlist</p>
+                    <p className="mt-1 text-sm text-[var(--admin-muted)]">Manage all waitlist entries</p>
                     <p className="mt-3 text-xs font-medium text-blue-600 group-hover:underline">Open module</p>
                   </button>
                   <button
                     onClick={() => router.push(`${basePath}/purchase-orders`)}
-                    className="group rounded-2xl border border-gray-200 bg-gray-50/60 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50/40"
+                    className="group admin-liquid-transition rounded-2xl border border-[color:var(--admin-card-border)] bg-white p-4 text-left shadow-sm hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <p className="font-semibold text-gray-900">Purchase Orders</p>
-                    <p className="mt-1 text-sm text-gray-500">View and manage all orders</p>
+                    <p className="font-semibold text-[var(--admin-heading)]">Purchase Orders</p>
+                    <p className="mt-1 text-sm text-[var(--admin-muted)]">View and manage all orders</p>
                     <p className="mt-3 text-xs font-medium text-indigo-600 group-hover:underline">Open module</p>
                   </button>
                   <button
                     onClick={() => router.push(`${basePath}/transactions`)}
-                    className="group rounded-2xl border border-gray-200 bg-gray-50/60 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/40"
+                    className="group admin-liquid-transition rounded-[var(--radius-liquid)] border-0 bg-[color:var(--admin-bg-canvas)]/80 p-4 text-left shadow-[0_12px_32px_-16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-14px_rgba(16,185,129,0.2)]"
                   >
                     <p className="font-semibold text-gray-900">Transactions</p>
                     <p className="mt-1 text-sm text-gray-500">View payment transactions</p>
                     <p className="mt-3 text-xs font-medium text-emerald-600 group-hover:underline">Open module</p>
                   </button>
                 </div>
-                <div className="mt-5 rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3">
+                <div className="mt-5 rounded-[var(--radius-liquid)] bg-[var(--brand-color-3)]/10 px-4 py-3">
                   <Link href={apmRoute} className="inline-flex items-center gap-2 text-sm font-medium text-violet-700 hover:underline">
                     Open reliability incident response dashboard
                   </Link>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-semibold text-gray-900">Channel Health</h2>
-                <p className="mt-1 text-sm text-gray-500">Dispatch control status by channel.</p>
+              <div className="admin-liquid-card p-6">
+                <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Channel Health</h2>
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">Dispatch control status by channel.</p>
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between rounded-xl bg-emerald-50/70 px-3 py-2 text-sm">
                     <span className="text-emerald-800">Active channels</span>
@@ -663,26 +682,26 @@ export default function Dashboard() {
             </div>
 
             {/* Recent Purchase Orders */}
-            <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-800">Recent Purchase Orders</h2>
+            <div className="admin-liquid-card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-[color:var(--admin-card-border)] px-6 py-4">
+                <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Recent Purchase Orders</h2>
                 <Link
                   href={`${basePath}/purchase-orders`}
-                  className="text-sm text-[var(--brand-color-2)] hover:underline"
+                  className="text-[0.8125rem] font-medium text-[var(--admin-ui-accent)] hover:opacity-90 hover:underline"
                 >
                   View all
                 </Link>
               </div>
               <div className="overflow-x-auto bg-transparent p-4">
-                <table className="w-full min-w-[700px]">
+                <table className="admin-liquid-table w-full min-w-[700px]">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">ID</th>
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Company</th>
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">SMS / Email / WhatsApp</th>
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Status</th>
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Billed Account</th>
-                      <th className="text-left py-3 px-5 text-xs font-semibold text-gray-600 uppercase">Created</th>
+                    <tr className="bg-transparent">
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">ID</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">Company</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">SMS / Email / WhatsApp</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">Status</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">Billed Account</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">Created</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -694,13 +713,13 @@ export default function Dashboard() {
                       </tr>
                     ) : (
                       recentOrders.map((po) => (
-                        <tr key={po.id ?? po.createdAt} className="border-b border-gray-100 hover:bg-gray-50/50">
+                        <tr key={po.id ?? po.createdAt}>
                           <td className="py-3 px-5 font-medium text-gray-900">{po.id ?? '--'}</td>
                           <td className="py-3 px-5">
                             {po.company ? (
                               <Link
                                 href={`${basePath}/companies/${po.company.id}`}
-                                className="text-[var(--brand-color-2)] hover:underline"
+                                className="font-medium text-[var(--admin-ui-accent)] hover:opacity-90 hover:underline"
                               >
                                 {po.company.name ?? `Company #${po.company.id}`}
                               </Link>
@@ -739,5 +758,21 @@ export default function Dashboard() {
         )}
       </div>
     </div>
+  )
+}
+
+function DashboardSuspenseFallback() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="h-12 w-12 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-3)]" />
+    </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSuspenseFallback />}>
+      <Dashboard />
+    </Suspense>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { adminApi, type CompanyLeanResponse, type CompanyReviewStatus } from '@/lib/adminApi'
 import { getAdminBasePath } from '@/lib/adminNamespace'
@@ -20,9 +20,10 @@ function getCompanyReviewStatus(company: CompanyLeanResponse): 'Pending' | 'Appr
 }
 
 
-export default function CompaniesPage() {
+function CompaniesPageContent() {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const basePath = getAdminBasePath(pathname)
   const { env } = useApiEnv()
   const [companies, setCompanies] = useState<CompanyLeanResponse[]>([])
@@ -60,6 +61,11 @@ export default function CompaniesPage() {
 
     load()
   }, [env])
+
+  useEffect(() => {
+    const s = searchParams?.get('search')?.trim()
+    if (s) setQuery(s)
+  }, [searchParams])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -948,5 +954,21 @@ export default function CompaniesPage() {
         ) : null}
       </div>
     </div>
+  )
+}
+
+function CompaniesPageFallback() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="h-12 w-12 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-3)]" />
+    </div>
+  )
+}
+
+export default function CompaniesPage() {
+  return (
+    <Suspense fallback={<CompaniesPageFallback />}>
+      <CompaniesPageContent />
+    </Suspense>
   )
 }

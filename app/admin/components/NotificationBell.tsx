@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { useNotifications } from '../contexts/NotificationsContext'
 import { useConfirmDialog } from './useConfirmDialog'
+import { useAdminTheme } from '@/app/admin/contexts/AdminThemeContext'
 
 function formatTime(createdAt: string) {
   const d = new Date(createdAt)
@@ -33,6 +34,7 @@ export default function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
+  const { isDark } = useAdminTheme()
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -50,15 +52,22 @@ export default function NotificationBell() {
     if (link) router.push(link)
   }
 
+  const btnSurface = isDark
+    ? 'border-white/10 bg-[#27293d] text-slate-200 hover:bg-[#303450]'
+    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+  const panelSurface = isDark ? 'border-white/10 bg-[#27293d]' : 'border-gray-200 bg-white'
+  const panelHeader = isDark ? 'border-white/10' : 'border-gray-200'
+  const panelTitle = isDark ? 'text-slate-100' : 'text-gray-800'
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm transition-colors hover:bg-gray-100"
+        className={`relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors ${btnSurface}`}
         aria-label="Notifications"
       >
-        <Bell className="w-6 h-6" />
+        <Bell className="admin-icon" strokeWidth={1.5} />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -67,9 +76,9 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-h-[24rem] bg-white border border-gray-200 rounded-lg shadow-lg z-50 flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-            <span className="font-semibold text-gray-800">Notifications</span>
+        <div className={`absolute right-0 z-50 mt-2 flex max-h-[24rem] w-80 flex-col overflow-hidden rounded-xl border shadow-xl ${panelSurface}`}>
+          <div className={`flex items-center justify-between border-b px-4 py-3 ${panelHeader}`}>
+            <span className={`font-semibold ${panelTitle}`}>Notifications</span>
             {unreadCount > 0 && (
               <button
                 type="button"
@@ -82,19 +91,19 @@ export default function NotificationBell() {
                   if (!approved) return
                   markAllRead()
                 }}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-sm text-[var(--brand-color-3)] hover:text-[var(--brand-color-2)]"
               >
                 Mark all read
               </button>
             )}
           </div>
-          <div className="overflow-y-auto flex-1">
+          <div className="flex-1 overflow-y-auto">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center px-4 py-8">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-3)]" />
               </div>
             ) : notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-gray-500 text-sm">
+              <div className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
                 No notifications yet
               </div>
             ) : (
@@ -104,12 +113,12 @@ export default function NotificationBell() {
                     <button
                       type="button"
                       onClick={() => handleNotificationClick(n.id, n.link)}
-                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 ${
-                        !n.read ? 'bg-blue-50/50' : ''
-                      }`}
+                      className={`w-full border-b px-4 py-3 text-left transition-colors last:border-0 ${
+                        isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'
+                      } ${!n.read ? (isDark ? 'bg-[var(--brand-color-3)]/15' : 'bg-blue-50/50') : ''}`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-gray-900 text-sm">{n.title}</p>
+                        <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{n.title}</p>
                         <div className="flex items-center gap-1">
                           {n.category ? (
                             <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700">
@@ -123,8 +132,8 @@ export default function NotificationBell() {
                           ) : null}
                         </div>
                       </div>
-                      <p className="text-gray-600 text-xs mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-gray-400 text-xs mt-1">{formatTime(n.createdAt)}</p>
+                      <p className={`mt-0.5 line-clamp-2 text-xs ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>{n.message}</p>
+                      <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>{formatTime(n.createdAt)}</p>
                     </button>
                   </li>
                 ))}

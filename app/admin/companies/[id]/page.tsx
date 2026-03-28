@@ -228,6 +228,12 @@ function ReviewStatusPill({ status }: { status: CompanyReviewStatus }) {
   )
 }
 
+function campaignApprovalOverrideLabel(override: boolean | null | undefined): string {
+  if (override === true) return 'Always require approval'
+  if (override === false) return 'Skip approval (trusted)'
+  return 'Inherit platform default'
+}
+
 export default function CompanyDetailsPage() {
   const params = useParams()
   const pathname = usePathname()
@@ -253,6 +259,7 @@ export default function CompanyDetailsPage() {
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
   const [lifecycleLoading, setLifecycleLoading] = useState(false)
+  const [campaignApprovalOverrideLoading, setCampaignApprovalOverrideLoading] = useState(false)
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const numericId = id != null ? Number(id) : NaN
@@ -531,6 +538,44 @@ export default function CompanyDetailsPage() {
       toast.error(e instanceof Error ? e.message : 'Failed to update review')
     } finally {
       setReviewLoading(false)
+    }
+  }
+
+  const handleSetCampaignApprovalOverride = async (next: boolean | null) => {
+    if (!company) return
+    if (!company.isActive) {
+      toast.error('Cannot change campaign approval override for a deactivated company')
+      return
+    }
+
+    if (next === false) {
+      const ok = await confirm({
+        title: 'Skip campaign approval for this company?',
+        description:
+          'New campaigns can go live without back-office approval, even when the platform default requires it. Use only for trusted tenants.',
+        confirmLabel: 'Skip approval',
+        tone: 'danger',
+      })
+      if (!ok) return
+    }
+
+    setCampaignApprovalOverrideLoading(true)
+    try {
+      const updated = await adminApi.updateCompanyCampaignApprovalOverride(company.id, {
+        requireCampaignApprovalOverride: next,
+      })
+      setCompany(updated)
+      toast.success(
+        next === null
+          ? 'Campaign approval now inherits the platform default'
+          : next
+            ? 'This company will always require campaign approval'
+            : 'Campaign approval is skipped for this company',
+      )
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update campaign approval override')
+    } finally {
+      setCampaignApprovalOverrideLoading(false)
     }
   }
 
@@ -1238,6 +1283,64 @@ export default function CompanyDetailsPage() {
                         Deactivated at {new Date(company.deactivatedAt).toLocaleString()}
                       </span>
                     ) : null}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200">
+                  <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                    <h3 className="text-base font-semibold text-slate-900">Campaign approval</h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Override platform default for new campaigns and client activation rules.
+                    </p>
+                  </div>
+                  <div className="space-y-3 px-4 py-4">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-slate-700">Effective:</span>
+                      <span className="text-slate-800">
+                        {company.effectiveRequireCampaignApproval ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-slate-700">Override:</span>
+                      <span className="text-slate-800">
+                        {campaignApprovalOverrideLabel(company.requireCampaignApprovalOverride)}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSetCampaignApprovalOverride(null)}
+                        disabled={campaignApprovalOverrideLoading || !company.isActive}
+                        className={classNames(
+                          buttonBase,
+                          'min-w-[96px] justify-center border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50',
+                        )}
+                      >
+                        {campaignApprovalOverrideLoading ? 'Updating...' : 'Inherit'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetCampaignApprovalOverride(true)}
+                        disabled={campaignApprovalOverrideLoading || !company.isActive}
+                        className={classNames(
+                          buttonBase,
+                          'min-w-[96px] justify-center border border-amber-200 bg-amber-50 text-amber-900 shadow-sm hover:bg-amber-100',
+                        )}
+                      >
+                        {campaignApprovalOverrideLoading ? 'Updating...' : 'Require approval'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetCampaignApprovalOverride(false)}
+                        disabled={campaignApprovalOverrideLoading || !company.isActive}
+                        className={classNames(
+                          buttonBase,
+                          'min-w-[96px] justify-center border border-red-200 bg-red-50 text-red-800 shadow-sm hover:bg-red-100',
+                        )}
+                      >
+                        {campaignApprovalOverrideLoading ? 'Updating...' : 'Skip approval'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

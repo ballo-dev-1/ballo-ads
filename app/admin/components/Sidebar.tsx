@@ -21,10 +21,8 @@ import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
 import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 
-/** Sidebar width transition (ms); labels fade in shortly before this completes. */
 const SIDEBAR_WIDTH_MS = 300
 const LABEL_SHOW_DELAY_MS = Math.round(SIDEBAR_WIDTH_MS * 0.72)
-/** Stagger nav label animations after they mount */
 const LABEL_ANIM_BASE_MS = 24
 const LABEL_ANIM_STAGGER_MS = 40
 
@@ -78,76 +76,93 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`relative flex flex-col ease-out ${collapsed ? 'w-24' : 'w-64'}`}
+      className={`admin-sidebar-surface relative flex shrink-0 flex-col rounded-tr-3xl ease-out ${collapsed ? 'w-[5.25rem]' : 'w-64'}`}
       style={{ transition: `width ${SIDEBAR_WIDTH_MS}ms ease-out` }}
     >
       <button
         type="button"
         onClick={toggleCollapsed}
-        className={`cursor-pointer absolute  top-[55%] ${collapsed ? 'left-[85%]': 'left-[93%]'} z-30 flex -translate-y-1/2 items-center justify-center rounded-r-xl rounded-l-xl bg-[#0e0e39] py-7 pl-1.5 pr-2.5 text-white shadow-[4px_0_12px_rgba(14,14,57,0.15)] transition-colors hover:bg-[#12124a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/40`}
+        className={`admin-liquid-transition absolute top-1/2 z-30 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white bg-white py-2.5 pl-1 pr-1.5 text-white shadow-lg backdrop-blur-sm hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50 ${
+          collapsed ? 'left-full -ml-3' : 'left-full -ml-3'
+        }`}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {collapsed ? <ChevronRight className="h-4 w-4 shrink-0" strokeWidth={2} /> : <ChevronLeft className="h-4 w-4 shrink-0" strokeWidth={2} />}
+        {collapsed ? <ChevronRight className="admin-icon shrink-0" strokeWidth={1.5} /> : <ChevronLeft className="admin-icon shrink-0" strokeWidth={1.5} />}
       </button>
 
-      <div className={`px-4 py-4 flex w-full justify-center items-center ${collapsed ? 'min-h-[88px]' : ''}`}>
+      <div
+        className={`flex items-center gap-2 px-4 pb-2 pt-6 ${collapsed ? 'justify-center px-2' : ''}`}
+      >
         <Image
           src={logo_1}
-          alt="Ballo Logo"
+          alt="Ballo"
           quality={100}
-          className={`h-12 w-auto ${collapsed ? '' : 'py-2'}`}
+          className="h-10 w-auto shrink-0 brightness-0 invert"
           priority
         />
         {!collapsed && showExpandedLabels ? (
           <Image
             src={logo_2}
-            alt="Ballo Logo"
+            alt="Ballo Ads"
             quality={100}
-            className="admin-sidebar-reveal w-full h-auto flex-1 -ml-6"
+            className="admin-sidebar-reveal h-9 w-auto flex-1 object-contain object-left brightness-0 invert"
             style={{ animationDelay: `${LABEL_ANIM_BASE_MS}ms` }}
             priority
           />
         ) : null}
       </div>
 
-      <div className="bg-[#0e0e39] h-full flex flex-col justify-between rounded-tr-[7rem] pt-5">
-
-        {/* Navigation */}
-        <nav className={`flex-1 text-white ${collapsed ? 'px-2' : 'px-4'}`}>
-          <div className="space-y-1">
-            {items.map((item, index) => {
-              const Icon = item.icon
-              return (
-                <button
-                  key={item.suffix}
-                  onClick={() => router.push(to(item.suffix))}
-                  title={collapsed ? item.label : undefined}
-                  className={`w-full flex items-center rounded-[7rem] transition-colors cursor-pointer first:w-[87%] first:mt-2 ${
-                    collapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'
-                  } ${
-                    item.isActive ? 'bg-[var(--brand-color-3)] text-white' : 'hover:bg-[var(--brand-color-2)]/50'
+      <nav
+        className={`mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 ${collapsed ? 'px-2' : 'pl-3 pr-0'}`}
+      >
+        {/* Vertical padding so inverse-fillet masks (tab pill radius) stay outside the scrollport */}
+        <div className={`space-y-1 ${collapsed ? '' : 'py-3.5'}`}>
+          {items.map((item, index) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.suffix}
+                type="button"
+                onClick={() => router.push(to(item.suffix))}
+                title={collapsed ? item.label : undefined}
+                className={`group/nav admin-liquid-transition ${
+                  collapsed
+                    ? `flex w-full items-center justify-center rounded-xl px-2 py-3 font-medium ${
+                        item.isActive
+                          ? 'bg-white text-[var(--admin-accent-ink)] shadow-md shadow-black/15'
+                          : 'text-white/90 hover:bg-white/10'
+                      }`
+                    : item.isActive
+                      ? 'admin-sidebar-nav-item-active flex w-full items-center gap-3 py-2.5 pl-3 pr-0 font-medium'
+                      : 'admin-sidebar-nav-item-inactive flex items-center gap-3 py-2.5 pl-3 font-medium tracking-wide text-white/90'
+                }`}
+              >
+                <span
+                  className={`flex shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
+                    item.isActive
+                      ? ''
+                      : collapsed
+                        ? 'group-hover/nav:bg-white/12 group-hover/nav:ring-2 group-hover/nav:ring-white/10'
+                        : ''
                   }`}
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  {!collapsed && showExpandedLabels ? (
-                    <span
-                      className="admin-sidebar-reveal min-w-0"
-                      style={{
-                        animationDelay: `${LABEL_ANIM_BASE_MS + index * LABEL_ANIM_STAGGER_MS}ms`,
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  ) : null}
-                </button>
-              )
-            })}
-          </div>
-        </nav>
-
-        <div className="px-4 pb-2" />
-      </div>
+                  <Icon className="admin-icon" strokeWidth={1.5} />
+                </span>
+                {!collapsed && showExpandedLabels ? (
+                  <span
+                    className="admin-sidebar-reveal min-w-0 truncate text-[0.8125rem] leading-snug tracking-wide"
+                    style={{
+                      animationDelay: `${LABEL_ANIM_BASE_MS + index * LABEL_ANIM_STAGGER_MS}ms`,
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+      </nav>
     </div>
   )
 }
-

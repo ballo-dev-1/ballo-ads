@@ -49,6 +49,19 @@ function triggerCsvDownload(fileName: string, csv: string): void {
   URL.revokeObjectURL(url)
 }
 
+const LIQUID_TICK = { fill: '#808191', fontSize: 12 }
+const LIQUID_AXIS = { axisLine: false as const, tickLine: false as const }
+const CHART_GRID_STROKE = '#e8e8ee'
+const CHART_GRID_DASH = '6 6'
+
+const KPI_GRADIENTS = [
+  'bg-[linear-gradient(145deg,#fce7f3_0%,#f472b6_45%,#db2777_100%)]',
+  'bg-[linear-gradient(145deg,#ddd6fe_0%,#8b7cf0_48%,#6c5dd3_100%)]',
+  'bg-[linear-gradient(145deg,#bbf7d0_0%,#48bb78_50%,#059669_100%)]',
+  'bg-[linear-gradient(145deg,#fef9c3_0%,#ecc94b_50%,#d97706_100%)]',
+  'bg-[linear-gradient(145deg,#bae6fd_0%,#4299e1_52%,#2563eb_100%)]',
+] as const
+
 function mapOverviewToSnapshot(data: DashboardAnalyticsOverviewResponse | null): BiKpiSnapshot {
   if (!data) {
     return { revenue: 0, dispatchRate: 0, conversionRate: 0, retentionRate: 0, failureRate: 0 }
@@ -168,19 +181,21 @@ export default function BiDashboardTabContent() {
           {warning}
         </div>
       ) : null}
-      <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+      <section className="admin-liquid-card p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Executive BI Dashboard</h1>
-            <p className="text-sm text-gray-600">Forecasting, retention, anomalies, and drill-down intelligence.</p>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--admin-heading)] sm:text-xl">
+              Executive BI Dashboard
+            </h1>
+            <p className="text-sm text-[var(--admin-muted)]">Forecasting, retention, anomalies, and drill-down intelligence.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <select className="rounded-xl border border-gray-300 px-3 py-2 text-sm" value={rangePreset} onChange={(event) => setRangePreset(event.target.value as RangePreset)}>
+            <select className="admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-4 py-2 text-[0.8125rem] text-[var(--admin-heading)] shadow-sm" value={rangePreset} onChange={(event) => setRangePreset(event.target.value as RangePreset)}>
               <option value="30d">Last 30 days</option>
               <option value="90d">Last 90 days</option>
               <option value="180d">Last 180 days</option>
             </select>
-            <select className="rounded-xl border border-gray-300 px-3 py-2 text-sm" value={companyId} onChange={(event) => setCompanyId(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
+            <select className="admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-4 py-2 text-[0.8125rem] text-[var(--admin-heading)] shadow-sm" value={companyId} onChange={(event) => setCompanyId(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
               <option value="all">All companies</option>
               {companies.map((company) => (
                 <option key={company.id} value={company.id}>
@@ -188,34 +203,38 @@ export default function BiDashboardTabContent() {
                 </option>
               ))}
             </select>
-            <select className="rounded-xl border border-gray-300 px-3 py-2 text-sm" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value as 'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility')}>
+            <select className="admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-4 py-2 text-[0.8125rem] text-[var(--admin-heading)] shadow-sm" value={channelFilter} onChange={(event) => setChannelFilter(event.target.value as 'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility')}>
               <option value="All">All channels</option>
               <option value="Sms">SMS</option>
               <option value="Email">Email</option>
               <option value="WhatsApp">WhatsApp</option>
               <option value="WhatsAppUtility">WhatsApp Utility</option>
             </select>
-            <select className="rounded-xl border border-gray-300 px-3 py-2 text-sm" value={bucket} onChange={(event) => setBucket(event.target.value as 'day' | 'week')}>
+            <select className="admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-4 py-2 text-[0.8125rem] text-[var(--admin-heading)] shadow-sm" value={bucket} onChange={(event) => setBucket(event.target.value as 'day' | 'week')}>
               <option value="day">Daily bucket</option>
               <option value="week">Weekly bucket</option>
             </select>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {kpiCards.map((card) => {
+          {kpiCards.map((card, i) => {
             const isPositive = card.delta >= 0
-            const deltaClass = isPositive ? 'text-emerald-700' : 'text-rose-700'
+            const deltaClass = isPositive ? 'text-emerald-100' : 'text-rose-100'
             const valueText = card.unit === 'currency'
               ? `ZMW ${card.value.toFixed(2)}`
               : `${card.value.toFixed(2)}%`
+            const g = KPI_GRADIENTS[i % KPI_GRADIENTS.length]
             return (
-              <div key={card.key} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">{card.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-gray-900">{valueText}</p>
-                <p className={`text-sm ${deltaClass}`}>
+              <div
+                key={card.key}
+                className={`rounded-2xl p-4 text-white shadow-md shadow-black/10 ${g}`}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">{card.label}</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums">{valueText}</p>
+                <p className={`mt-1 text-[0.8125rem] font-semibold ${deltaClass}`}>
                   {isPositive ? '+' : ''}
                   {card.delta.toFixed(2)}
-                  {card.unit === 'currency' ? '' : 'pp'} vs previous period
+                  {card.unit === 'currency' ? '' : 'pp'} vs previous
                 </p>
               </div>
             )
@@ -224,31 +243,42 @@ export default function BiDashboardTabContent() {
       </section>
 
       {loading ? (
-        <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center text-gray-500">Loading BI analytics...</div>
+        <div className="admin-liquid-card p-12 text-center text-gray-500">Loading BI analytics...</div>
       ) : (
         <>
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <div className="xl:col-span-2 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900">Forecast</h2>
-              <p className="text-sm text-gray-500">Projected trend with confidence range.</p>
+            <div className="xl:col-span-2 admin-liquid-card p-5 md:p-6">
+              <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Forecast</h2>
+              <p className="text-sm text-[var(--admin-muted)]">Projected trend with confidence range.</p>
               <div className="mt-4 h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={forecastSeries}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="bucketStart" tickFormatter={(value) => new Date(value).toLocaleDateString()} />
-                    <YAxis />
+                  <AreaChart data={forecastSeries} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="biBand" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4299e1" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="#4299e1" stopOpacity={0.04} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} strokeDasharray={CHART_GRID_DASH} />
+                    <XAxis
+                      dataKey="bucketStart"
+                      tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                      {...LIQUID_AXIS}
+                      tick={LIQUID_TICK}
+                    />
+                    <YAxis {...LIQUID_AXIS} tick={LIQUID_TICK} width={40} />
                     <Tooltip labelFormatter={(value) => new Date(value).toLocaleString()} />
-                    <Area dataKey="upper" stroke="#c7d2fe" fill="#e0e7ff" />
-                    <Area dataKey="lower" stroke="#c7d2fe" fill="#ffffff" />
-                    <Line type="monotone" dataKey="predicted" stroke="#4f46e5" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="actual" stroke="#0f172a" strokeWidth={2} dot={false} />
+                    <Area type="monotone" dataKey="upper" stroke="#93c5fd" strokeWidth={1} fill="url(#biBand)" />
+                    <Area type="monotone" dataKey="lower" stroke="#93c5fd" strokeWidth={1} fill="#ffffff" fillOpacity={0.95} />
+                    <Line type="basis" dataKey="predicted" stroke="#4299e1" strokeWidth={2.5} dot={false} />
+                    <Line type="basis" dataKey="actual" stroke="#48bb78" strokeWidth={2.25} strokeOpacity={0.95} dot={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900">Anomaly Alerts</h2>
-              <p className="text-sm text-gray-500">Severity overview and latest incidents.</p>
+            <div className="admin-liquid-card p-5 md:p-6">
+              <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Anomaly Alerts</h2>
+              <p className="text-sm text-[var(--admin-muted)]">Severity overview and latest incidents.</p>
               <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                 <div className="rounded-xl bg-rose-50 p-3">Critical: {severitySummary.critical}</div>
                 <div className="rounded-xl bg-orange-50 p-3">High: {severitySummary.high}</div>
@@ -257,9 +287,9 @@ export default function BiDashboardTabContent() {
               </div>
               <div className="mt-4 space-y-2 text-sm">
                 {(anomalies?.alerts ?? []).slice(0, 6).map((alert) => (
-                  <div key={alert.alertId} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                    <p className="font-medium text-gray-800">{alert.metric}</p>
-                    <p className="text-xs text-gray-600">
+                  <div key={alert.alertId} className="rounded-xl border border-[color:var(--admin-card-border)] bg-[color:var(--admin-bg-canvas)] px-3 py-2">
+                    <p className="font-medium text-[var(--admin-heading)]">{alert.metric}</p>
+                    <p className="text-xs text-[var(--admin-muted)]">
                       {alert.severity.toUpperCase()} | expected {alert.expectedValue.toFixed(2)} | actual {alert.actualValue.toFixed(2)}
                     </p>
                   </div>
@@ -269,35 +299,38 @@ export default function BiDashboardTabContent() {
           </section>
 
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <div className="xl:col-span-2 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900">Cohort Retention</h2>
-              <p className="text-sm text-gray-500">Retention rates by cohort month.</p>
+            <div className="xl:col-span-2 admin-liquid-card p-5 md:p-6">
+              <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Cohort Retention</h2>
+              <p className="text-sm text-[var(--admin-muted)]">Retention rates by cohort month.</p>
               <div className="mt-4 h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={retentionRows.map((cohort) => ({
-                    cohort: cohort.cohortMonth,
-                    m0: cohort.retentionPoints.find((point) => point.monthIndex === 0)?.retentionRate ?? 0,
-                    m1: cohort.retentionPoints.find((point) => point.monthIndex === 1)?.retentionRate ?? 0,
-                    m3: cohort.retentionPoints.find((point) => point.monthIndex === 3)?.retentionRate ?? 0,
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="cohort" />
-                    <YAxis />
+                  <LineChart
+                    data={retentionRows.map((cohort) => ({
+                      cohort: cohort.cohortMonth,
+                      m0: cohort.retentionPoints.find((point) => point.monthIndex === 0)?.retentionRate ?? 0,
+                      m1: cohort.retentionPoints.find((point) => point.monthIndex === 1)?.retentionRate ?? 0,
+                      m3: cohort.retentionPoints.find((point) => point.monthIndex === 3)?.retentionRate ?? 0,
+                    }))}
+                    margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
+                  >
+                    <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} strokeDasharray={CHART_GRID_DASH} />
+                    <XAxis dataKey="cohort" {...LIQUID_AXIS} tick={LIQUID_TICK} />
+                    <YAxis {...LIQUID_AXIS} tick={LIQUID_TICK} width={40} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="m0" stroke="#111827" name="M0" />
-                    <Line type="monotone" dataKey="m1" stroke="#4f46e5" name="M1" />
-                    <Line type="monotone" dataKey="m3" stroke="#0ea5e9" name="M3" />
+                    <Line type="basis" dataKey="m0" stroke="#a0aec0" strokeWidth={2} name="M0" dot={false} />
+                    <Line type="basis" dataKey="m1" stroke="#4299e1" strokeWidth={2.5} name="M1" dot={false} />
+                    <Line type="basis" dataKey="m3" stroke="#48bb78" strokeWidth={2.25} name="M3" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900">Retention Table</h2>
+            <div className="admin-liquid-card p-5 md:p-6">
+              <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Retention Table</h2>
               <div className="mt-3 space-y-2 text-sm">
                 {retentionRows.map((cohort) => (
-                  <div key={cohort.cohortMonth} className="rounded-xl bg-gray-50 px-3 py-2">
-                    <p className="font-medium text-gray-800">{cohort.cohortMonth}</p>
-                    <p className="text-xs text-gray-600">
+                  <div key={cohort.cohortMonth} className="rounded-xl border border-[color:var(--admin-card-border)] bg-[color:var(--admin-bg-canvas)] px-3 py-2">
+                    <p className="font-medium text-[var(--admin-heading)]">{cohort.cohortMonth}</p>
+                    <p className="text-xs text-[var(--admin-muted)]">
                       Size: {cohort.cohortSize} | M1: {(cohort.retentionPoints.find((point) => point.monthIndex === 1)?.retentionRate ?? 0).toFixed(2)}%
                     </p>
                   </div>
@@ -306,24 +339,24 @@ export default function BiDashboardTabContent() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="admin-liquid-card p-5 md:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Drill-down</h2>
-                <p className="text-sm text-gray-500">Company/channel level performance rows.</p>
+                <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Drill-down</h2>
+                <p className="text-sm text-[var(--admin-muted)]">Company/channel level performance rows.</p>
               </div>
               <button
                 type="button"
                 onClick={() => triggerCsvDownload("bi-drilldown.csv", toDrilldownCsv(drilldown?.rows ?? []))}
-                className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700"
+                className="admin-btn-primary"
               >
                 Export CSV
               </button>
             </div>
             <div className="mt-4 overflow-x-auto">
-              <table className="min-w-[860px] w-full">
+              <table className="admin-liquid-table min-w-[860px] w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-xs uppercase text-gray-500">
+                  <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
                     <th className="px-3 py-2">Bucket</th>
                     <th className="px-3 py-2">Company</th>
                     <th className="px-3 py-2">Channel</th>
@@ -336,7 +369,7 @@ export default function BiDashboardTabContent() {
                 </thead>
                 <tbody>
                   {(drilldown?.rows ?? []).map((row) => (
-                    <tr key={`${row.bucketStart}-${row.companyId ?? 'all'}-${row.channel ?? 'all'}`} className="border-b border-gray-100 text-sm text-gray-700">
+                    <tr key={`${row.bucketStart}-${row.companyId ?? 'all'}-${row.channel ?? 'all'}`} className="text-[0.8125rem] text-[var(--admin-heading)]">
                       <td className="px-3 py-2">{new Date(row.bucketStart).toLocaleDateString()}</td>
                       <td className="px-3 py-2">{row.companyName ?? `Company #${row.companyId ?? '-'}`}</td>
                       <td className="px-3 py-2">{row.channel ?? 'All'}</td>

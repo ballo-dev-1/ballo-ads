@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant admin-dark (.admin-shell[data-admin-theme="dark"] &);
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -8,6 +10,9 @@
   --brand-color-3: #2273af;
   --brand-color-4: #3fdbff;
   --brand-color-5: #bdd4dc;
+  /* Liquid UI — geometry & motion (colors: use --brand-color-1 … 5) */
+  --radius-liquid: 24px;
+  --liquid-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @theme inline {
@@ -38,9 +43,269 @@ body {
     1px 0 #00a3ff;
 }
 
+/* ——— Liquid / carved backoffice design system ——— */
+
+/* Hook for carved/selected UI (sidebar uses .admin-sidebar-nav-item-active; tables use tr.admin-row-carved) */
+.carved-active {
+  transition: all 0.3s var(--liquid-ease);
+}
+
+.admin-shell {
+  --admin-ui-accent: var(--brand-color-3);
+  --admin-accent: var(--admin-ui-accent);
+  --admin-accent-bright: var(--brand-color-4);
+  --admin-accent-deep: var(--brand-color-1);
+  --admin-accent-ink: #1b1d21;
+  --admin-card: #ffffff;
+  --admin-card-border: #ececef;
+  --admin-muted: #808191;
+  --admin-heading: #1b1d21;
+  --admin-bg-canvas: #f9f9fb;
+  --admin-chart-grid: #e8e8ee;
+  --admin-chart-teal: #48bb78;
+  --admin-chart-blue: #4299e1;
+  font-family: var(--font-inter-admin), ui-sans-serif, system-ui, sans-serif;
+}
+
+.admin-shell[data-admin-theme="light"] {
+  --admin-ui-accent: #6c5dd3;
+  --admin-accent: #6c5dd3;
+  background: var(--admin-bg-canvas) !important;
+}
+
+.admin-shell[data-admin-theme="dark"] {
+  --admin-ui-accent: var(--brand-color-3);
+  --admin-accent: var(--brand-color-3);
+  --admin-card: #27293d;
+  --admin-card-border: #3d4159;
+  --admin-muted: #94a3b8;
+  --admin-heading: #f1f5f9;
+  --admin-accent-ink: #f1f5f9;
+  --admin-bg-canvas: #161825;
+  --admin-chart-grid: #3d4159;
+  background: var(--admin-bg-canvas) !important;
+}
+
+/* Outline icons in admin chrome (~18px) */
+.admin-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+/* Main column: large left radius, interlocks with sidebar */
+.admin-main-panel {
+  border-top-left-radius: var(--radius-liquid);
+  border-bottom-left-radius: var(--radius-liquid);
+  background: var(--admin-bg-canvas);
+  box-shadow: -18px 0 56px -32px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.3s var(--liquid-ease), box-shadow 0.3s var(--liquid-ease);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-main-panel {
+  box-shadow: -18px 0 56px -32px rgba(0, 0, 0, 0.45);
+}
+
+.admin-liquid-transition {
+  transition: all 0.3s var(--liquid-ease);
+}
+
+/* Cards — pure white on off-white canvas */
+.admin-liquid-card {
+  border-radius: 16px;
+  background: var(--admin-card);
+  box-shadow: 0 4px 24px rgba(27, 29, 33, 0.06);
+  border: 1px solid color-mix(in srgb, var(--admin-card-border) 85%, transparent);
+  transition: box-shadow 0.3s var(--liquid-ease), transform 0.3s var(--liquid-ease);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-liquid-card {
+  border-color: var(--admin-card-border);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.admin-shell[data-admin-theme="light"] .admin-liquid-card:hover {
+  box-shadow: 0 8px 32px rgba(27, 29, 33, 0.09);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-liquid-card:hover {
+  box-shadow:
+    0 28px 52px rgba(0, 0, 0, 0.4),
+    0 4px 14px rgba(0, 0, 0, 0.22);
+}
+
+/* Primary / secondary buttons (dashboard & tools) */
+.admin-btn-primary {
+  border-radius: 9999px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: var(--admin-ui-accent);
+  color: #fff;
+  box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--admin-ui-accent) 50%, transparent);
+  transition: all 0.3s var(--liquid-ease);
+}
+
+.admin-btn-primary:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 12px 28px -8px color-mix(in srgb, var(--admin-ui-accent) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+.admin-btn-ghost {
+  border-radius: 1.25rem;
+  padding: 0.625rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  transition: all 0.3s var(--liquid-ease);
+}
+
+.admin-btn-ghost:hover {
+  background: color-mix(in srgb, var(--brand-color-3) 10%, transparent);
+  color: var(--brand-color-1);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-btn-ghost {
+  color: #cbd5e1;
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-btn-ghost:hover {
+  background: color-mix(in srgb, var(--brand-color-4) 14%, transparent);
+  color: #e2e8f0;
+}
+
+/* Sidebar — reference-style purple; fillet size matches active tab left radius */
+.admin-sidebar-surface {
+  --admin-sidebar-bg: linear-gradient(168deg, #8b7cf0 0%, #6c5dd3 52%, #5548b8 100%);
+  --admin-sidebar-tab-pill-radius: calc(var(--radius-liquid) * 0.45);
+  --admin-sidebar-inverse-size: var(--admin-sidebar-tab-pill-radius);
+  /* Opaque fillet shadow for translucent hovers (rgba row fill + rgba shadow causes dark corner artifacts) */
+  --admin-sidebar-fillet-mask: color-mix(in srgb, #6c5dd3 58%, #5548b8 42%);
+  background: var(--admin-sidebar-bg);
+}
+
+/*
+ * Inverse fillet: transparent masks + box-shadow “extends” the pill (opaque fill / solid mask);
+ * the rounded cutout lets the real sidebar show through.
+ */
+.admin-sidebar-nav-item-active {
+  --admin-sidebar-tab-fill: #ffffff;
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  border-radius: var(--admin-sidebar-tab-pill-radius) 0 0 var(--admin-sidebar-tab-pill-radius);
+  background: var(--admin-sidebar-tab-fill) !important;
+  color: var(--admin-accent-ink);
+  box-shadow: none;
+  transition: all 0.3s var(--liquid-ease);
+}
+
+/* Inactive row: inset pill by default; on hover match active rail + fillets */
+.admin-sidebar-nav-item-inactive {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  margin-right: 0.75rem;
+  width: calc(100% - 0.75rem);
+  border-radius: 0.75rem;
+  padding-right: 1rem;
+  transition:
+    margin 0.3s var(--liquid-ease),
+    width 0.3s var(--liquid-ease),
+    border-radius 0.3s var(--liquid-ease),
+    background-color 0.3s var(--liquid-ease),
+    padding-right 0.3s var(--liquid-ease);
+}
+
+.admin-sidebar-nav-item-inactive:hover {
+  z-index: 2;
+  margin-right: 0;
+  width: 100%;
+  border-radius: var(--admin-sidebar-tab-pill-radius) 0 0 var(--admin-sidebar-tab-pill-radius);
+  background-color: rgb(255 255 255 / 0.1);
+  padding-right: 0;
+}
+
+/* Keep label/icon above the inverse-fillet pseudos */
+.admin-sidebar-nav-item-active > span,
+.admin-sidebar-nav-item-inactive > span {
+  position: relative;
+  z-index: 1;
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-sidebar-nav-item-active {
+  --admin-sidebar-tab-fill: var(--admin-card);
+  background: var(--admin-card) !important;
+  color: #f1f5f9;
+}
+
+.admin-sidebar-nav-item-active::before,
+.admin-sidebar-nav-item-active::after,
+.admin-sidebar-nav-item-inactive::before,
+.admin-sidebar-nav-item-inactive::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  width: var(--admin-sidebar-inverse-size);
+  height: var(--admin-sidebar-inverse-size);
+  background: transparent;
+  pointer-events: none;
+}
+
+.admin-sidebar-nav-item-active::before,
+.admin-sidebar-nav-item-inactive::before {
+  top: calc(-1 * var(--admin-sidebar-inverse-size));
+}
+
+.admin-sidebar-nav-item-active::after,
+.admin-sidebar-nav-item-inactive::after {
+  bottom: calc(-1 * var(--admin-sidebar-inverse-size));
+}
+
+/* Inactive: hide fillet geometry until hover */
+.admin-sidebar-nav-item-inactive::before,
+.admin-sidebar-nav-item-inactive::after {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.admin-sidebar-nav-item-active::before {
+  border-bottom-right-radius: var(--admin-sidebar-inverse-size);
+  box-shadow:
+    calc(var(--admin-sidebar-inverse-size) / 2) calc(var(--admin-sidebar-inverse-size) / 2) 0
+    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
+}
+
+.admin-sidebar-nav-item-active::after {
+  border-top-right-radius: var(--admin-sidebar-inverse-size);
+  box-shadow:
+    calc(var(--admin-sidebar-inverse-size) / 2) calc(-1 * var(--admin-sidebar-inverse-size) / 2) 0
+    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
+}
+
+/* Solid mask matches sidebar hue — avoids premultiplied / double-alpha corners on translucent hover */
+.admin-sidebar-nav-item-inactive:hover::before {
+  border-bottom-right-radius: var(--admin-sidebar-inverse-size);
+  box-shadow:
+    calc(var(--admin-sidebar-inverse-size) / 2) calc(var(--admin-sidebar-inverse-size) / 2) 0
+    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-fillet-mask);
+}
+
+.admin-sidebar-nav-item-inactive:hover::after {
+  border-top-right-radius: var(--admin-sidebar-inverse-size);
+  box-shadow:
+    calc(var(--admin-sidebar-inverse-size) / 2) calc(-1 * var(--admin-sidebar-inverse-size) / 2) 0
+    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-fillet-mask);
+}
+
+/* Default tables — light separators */
 .admin-shell table {
   border-collapse: separate;
-  border-spacing: 0 10px;
+  border-spacing: 0 8px;
 }
 
 .admin-shell thead tr {
@@ -49,45 +314,169 @@ body {
 
 .admin-shell thead th {
   border: 0 !important;
-  padding-top: 0.55rem !important;
-  padding-bottom: 0.55rem !important;
-  color: #64748b !important;
-  font-size: 0.7rem;
-  font-weight: 700;
+  padding-top: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  color: var(--admin-muted) !important;
+  font-size: 0.6875rem;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.admin-shell tbody tr {
-  background: #ffffff;
-  transition: transform 120ms ease, box-shadow 160ms ease, background-color 160ms ease;
+.admin-shell[data-admin-theme="dark"] thead th {
+  color: var(--admin-muted) !important;
 }
 
-.admin-shell tbody tr:hover {
-  background: #fbfdff;
-  box-shadow: 0 6px 18px -14px rgba(15, 23, 42, 0.45);
-  transform: translateY(-1px);
+.admin-shell tbody tr {
+  background: var(--admin-card);
+  transition: all 0.3s var(--liquid-ease);
 }
 
 .admin-shell tbody td {
-  border-top: 1px solid #edf2f7 !important;
-  border-bottom: 1px solid #edf2f7 !important;
-  border-left: 0 !important;
-  border-right: 0 !important;
-  padding-top: 0.95rem !important;
-  padding-bottom: 0.95rem !important;
+  border-top: 1px solid var(--admin-card-border) !important;
+  border-bottom: 1px solid var(--admin-card-border) !important;
+  padding: 0.875rem 1.1rem !important;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+
+.admin-shell[data-admin-theme="dark"] tbody td {
+  border-top-color: var(--admin-card-border) !important;
+  border-bottom-color: var(--admin-card-border) !important;
 }
 
 .admin-shell tbody td:first-child {
-  border-left: 1px solid #edf2f7 !important;
-  border-top-left-radius: 0.95rem;
-  border-bottom-left-radius: 0.95rem;
+  border-left: 1px solid var(--admin-card-border) !important;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
 }
 
 .admin-shell tbody td:last-child {
-  border-right: 1px solid #edf2f7 !important;
-  border-top-right-radius: 0.95rem;
-  border-bottom-right-radius: 0.95rem;
+  border-right: 1px solid var(--admin-card-border) !important;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.admin-shell[data-admin-theme="dark"] tbody td:first-child {
+  border-left-color: var(--admin-card-border) !important;
+}
+
+.admin-shell[data-admin-theme="dark"] tbody td:last-child {
+  border-right-color: var(--admin-card-border) !important;
+}
+
+.admin-shell tbody tr:hover td {
+  background: color-mix(in srgb, var(--admin-bg-canvas) 65%, var(--admin-card));
+}
+
+.admin-shell[data-admin-theme="dark"] tbody tr:hover td {
+  background: #303450;
+}
+
+/* Layered “floating” tables — add class admin-liquid-table on <table> */
+.admin-shell table.admin-liquid-table {
+  border-spacing: 0 10px;
+}
+
+.admin-shell table.admin-liquid-table tbody tr {
+  filter: drop-shadow(0 4px 18px rgba(27, 29, 33, 0.06));
+}
+
+.admin-shell[data-admin-theme="dark"] table.admin-liquid-table tbody tr {
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
+}
+
+.admin-shell table.admin-liquid-table tbody td {
+  border: none !important;
+  background: var(--admin-card);
+}
+
+.admin-shell table.admin-liquid-table tbody td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.admin-shell table.admin-liquid-table tbody td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Compact / inline tables — no row islands */
+.admin-shell table.admin-table-plain {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.admin-shell table.admin-table-plain tbody tr {
+  filter: none !important;
+}
+
+.admin-shell table.admin-table-plain tbody td {
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0.5rem 1rem !important;
+  background: transparent !important;
+}
+
+.admin-shell table.admin-table-plain tbody tr:hover td {
+  background: color-mix(in srgb, var(--brand-color-3) 6%, transparent) !important;
+}
+
+.admin-shell[data-admin-theme="dark"] table.admin-table-plain tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Selected row: carved gutters + tint */
+.admin-shell table.admin-liquid-table tbody tr.admin-row-carved td:first-child {
+  position: relative;
+}
+
+.admin-shell table.admin-liquid-table tbody tr.admin-row-carved td:first-child::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: var(--admin-bg-canvas);
+  border-radius: 0 14px 14px 0;
+  pointer-events: none;
+}
+
+.admin-shell table.admin-liquid-table tbody tr.admin-row-carved td:last-child {
+  position: relative;
+}
+
+.admin-shell table.admin-liquid-table tbody tr.admin-row-carved td:last-child::after {
+  content: '';
+  position: absolute;
+  right: -14px;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: var(--admin-bg-canvas);
+  border-radius: 14px 0 0 14px;
+  pointer-events: none;
+}
+
+.admin-shell table.admin-liquid-table tbody tr.admin-row-carved td {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brand-color-3) 9%, transparent),
+    var(--admin-card) 28%,
+    var(--admin-card) 72%,
+    color-mix(in srgb, var(--brand-color-3) 9%, transparent)
+  );
+}
+
+.admin-shell[data-admin-theme="dark"] table.admin-liquid-table tbody tr.admin-row-carved td {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brand-color-4) 14%, transparent),
+    var(--admin-card) 26%,
+    var(--admin-card) 74%,
+    color-mix(in srgb, var(--brand-color-4) 14%, transparent)
+  );
 }
 
 /* Sidebar: fade + slide when expanding (labels / wordmark) */

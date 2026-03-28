@@ -524,6 +524,11 @@ export type AdsClientResponse = {
   companyName?: string;
 };
 
+export type CompanyCampaignApprovalOverrideRequest = {
+  /** Use `null` to clear override and inherit platform default. */
+  requireCampaignApprovalOverride?: boolean | null;
+};
+
 export type CompanyLeanResponse = {
   id: number;
   name?: string;
@@ -552,6 +557,9 @@ export type CompanyLeanResponse = {
   reviewReason?: string;
   isActive: boolean;
   deactivatedAt?: string;
+  /** `null`/`undefined` = inherit platform default */
+  requireCampaignApprovalOverride?: boolean | null;
+  effectiveRequireCampaignApproval: boolean;
 };
 
 export type CompanyReviewStatus = "Pending" | "Approved" | "Rejected";
@@ -755,6 +763,11 @@ function mapCompanyLeanResponse(
     reviewReason: (r.ReviewReason ?? r.reviewReason) as string | undefined,
     isActive: Boolean(r.IsActive ?? r.isActive ?? true),
     deactivatedAt: (r.DeactivatedAt ?? r.deactivatedAt) as string | undefined,
+    requireCampaignApprovalOverride: (r.RequireCampaignApprovalOverride ??
+      r.requireCampaignApprovalOverride) as boolean | null | undefined,
+    effectiveRequireCampaignApproval: Boolean(
+      r.EffectiveRequireCampaignApproval ?? r.effectiveRequireCampaignApproval ?? false,
+    ),
   };
 }
 
@@ -1801,6 +1814,23 @@ export const adminApi = {
       {
         method: "PATCH",
         body: JSON.stringify({ senderId }),
+        authToken,
+      },
+    ).then(mapCompanyLeanResponse),
+
+  updateCompanyCampaignApprovalOverride: (
+    companyId: number,
+    payload: CompanyCampaignApprovalOverrideRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/campaign-approval-override`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          requireCampaignApprovalOverride:
+            payload.requireCampaignApprovalOverride ?? null,
+        }),
         authToken,
       },
     ).then(mapCompanyLeanResponse),
