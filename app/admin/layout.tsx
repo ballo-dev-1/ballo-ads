@@ -18,10 +18,10 @@ export default function AdminLayout({
       <AdminThemeProvider className={inter.variable}>
         <Toaster position="top-center" />
         <Sidebar />
-        <div className="admin-main-panel flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="admin-main-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <NotificationsProvider>
             <AdminHeader />
-            <main className="admin-content flex-1 overflow-auto px-5 py-5 text-sm leading-relaxed text-[var(--admin-heading)] lg:px-8 lg:py-6">
+            <main className="admin-content min-h-0 flex-1 overflow-auto px-5 py-5 text-sm leading-relaxed text-[var(--admin-heading)] lg:px-8 lg:py-6">
               {children}
             </main>
           </NotificationsProvider>

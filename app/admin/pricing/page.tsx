@@ -390,9 +390,9 @@ export default function PricingPage() {
                   <button
                     type="button"
                     onClick={() => setFiltersPopoverOpen((o) => !o)}
-                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] ${
+                    className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] ${
                       filtersPopoverOpen
-                        ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                        ? 'bg-[var(--admin-ui-accent)]/10 text-[var(--admin-ui-accent)]'
                         : 'text-gray-700 hover:bg-gray-200'
                     }`}
                     aria-label="Filters"
@@ -402,7 +402,7 @@ export default function PricingPage() {
                     <Filter className="w-4 h-4" />
                     <span>Filters</span>
                     {(platformFilter || !filterEnabled || !filterDisabled) && (
-                      <span className="flex h-2 w-2 rounded-full bg-[var(--brand-color-2)]" aria-hidden />
+                      <span className="flex h-2 w-2 rounded-full bg-[var(--admin-ui-accent)]" aria-hidden />
                     )}
                   </button>
                   {filtersPopoverOpen && (
@@ -416,7 +416,7 @@ export default function PricingPage() {
                             id="filter-platform"
                             value={platformFilter}
                             onChange={(e) => setPlatformFilter(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
                           >
                             <option value="">All</option>
                             {uniquePlatforms.map((p) => (
@@ -434,7 +434,7 @@ export default function PricingPage() {
                                 type="checkbox"
                                 checked={filterEnabled}
                                 onChange={(e) => setFilterEnabled(e.target.checked)}
-                                className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                                className="rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)]"
                               />
                               <span className="text-sm text-gray-700">Enabled</span>
                             </label>
@@ -443,7 +443,7 @@ export default function PricingPage() {
                                 type="checkbox"
                                 checked={filterDisabled}
                                 onChange={(e) => setFilterDisabled(e.target.checked)}
-                                className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                                className="rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)]"
                               />
                               <span className="text-sm text-gray-700">Disabled</span>
                             </label>
@@ -461,7 +461,7 @@ export default function PricingPage() {
                     id="sort-by"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as SortKey)}
-                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
                   >
                     <option value="platform">Platform</option>
                     <option value="range">Range</option>
@@ -474,7 +474,7 @@ export default function PricingPage() {
                     aria-label="Sort direction"
                     value={sortDir}
                     onChange={(e) => setSortDir(e.target.value as SortDir)}
-                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
                   >
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
@@ -492,7 +492,7 @@ export default function PricingPage() {
                       <button
                         type="button"
                         onClick={() => handleSort('platform')}
-                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                       >
                         Platform
                         <SortIcon column="platform" />
@@ -502,7 +502,7 @@ export default function PricingPage() {
                       <button
                         type="button"
                         onClick={() => handleSort('range')}
-                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                       >
                         Range
                         <SortIcon column="range" />
@@ -512,7 +512,7 @@ export default function PricingPage() {
                       <button
                         type="button"
                         onClick={() => handleSort('amountPerMessage')}
-                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                       >
                         Amount / Msg
                         <SortIcon column="amountPerMessage" />
@@ -522,7 +522,7 @@ export default function PricingPage() {
                       <button
                         type="button"
                         onClick={() => handleSort('duration')}
-                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                       >
                         Duration
                         <SortIcon column="duration" />
@@ -532,7 +532,7 @@ export default function PricingPage() {
                       <button
                         type="button"
                         onClick={() => handleSort('status')}
-                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                        className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                       >
                         Status
                         <SortIcon column="status" />
@@ -709,7 +709,7 @@ export default function PricingPage() {
                           aria-checked={effectiveEnabled}
                           aria-label="Status"
                           onClick={() => setPendingEnable(!effectiveEnabled)}
-                          className={`relative inline-flex h-6 w-14 shrink-0 cursor-pointer rounded-full border-0 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] focus:ring-offset-2 ${
+                          className={`relative inline-flex h-6 w-14 shrink-0 cursor-pointer rounded-full border-0 transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] focus:ring-offset-2 ${
                             effectiveEnabled ? 'bg-emerald-600' : 'bg-gray-300'
                           }`}
                         >

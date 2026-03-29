@@ -340,7 +340,7 @@ export default function BackofficeUsersPage() {
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
-                className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
+                className="rounded-full bg-[var(--brand-color-1)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
               >
                 Create user
               </button>
@@ -348,7 +348,7 @@ export default function BackofficeUsersPage() {
               <button
                 type="button"
                 onClick={() => setCreateRoleOpen(true)}
-                className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
+                className="rounded-full bg-[var(--brand-color-1)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
               >
                 Create role
               </button>
@@ -356,26 +356,22 @@ export default function BackofficeUsersPage() {
           }
         />
 
-        <div className="mb-4 flex items-center gap-2">
+        <div className="admin-tab-bar" role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'users'}
             onClick={() => setActiveTab('users')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'users'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'users' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Users
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'roles'}
             onClick={() => setActiveTab('roles')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'roles'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'roles' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Roles
           </button>
@@ -460,7 +456,7 @@ export default function BackofficeUsersPage() {
                   <button
                     type="submit"
                     disabled={createLoading}
-                    className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white hover:opacity-90 disabled:opacity-50"
                   >
                     {createLoading ? 'Creating…' : 'Create'}
                   </button>
@@ -500,7 +496,7 @@ export default function BackofficeUsersPage() {
                   type="button"
                   onClick={() => handleSetUserRoles(editId)}
                   disabled={editLoading}
-                  className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white hover:opacity-90 disabled:opacity-50"
                 >
                   {editLoading ? 'Saving…' : 'Save'}
                 </button>
@@ -551,7 +547,7 @@ export default function BackofficeUsersPage() {
                   <button
                     type="submit"
                     disabled={createRoleLoading}
-                    className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white hover:opacity-90 disabled:opacity-50"
                   >
                     {createRoleLoading ? 'Creating…' : 'Create'}
                   </button>
@@ -614,7 +610,7 @@ export default function BackofficeUsersPage() {
                               type="button"
                               onClick={() => setGroupPermissions(group.permissions, !allSelected)}
                               disabled={editRoleLoading}
-                              className="text-xs font-medium text-[#0e0e39] hover:underline disabled:opacity-50"
+                              className="text-xs font-medium text-[var(--brand-color-1)] hover:underline disabled:opacity-50"
                             >
                               {allSelected ? 'Clear group' : 'Select all in group'}
                             </button>
@@ -634,7 +630,7 @@ export default function BackofficeUsersPage() {
                                   checked={editRolePerms.includes(permission)}
                                   onChange={() => togglePerm(editRolePerms, setEditRolePerms, permission)}
                                   disabled={editRoleLoading}
-                                  className="h-4 w-4 shrink-0 rounded border-gray-300 text-[#0e0e39] focus:ring-[#0e0e39]"
+                                  className="h-4 w-4 shrink-0 rounded border-gray-300 text-[var(--brand-color-1)] focus:ring-[var(--brand-color-1)]"
                                 />
                               </label>
                             ))}
@@ -658,7 +654,7 @@ export default function BackofficeUsersPage() {
                   type="button"
                   onClick={() => handleSetPermissions(editRoleId)}
                   disabled={editRoleLoading}
-                  className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white hover:opacity-90 disabled:opacity-50"
                 >
                   {editRoleLoading ? 'Saving…' : 'Save'}
                 </button>
@@ -669,7 +665,7 @@ export default function BackofficeUsersPage() {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <div className="bg-transparent rounded-xl border border-gray-200/80 shadow-sm overflow-hidden p-4">

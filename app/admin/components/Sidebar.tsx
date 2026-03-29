@@ -76,13 +76,13 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`admin-sidebar-surface relative flex shrink-0 flex-col rounded-tr-3xl ease-out ${collapsed ? 'w-[5.25rem]' : 'w-64'}`}
+      className={`admin-sidebar-surface relative flex shrink-0 flex-col rounded-3xl m-2 ease-out ${collapsed ? 'w-[5.25rem]' : 'w-64'}`}
       style={{ transition: `width ${SIDEBAR_WIDTH_MS}ms ease-out` }}
     >
       <button
         type="button"
         onClick={toggleCollapsed}
-        className={`admin-liquid-transition absolute top-1/2 z-30 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-white bg-white py-2.5 pl-1 pr-1.5 text-white shadow-lg backdrop-blur-sm hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50 ${
+        className={`admin-sidebar-toggle-btn admin-liquid-transition absolute top-1/2 z-30 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full py-2.5 pl-1 pr-1.5 backdrop-blur-sm ${
           collapsed ? 'left-full -ml-3' : 'left-full -ml-3'
         }`}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -97,7 +97,7 @@ export default function Sidebar() {
           src={logo_1}
           alt="Ballo"
           quality={100}
-          className="h-10 w-auto shrink-0 brightness-0 invert"
+          className="h-10 w-auto shrink-0 brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.22)]"
           priority
         />
         {!collapsed && showExpandedLabels ? (
@@ -105,7 +105,7 @@ export default function Sidebar() {
             src={logo_2}
             alt="Ballo Ads"
             quality={100}
-            className="admin-sidebar-reveal h-9 w-auto flex-1 object-contain object-left brightness-0 invert"
+            className="admin-sidebar-reveal scale-150 ml-5 h-9 w-auto flex-1 object-contain object-left brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.22)]"
             style={{ animationDelay: `${LABEL_ANIM_BASE_MS}ms` }}
             priority
           />
@@ -129,20 +129,23 @@ export default function Sidebar() {
                   collapsed
                     ? `flex w-full items-center justify-center rounded-xl px-2 py-3 font-medium ${
                         item.isActive
-                          ? 'bg-white text-[var(--admin-accent-ink)] shadow-md shadow-black/15'
-                          : 'text-white/90 hover:bg-white/10'
+                          ? 'admin-sidebar-nav-collapsed-active'
+                          : 'text-[var(--admin-sidebar-fg-muted)] hover:bg-[color-mix(in_srgb,var(--brand-color-4)_10%,transparent)]'
                       }`
                     : item.isActive
                       ? 'admin-sidebar-nav-item-active flex w-full items-center gap-3 py-2.5 pl-3 pr-0 font-medium'
-                      : 'admin-sidebar-nav-item-inactive flex items-center gap-3 py-2.5 pl-3 font-medium tracking-wide text-white/90'
+                      : 'admin-sidebar-nav-item-inactive flex items-center gap-3 py-2.5 pl-3 font-medium tracking-wide text-[var(--admin-sidebar-fg-muted)]'
                 }`}
               >
+                {item.isActive && !collapsed ? (
+                  <span className="admin-sidebar-active-rail-bridge" aria-hidden />
+                ) : null}
                 <span
                   className={`flex shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                     item.isActive
                       ? ''
                       : collapsed
-                        ? 'group-hover/nav:bg-white/12 group-hover/nav:ring-2 group-hover/nav:ring-white/10'
+                        ? 'group-hover/nav:bg-[color-mix(in_srgb,var(--brand-color-4)_14%,transparent)] group-hover/nav:ring-2 group-hover/nav:ring-[color-mix(in_srgb,#ffffff_28%,var(--brand-color-4)_22%)]'
                         : ''
                   }`}
                 >

@@ -60,37 +60,31 @@ export default function SmsProvidersClient() {
           variant="sky"
         />
 
-        <div className="mb-2 flex items-center gap-2">
+        <div className="admin-tab-bar mb-2" role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'tumani'}
             onClick={() => setActiveTab('tumani')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'tumani'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'tumani' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Tumani
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'mtn'}
             onClick={() => setActiveTab('mtn')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'mtn'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'mtn' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             MTN
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'routes'}
             onClick={() => setActiveTab('routes')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'routes'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'routes' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Routing rules
           </button>
@@ -102,7 +96,7 @@ export default function SmsProvidersClient() {
 
             {loadingTumani ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
               </div>
             ) : tumaniError ? (
               <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3">
@@ -130,15 +124,13 @@ export default function SmsProvidersClient() {
               <p className="text-sm text-gray-600">Operational controls and backup views for MTN.</p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="admin-tab-bar" role="tablist">
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeMtnInnerTab === 'whitelisted'}
                 onClick={() => setActiveMtnInnerTab('whitelisted')}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                  activeMtnInnerTab === 'whitelisted'
-                    ? 'bg-[#0e0e39] text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`admin-tab-bar__tab ${activeMtnInnerTab === 'whitelisted' ? 'admin-tab-bar__tab--active' : ''}`}
               >
                 Whitelisted sender IDs
               </button>

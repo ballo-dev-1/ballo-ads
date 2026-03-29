@@ -167,7 +167,7 @@ export default function CampaignDetailsPage() {
     return (
       <div className="flex-1 overflow-auto p-4 sm:p-6">
         <div className="mx-auto flex min-h-[320px] w-full max-w-[1280px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--admin-ui-accent)]" />
         </div>
       </div>
     )
@@ -202,16 +202,22 @@ export default function CampaignDetailsPage() {
       <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-6">
         <AdminHero
           topSlot={
-            <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
-              <Link href={`${basePath}/campaigns`} className="hover:text-white hover:underline">
+            <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-[var(--admin-muted)] [&_svg]:shrink-0 [&_svg]:opacity-70">
+              <Link
+                href={`${basePath}/campaigns`}
+                className="transition-colors hover:text-[var(--admin-heading)] hover:underline"
+              >
                 Campaigns
               </Link>
               <ChevronRight className="h-3.5 w-3.5" />
-              <Link href={`${basePath}/companies/${companyId}`} className="hover:text-white hover:underline">
+              <Link
+                href={`${basePath}/companies/${companyId}`}
+                className="transition-colors hover:text-[var(--admin-heading)] hover:underline"
+              >
                 Company {companyId}
               </Link>
               <ChevronRight className="h-3.5 w-3.5" />
-              <span>Campaign {campaign.id}</span>
+              <span className="font-medium text-[var(--admin-heading)]">Campaign {campaign.id}</span>
             </div>
           }
           eyebrow="Campaign details"
@@ -222,7 +228,7 @@ export default function CampaignDetailsPage() {
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={`${basePath}/companies/${companyId}`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--admin-card-border)] bg-[color:var(--admin-card)] px-3 py-1.5 text-xs font-semibold text-[var(--admin-heading)] shadow-sm transition hover:bg-[color:var(--admin-control-hover)]"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back to company
@@ -231,7 +237,7 @@ export default function CampaignDetailsPage() {
                 type="button"
                 onClick={loadCampaign}
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--admin-card-border)] bg-[color:var(--admin-card)] px-3 py-1.5 text-xs font-semibold text-[var(--admin-heading)] shadow-sm transition hover:bg-[color:var(--admin-control-hover)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw className={classNames('h-3.5 w-3.5', loading && 'animate-spin')} />
                 Refresh
@@ -240,58 +246,50 @@ export default function CampaignDetailsPage() {
           }
           meta={
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+              <span className="rounded-full border border-[color:var(--admin-card-border)] bg-[color:color-mix(in_srgb,var(--admin-card)_88%,var(--admin-bg-canvas))] px-3 py-1.5 text-[var(--admin-muted)]">
                 {campaign.status}
               </span>
-              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
+              <span className="rounded-full border border-[color:var(--admin-card-border)] bg-[color:color-mix(in_srgb,var(--admin-card)_88%,var(--admin-bg-canvas))] px-3 py-1.5 text-[var(--admin-muted)]">
                 {campaign.isApproved ? 'Approved' : 'Not approved'}
               </span>
             </div>
           }
         />
 
-        <div className="mb-1 flex items-center gap-2">
+        <div className="admin-tab-bar mb-1" role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'overview'}
             onClick={() => setActiveTab('overview')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'overview'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'overview' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Overview
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'recipients'}
             onClick={() => setActiveTab('recipients')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'recipients'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'recipients' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Recipients
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'actions'}
             onClick={() => setActiveTab('actions')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'actions'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'actions' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Actions
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'logs'}
             onClick={() => setActiveTab('logs')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'logs'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'logs' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Logs
           </button>
@@ -466,7 +464,7 @@ export default function CampaignDetailsPage() {
                 href={campaign.mediaFileUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-block break-all text-sm font-medium text-[var(--brand-color-2)] hover:text-[var(--brand-color-1)] hover:underline"
+                className="mt-1 inline-block break-all text-sm font-medium text-[var(--admin-ui-accent)] hover:text-[var(--brand-color-1)] hover:underline"
               >
                 {campaign.mediaFileUrl}
               </a>
@@ -560,7 +558,7 @@ export default function CampaignDetailsPage() {
                     { title: 'Activate campaign', confirmLabel: 'Activate' },
                   )
                 }
-                className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Activate
               </button>
@@ -585,7 +583,7 @@ export default function CampaignDetailsPage() {
                   type="button"
                   disabled={actionDisabled}
                   onClick={() => void handleRetargetPendingRecipients()}
-                  className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-white px-3 py-2 text-xs font-semibold text-[var(--brand-color-2)] transition-colors hover:bg-[rgba(91,94,231,0.06)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex rounded-lg border border-[var(--admin-ui-accent)] bg-white px-3 py-2 text-xs font-semibold text-[var(--admin-ui-accent)] transition-colors hover:bg-[color-mix(in_srgb,var(--admin-ui-accent)_8%,#ffffff)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Retarget pending ({pendingSenderIdCount})
                 </button>

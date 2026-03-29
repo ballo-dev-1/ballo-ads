@@ -21,14 +21,12 @@ import {
   Linkedin,
   Mail,
   MapPin,
-  Megaphone,
   Phone,
-  ShieldCheck,
   ShieldX,
-  SignalHigh,
   Signature,
   Twitter,
   Youtube,
+  ListChecks,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -45,7 +43,9 @@ import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 import { notifyBackofficeEvent } from '@/lib/notifications/client'
-import CompanyAnalyticsPanel from '@/app/admin/companies/[id]/components/CompanyAnalyticsPanel'
+import CompanyAnalyticsPanel, {
+  type CompanyOverviewSnapshot,
+} from '@/app/admin/companies/[id]/components/CompanyAnalyticsPanel'
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -54,6 +54,8 @@ function classNames(...classes: Array<string | false | null | undefined>) {
 type NetworkKey = 'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile'
 /** Per-network sender ID state shown in the Action dropdown (server truth + optional Hold). */
 type NetworkStatus = 'Pending' | 'Approved' | 'Hold'
+
+type ReviewFeedbackMode = 'reject' | 'requestChanges'
 
 function SenderIdStatusBadge({
   company,
@@ -110,7 +112,7 @@ function DetailRow({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="break-all font-medium text-[var(--brand-color-2)] transition-colors hover:text-[var(--brand-color-1)] hover:underline"
+      className="break-all font-medium text-[var(--admin-ui-accent)] transition-colors hover:text-[var(--brand-color-1)] hover:underline"
     >
       {value}
     </a>
@@ -180,29 +182,6 @@ function SectionCard({
   )
 }
 
-function StatCard({
-  label,
-  value,
-  hint,
-  icon,
-}: {
-  label: string
-  value: React.ReactNode
-  hint?: string
-  icon: React.ReactNode
-}) {
-  return (
-    <article className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
-      <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
-        {icon}
-      </div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-semibold text-slate-800">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-    </article>
-  )
-}
-
 function ReviewStatusPill({ status }: { status: CompanyReviewStatus }) {
   if (status === 'Approved') {
     return (
@@ -232,6 +211,68 @@ function campaignApprovalOverrideLabel(override: boolean | null | undefined): st
   if (override === true) return 'Always require approval'
   if (override === false) return 'Skip approval (trusted)'
   return 'Inherit platform default'
+}
+
+function hasSubmittedValue(value?: string | null): boolean {
+  return value != null && String(value).trim().length > 0
+}
+
+function SubmissionReviewChecklist({ company }: { company: CompanyLeanResponse }) {
+  const items = [
+    { label: 'Company name', ok: hasSubmittedValue(company.name) },
+    { label: 'Contact email', ok: hasSubmittedValue(company.email) },
+    { label: 'Phone number', ok: hasSubmittedValue(company.phoneNumber) },
+    { label: 'Physical address', ok: hasSubmittedValue(company.physicalAddress) },
+    { label: 'Industry', ok: hasSubmittedValue(company.industry) },
+    { label: 'Company description', ok: hasSubmittedValue(company.description) },
+    { label: 'Registration document uploaded', ok: hasSubmittedValue(company.registrationDocumentUrl) },
+    { label: 'Authorized signatory (signature image)', ok: hasSubmittedValue(company.signatureImageUrl) },
+    { label: 'Company logo / profile image', ok: hasSubmittedValue(company.profileImageUrl) },
+    { label: 'Sender ID configured', ok: hasSubmittedValue(company.senderId) },
+  ] as const
+
+  const complete = items.filter((i) => i.ok).length
+  const total = items.length
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-3">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
+        <ListChecks className="h-3.5 w-3.5 text-slate-400" strokeWidth={2} aria-hidden />
+        Submission checklist
+      </div>
+      <p className="mt-1 text-xs text-slate-600">
+        <span className="font-medium text-slate-700">{complete}</span> of {total} items submitted
+      </p>
+      <ul className="mt-3 space-y-2" aria-label="Submission requirements">
+        {items.map((item) => (
+          <li key={item.label} className="flex items-start gap-2.5 text-sm">
+            {item.ok ? (
+              <CheckCircle2
+                className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                strokeWidth={2}
+                aria-hidden
+              />
+            ) : (
+              <CircleDashed
+                className="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
+                strokeWidth={2}
+                aria-hidden
+              />
+            )}
+            <span
+              className={classNames(
+                'leading-snug',
+                item.ok ? 'font-medium text-slate-800' : 'text-slate-500',
+              )}
+            >
+              {item.label}
+              <span className="sr-only">{item.ok ? ' — provided' : ' — not provided'}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 }
 
 export default function CompanyDetailsPage() {
@@ -496,8 +537,55 @@ export default function CompanyDetailsPage() {
   }
 
   const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewFeedbackOpen, setReviewFeedbackOpen] = useState(false)
+  const [reviewFeedbackMode, setReviewFeedbackMode] = useState<ReviewFeedbackMode>('reject')
+  const [reviewFeedbackText, setReviewFeedbackText] = useState('')
+  const [reviewFeedbackFieldError, setReviewFeedbackFieldError] = useState('')
   const reviewStatus: CompanyReviewStatus =
     company?.reviewStatus ?? (company?.isCompanyVerified ? 'Approved' : 'Pending')
+
+  const closeReviewFeedbackModal = () => {
+    setReviewFeedbackOpen(false)
+    setReviewFeedbackFieldError('')
+  }
+
+  const openReviewFeedbackModal = (mode: ReviewFeedbackMode) => {
+    if (!company) return
+    setReviewFeedbackMode(mode)
+    setReviewFeedbackText(company.reviewReason ?? '')
+    setReviewFeedbackFieldError('')
+    setReviewFeedbackOpen(true)
+  }
+
+  const submitReviewFeedback = async () => {
+    if (!company) return
+    const trimmed = reviewFeedbackText.trim()
+    if (!trimmed) {
+      setReviewFeedbackFieldError(
+        reviewFeedbackMode === 'reject' ? 'Rejection reason is required' : 'Feedback is required',
+      )
+      return
+    }
+    setReviewFeedbackFieldError('')
+    setReviewLoading(true)
+    try {
+      const status = reviewFeedbackMode === 'reject' ? 'Rejected' : 'Pending'
+      const updated = await adminApi.reviewCompany(company.id, {
+        status,
+        reason: trimmed,
+      })
+      setCompany((prev) => (prev ? { ...prev, ...updated } : null))
+      toast.success(
+        reviewFeedbackMode === 'reject' ? 'Review set to Rejected' : 'Changes requested; company is pending review',
+      )
+      setReviewFeedbackOpen(false)
+      setReviewFeedbackText('')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to update review')
+    } finally {
+      setReviewLoading(false)
+    }
+  }
 
   const handleSetReviewStatus = async (status: CompanyReviewStatus) => {
     if (!company) return
@@ -506,32 +594,27 @@ export default function CompanyDetailsPage() {
       return
     }
 
-    let reason: string | undefined
     if (status === 'Rejected') {
-      const entered = window.prompt('Provide rejection reason (required):', company.reviewReason ?? '')
-      if (entered == null) return
-      const trimmed = entered.trim()
-      if (!trimmed) {
-        toast.error('Rejection reason is required')
-        return
-      }
-      reason = trimmed
+      openReviewFeedbackModal('reject')
+      return
+    }
+
+    if (status === 'Pending') {
+      openReviewFeedbackModal('requestChanges')
+      return
     }
 
     const approved = await confirm({
       title: `Set review to ${status}`,
-      description:
-        status === 'Rejected'
-          ? `Reject this company submission with reason: "${reason}"`
-          : `Mark this company submission as ${status.toLowerCase()}?`,
+      description: `Mark this company submission as ${status.toLowerCase()}?`,
       confirmLabel: status,
-      tone: status === 'Rejected' ? 'danger' : 'default',
+      tone: 'default',
     })
     if (!approved) return
 
     setReviewLoading(true)
     try {
-      const updated = await adminApi.reviewCompany(company.id, { status, reason })
+      const updated = await adminApi.reviewCompany(company.id, { status })
       setCompany((prev) => (prev ? { ...prev, ...updated } : null))
       toast.success(`Review set to ${status}`)
     } catch (e: unknown) {
@@ -610,7 +693,33 @@ export default function CompanyDetailsPage() {
     const ratio = Math.round((approvedCampaignsCount / campaigns.length) * 100)
     return `${ratio}%`
   }, [approvedCampaignsCount, campaigns.length])
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'members' | 'campaigns'>('overview')
+
+  const analyticsOverviewSnapshot = useMemo((): CompanyOverviewSnapshot | null => {
+    if (!company) return null
+    return {
+      isActive: company.isActive,
+      reviewStatus,
+      reviewReason: company.reviewReason,
+      senderStatusLabel,
+      senderIdHint: company.senderId ? company.senderId : 'Not configured',
+      campaignsTotal: campaigns.length,
+      activeCampaignsCount,
+      approvedRate,
+      approvedCampaignsCount,
+    }
+  }, [
+    company,
+    reviewStatus,
+    senderStatusLabel,
+    campaigns.length,
+    activeCampaignsCount,
+    approvedRate,
+    approvedCampaignsCount,
+  ])
+
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'analytics' | 'members' | 'campaigns' | 'settings'
+  >('overview')
   const [members, setMembers] = useState<CompanyMemberResponse[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
   const [membersError, setMembersError] = useState('')
@@ -772,12 +881,17 @@ export default function CompanyDetailsPage() {
   }
 
   const breadcrumb = (
-    <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
-      <Link href={`${basePath}/companies`} className="hover:text-white hover:underline">
+    <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-[var(--admin-muted)] [&_svg]:shrink-0 [&_svg]:opacity-70">
+      <Link
+        href={`${basePath}/companies`}
+        className="transition-colors hover:text-[var(--admin-heading)] hover:underline"
+      >
         Companies
       </Link>
       <ChevronRight className="h-3.5 w-3.5" />
-      <span>{company ? `Company ${company.id}` : `Company ${numericId}`}</span>
+      <span className="font-medium text-[var(--admin-heading)]">
+        {company ? `Company ${company.id}` : `Company ${numericId}`}
+      </span>
     </div>
   )
 
@@ -976,7 +1090,7 @@ export default function CompanyDetailsPage() {
             topSlot={breadcrumb}
           />
           <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
-            <div className="h-11 w-11 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
+            <div className="h-11 w-11 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         </div>
       </div>
@@ -1003,7 +1117,7 @@ export default function CompanyDetailsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-[radial-gradient(circle_at_top_right,rgba(148,163,184,0.14),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.09),transparent_42%)] p-4 sm:p-6">
+    <div className="flex-1 overflow-auto p-4 sm:p-6">
       <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-6">
         <AdminHero
           topSlot={breadcrumb}
@@ -1014,89 +1128,56 @@ export default function CompanyDetailsPage() {
           actions={heroActions}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard
-            label="Lifecycle"
-            value={company.isActive ? 'Active' : 'Deactivated'}
-            hint={company.isActive ? 'Operational actions enabled' : 'Operational actions blocked'}
-            icon={<SignalHigh className="h-4 w-4" />}
-          />
-          <StatCard
-            label="Submission review"
-            value={reviewStatus}
-            hint={reviewStatus === 'Rejected' ? (company.reviewReason ?? 'Reason required') : 'Backoffice decision'}
-            icon={<ShieldCheck className="h-4 w-4" />}
-          />
-          <StatCard
-            label="Sender ID"
-            value={senderStatusLabel}
-            hint={company.senderId ? company.senderId : 'Not configured'}
-            icon={<BadgeCheck className="h-4 w-4" />}
-          />
-          <StatCard
-            label="Campaigns"
-            value={`${campaigns.length} total`}
-            hint={`${activeCampaignsCount} currently active`}
-            icon={<Megaphone className="h-4 w-4" />}
-          />
-          <StatCard
-            label="Approval rate"
-            value={approvedRate}
-            hint={`${approvedCampaignsCount} approved`}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="admin-tab-bar" role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'overview'}
             onClick={() => setActiveTab('overview')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'overview'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'overview' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Overview
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'analytics'}
             onClick={() => setActiveTab('analytics')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'analytics'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'analytics' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Analytics
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'members'}
             onClick={() => setActiveTab('members')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'members'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'members' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Members
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'campaigns'}
             onClick={() => setActiveTab('campaigns')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === 'campaigns'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${activeTab === 'campaigns' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Campaigns
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'settings'}
+            onClick={() => setActiveTab('settings')}
+            className={`admin-tab-bar__tab ${activeTab === 'settings' ? 'admin-tab-bar__tab--active' : ''}`}
+          >
+            Settings
           </button>
         </div>
 
         {activeTab === 'overview' ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(380px,0.8fr)]">
-          <div className="space-y-6">
+        <div className="space-y-6">
             <SectionCard
               title="Submission Details"
               subtitle="Core information about this company"
@@ -1110,7 +1191,7 @@ export default function CompanyDetailsPage() {
                         Submission review status
                       </p>
                       <p className="mt-1 text-sm text-slate-600">
-                        Use the controls on the right panel to approve, reject, or keep pending.
+                        Use the Submission review & sender ID section at the bottom of the page to approve, reject, or keep pending.
                       </p>
                     </div>
                     <ReviewStatusPill status={reviewStatus} />
@@ -1118,6 +1199,11 @@ export default function CompanyDetailsPage() {
                   {reviewStatus === 'Rejected' && company.reviewReason ? (
                     <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                       <span className="font-semibold">Rejection reason:</span> {company.reviewReason}
+                    </div>
+                  ) : null}
+                  {reviewStatus === 'Pending' && company.reviewReason ? (
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                      <span className="font-semibold">Changes requested:</span> {company.reviewReason}
                     </div>
                   ) : null}
                 </div>
@@ -1180,7 +1266,7 @@ export default function CompanyDetailsPage() {
                           kind: 'document',
                         })
                       }
-                      className="mt-3 inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
+                      className="mt-3 inline-flex rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
                     >
                       View document
                     </button>
@@ -1205,7 +1291,7 @@ export default function CompanyDetailsPage() {
                           kind: 'image',
                         })
                       }
-                      className="mt-3 inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
+                      className="mt-3 inline-flex rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
                     >
                       View image
                     </button>
@@ -1258,299 +1344,197 @@ export default function CompanyDetailsPage() {
                 />
               </dl>
             </SectionCard>
-          </div>
 
-          <div className="xl:ml-auto xl:w-full xl:max-w-[560px] xl:sticky xl:top-6 xl:self-start">
             <SectionCard
               title="Submission review & sender ID"
               subtitle="Review company submission, then manage sender ID controls"
+              variant="overview"
             >
               <div className="space-y-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={classNames(
-                        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold',
-                        company.isActive
-                          ? 'border-emerald-300/80 bg-emerald-50 text-emerald-700'
-                          : 'border-slate-300/80 bg-slate-100 text-slate-700',
-                      )}
-                    >
-                      {company.isActive ? 'Active' : 'Deactivated'}
-                    </span>
-                    {!company.isActive && company.deactivatedAt ? (
-                      <span className="text-xs text-slate-500">
-                        Deactivated at {new Date(company.deactivatedAt).toLocaleString()}
-                      </span>
-                    ) : null}
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
+                  <div className="min-w-0 space-y-4">
+                    <div className="rounded-xl border border-slate-200">
+                      <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                        <h3 className="text-base font-semibold text-slate-900">Submission review</h3>
+                      </div>
+                      <div className="space-y-3 px-4 py-4">
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                          <span className="font-medium text-slate-700">Status:</span>
+                          <ReviewStatusPill status={reviewStatus} />
+                        </div>
+                        <SubmissionReviewChecklist company={company} />
+
+                        <p className="text-sm text-slate-600">
+                          Review company details before granting access.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSetReviewStatus('Approved')}
+                            disabled={reviewLoading || !company.isActive}
+                            className={classNames(
+                              buttonBase,
+                              'min-w-[96px] justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                            )}
+                          >
+                            {reviewLoading ? 'Updating...' : 'Approve'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetReviewStatus('Rejected')}
+                            disabled={reviewLoading || !company.isActive}
+                            className={classNames(
+                              buttonBase,
+                              'min-w-[96px] justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
+                            )}
+                          >
+                            {reviewLoading ? 'Updating...' : 'Reject'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSetReviewStatus('Pending')}
+                            disabled={reviewLoading || !company.isActive}
+                            className={classNames(
+                              buttonBase,
+                              'min-w-[96px] justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
+                            )}
+                          >
+                            {reviewLoading ? 'Updating...' : 'Request changes'}
+                          </button>
+                        </div>
+                        {reviewStatus === 'Rejected' && company.reviewReason ? (
+                          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                            Rejection reason: {company.reviewReason}
+                          </p>
+                        ) : null}
+                        {reviewStatus === 'Pending' && company.reviewReason ? (
+                          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                            Changes requested: {company.reviewReason}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="rounded-xl border border-slate-200">
+                      <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="text-base font-semibold text-slate-900">Network Sender ID Approvals</h3>
+                        <select
+                          value={bulkNetworkStatus}
+                          onChange={(event) =>
+                            void confirmAndApplyBulkNetworkStatus(event.target.value as NetworkStatus)
+                          }
+                          disabled={networkSenderIdActionLoading || !company.isActive}
+                          className="w-full shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="Pending">Pending All</option>
+                          <option value="Approved">Approved All</option>
+                          <option value="Hold">Hold All</option>
+                        </select>
+                      </div>
+                      <div className="space-y-4 p-4">
+                        <div className="space-y-2">
+                          <label
+                            htmlFor="sender-id-inline-input"
+                            className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500"
+                          >
+                            Sender ID
+                          </label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <input
+                              id="sender-id-inline-input"
+                              type="text"
+                              value={senderIdInputValue}
+                              onChange={(event) => setSenderIdInputValue(event.target.value)}
+                              placeholder="Enter sender ID"
+                              disabled={senderIdUpdateLoading || !company.isActive}
+                              className="min-w-[220px] flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/40 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleUpdateSenderId}
+                              disabled={senderIdUpdateLoading || !company.isActive}
+                              className={classNames(
+                                buttonBase,
+                                'border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] text-white hover:bg-[var(--brand-color-1)]',
+                              )}
+                            >
+                              {senderIdUpdateLoading ? 'Saving...' : 'Save'}
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
+                            <span className="text-xs text-slate-500">Max 11 characters, no spaces.</span>
+                          </div>
+                        </div>
+
+                        {!company.senderId ? (
+                          <div className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span>Sender ID must be configured before approval.</span>
+                          </div>
+                        ) : null}
+
+                        <div className="overflow-x-auto rounded-lg border border-slate-200">
+                          <table className="admin-table-plain min-w-full text-sm">
+                            <thead>
+                              <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
+                                <th className="px-3 py-2">Network</th>
+                                <th className="px-3 py-2">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {networkRows.map((item) => (
+                                <tr key={item.key} className="">
+                                  <td className="px-3 py-2.5">
+                                    <a
+                                      href={item.link}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-2 text-slate-800 hover:text-[var(--admin-ui-accent)]"
+                                    >
+                                      <img
+                                        src={item.logoSrc}
+                                        alt={`${item.label} logo`}
+                                        className="h-5 w-5 rounded-full border border-slate-200 object-contain bg-white"
+                                      />
+                                      <span className="font-medium">{item.label}</span>
+                                    </a>
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <select
+                                      value={networkStatuses[item.key]}
+                                      onChange={(event) =>
+                                        void confirmAndApplyRowNetworkStatus(
+                                          item.key,
+                                          event.target.value as NetworkStatus,
+                                        )
+                                      }
+                                      className="min-w-[9.5rem] rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                                      disabled={networkSenderIdActionLoading || !company.isActive}
+                                    >
+                                      <option value="Pending">Pending</option>
+                                      <option value="Approved">Approved</option>
+                                      <option value="Hold">Hold</option>
+                                    </select>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          Sender ID must be configured before approval. Each network may require separate sender ID
+                          approval.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="rounded-xl border border-slate-200">
-                  <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                    <h3 className="text-base font-semibold text-slate-900">Campaign approval</h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Override platform default for new campaigns and client activation rules.
-                    </p>
-                  </div>
-                  <div className="space-y-3 px-4 py-4">
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium text-slate-700">Effective:</span>
-                      <span className="text-slate-800">
-                        {company.effectiveRequireCampaignApproval ? 'Yes' : 'No'}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium text-slate-700">Override:</span>
-                      <span className="text-slate-800">
-                        {campaignApprovalOverrideLabel(company.requireCampaignApprovalOverride)}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleSetCampaignApprovalOverride(null)}
-                        disabled={campaignApprovalOverrideLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'min-w-[96px] justify-center border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50',
-                        )}
-                      >
-                        {campaignApprovalOverrideLoading ? 'Updating...' : 'Inherit'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetCampaignApprovalOverride(true)}
-                        disabled={campaignApprovalOverrideLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'min-w-[96px] justify-center border border-amber-200 bg-amber-50 text-amber-900 shadow-sm hover:bg-amber-100',
-                        )}
-                      >
-                        {campaignApprovalOverrideLoading ? 'Updating...' : 'Require approval'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetCampaignApprovalOverride(false)}
-                        disabled={campaignApprovalOverrideLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'min-w-[96px] justify-center border border-red-200 bg-red-50 text-red-800 shadow-sm hover:bg-red-100',
-                        )}
-                      >
-                        {campaignApprovalOverrideLoading ? 'Updating...' : 'Skip approval'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200">
-                  <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                    <h3 className="text-base font-semibold text-slate-900">Submission review</h3>
-                  </div>
-                  <div className="space-y-3 px-4 py-4">
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium text-slate-700">Status:</span>
-                      <ReviewStatusPill status={reviewStatus} />
-                    </div>
-                    <p className="text-sm text-slate-600">
-                      Review company details before granting access.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleSetReviewStatus('Approved')}
-                        disabled={reviewLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'min-w-[96px] justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
-                        )}
-                      >
-                        {reviewLoading ? 'Updating...' : 'Approve'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetReviewStatus('Rejected')}
-                        disabled={reviewLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'min-w-[96px] justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
-                        )}
-                      >
-                        {reviewLoading ? 'Updating...' : 'Reject'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetReviewStatus('Pending')}
-                        disabled={reviewLoading || !company.isActive}
-                        className={classNames(
-                          buttonBase,
-                          'min-w-[96px] justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
-                        )}
-                      >
-                        {reviewLoading ? 'Updating...' : 'Request changes'}
-                      </button>
-                    </div>
-                    {reviewStatus === 'Rejected' && company.reviewReason ? (
-                      <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                        Rejection reason: {company.reviewReason}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="space-y-2 border-t border-slate-100 pt-2">
-                  <label htmlFor="sender-id-inline-input" className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
-                    Sender ID
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      id="sender-id-inline-input"
-                      type="text"
-                      value={senderIdInputValue}
-                      onChange={(event) => setSenderIdInputValue(event.target.value)}
-                      placeholder="Enter sender ID"
-                      disabled={senderIdUpdateLoading || !company.isActive}
-                      className="min-w-[220px] flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--brand-color-2)]/40 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleUpdateSenderId}
-                      disabled={senderIdUpdateLoading || !company.isActive}
-                      className={classNames(
-                        buttonBase,
-                        'border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] text-white hover:bg-[var(--brand-color-1)]',
-                      )}
-                    >
-                      {senderIdUpdateLoading ? 'Saving...' : 'Save'}
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <SenderIdStatusBadge company={company} rejectedInSession={rejectedSenderId} />
-                    <span className="text-xs text-slate-500">Max 11 characters, no spaces.</span>
-                  </div>
-                </div>
-
-                {!company.senderId ? (
-                  <div className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>Sender ID must be configured before approval.</span>
-                  </div>
-                ) : null}
-
-                <div className="rounded-xl border border-slate-200">
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-                    <h3 className="text-base font-semibold text-slate-900">Network Sender ID Approvals</h3>
-                    <select
-                      value={bulkNetworkStatus}
-                      onChange={(event) =>
-                        void confirmAndApplyBulkNetworkStatus(event.target.value as NetworkStatus)
-                      }
-                      disabled={networkSenderIdActionLoading || !company.isActive}
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="Pending">Pending All</option>
-                      <option value="Approved">Approved All</option>
-                      <option value="Hold">Hold All</option>
-                    </select>
-                  </div>
-                  <div className="p-4">
-                    <div className="overflow-x-auto rounded-lg border border-slate-200">
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
-                            <th className="px-3 py-2">Network</th>
-                            <th className="px-3 py-2">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {networkRows.map((item) => (
-                            <tr key={item.key} className="border-t border-slate-100 first:border-t-0">
-                              <td className="px-3 py-2.5">
-                                <a
-                                  href={item.link}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-2 text-slate-800 hover:text-[var(--brand-color-2)]"
-                                >
-                                  <img
-                                    src={item.logoSrc}
-                                    alt={`${item.label} logo`}
-                                    className="h-5 w-5 rounded-full border border-slate-200 object-contain bg-white"
-                                  />
-                                  <span className="font-medium">{item.label}</span>
-                                </a>
-                              </td>
-                              <td className="px-3 py-2.5">
-                                <select
-                                  value={networkStatuses[item.key]}
-                                  onChange={(event) =>
-                                    void confirmAndApplyRowNetworkStatus(
-                                      item.key,
-                                      event.target.value as NetworkStatus,
-                                    )
-                                  }
-                                  className="min-w-[9.5rem] rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700"
-                                  disabled={networkSenderIdActionLoading || !company.isActive}
-                                >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Approved">Approved</option>
-                                  <option value="Hold">Hold</option>
-                                </select>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      Sender ID must be configured before approval. Each network may require separate sender ID approval.
-                    </p>
-                  </div>
-                </div>
-
-                {company.senderId ? (
-                  <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
-                    {senderIdActionLoading ? <span className="text-xs text-slate-500">Updating...</span> : null}
-                    <button
-                      type="button"
-                      disabled={senderIdActionLoading || !company.isActive}
-                      onClick={() => handleApproveSenderId(true)}
-                      className={classNames(
-                        buttonBase,
-                        'border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
-                      )}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      disabled={senderIdActionLoading || !company.isActive}
-                      onClick={() => handleApproveSenderId(false)}
-                      className={classNames(
-                        buttonBase,
-                        'border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
-                      )}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      disabled={senderIdActionLoading || !company.isActive}
-                      onClick={handleSetSenderIdPending}
-                      className={classNames(
-                        buttonBase,
-                        'border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
-                      )}
-                    >
-                      Request changes
-                    </button>
-                  </div>
-                ) : null}
               </div>
             </SectionCard>
           </div>
-        </div>
         ) : null}
 
         {activeTab === 'members' ? (
@@ -1565,7 +1549,7 @@ export default function CompanyDetailsPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="Invite by email"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-[var(--brand-color-2)]/40 transition focus:ring-2"
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none ring-[var(--admin-ui-accent)]/40 transition focus:ring-2"
                 />
                 <select
                   value={inviteRole}
@@ -1580,7 +1564,7 @@ export default function CompanyDetailsPage() {
                   type="button"
                   onClick={handleInviteMember}
                   disabled={inviteLoading}
-                  className="rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--brand-color-1)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {inviteLoading ? 'Inviting...' : 'Invite'}
                 </button>
@@ -1594,7 +1578,7 @@ export default function CompanyDetailsPage() {
 
               {membersLoading ? (
                 <div className="flex items-center justify-center py-10">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--admin-ui-accent)]" />
                 </div>
               ) : members.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
@@ -1648,7 +1632,12 @@ export default function CompanyDetailsPage() {
           </SectionCard>
         ) : null}
 
-        {activeTab === 'analytics' ? <CompanyAnalyticsPanel companyId={company.id} /> : null}
+        {activeTab === 'analytics' ? (
+          <CompanyAnalyticsPanel
+            companyId={company.id}
+            overviewSnapshot={analyticsOverviewSnapshot ?? undefined}
+          />
+        ) : null}
 
         {activeTab === 'campaigns' ? (
         <SectionCard
@@ -1657,7 +1646,7 @@ export default function CompanyDetailsPage() {
         >
           {campaignsLoading ? (
             <div className="flex items-center justify-center py-14">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--brand-color-2)]" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--admin-ui-accent)]" />
             </div>
           ) : campaigns.length === 0 ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
@@ -1716,7 +1705,7 @@ export default function CompanyDetailsPage() {
                       <td className="px-3 py-3">
                         <Link
                           href={`${basePath}/companies/${company.id}/campaigns/${campaign.id}`}
-                          className="inline-flex rounded-lg border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
+                          className="inline-flex rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]"
                         >
                           Open details
                         </Link>
@@ -1728,6 +1717,72 @@ export default function CompanyDetailsPage() {
             </div>
           )}
         </SectionCard>
+        ) : null}
+
+        {activeTab === 'settings' ? (
+          <SectionCard
+            title="Settings"
+            subtitle="Company-level policies and platform overrides"
+            variant="overview"
+          >
+            <div className="rounded-xl border border-slate-200">
+              <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                <h3 className="text-base font-semibold text-slate-900">Campaign approval</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Override platform default for new campaigns and client activation rules.
+                </p>
+              </div>
+              <div className="space-y-3 px-4 py-4">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-medium text-slate-700">Effective:</span>
+                  <span className="text-slate-800">
+                    {company.effectiveRequireCampaignApproval ? 'Yes' : 'No'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="font-medium text-slate-700">Override:</span>
+                  <span className="text-slate-800">
+                    {campaignApprovalOverrideLabel(company.requireCampaignApprovalOverride)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSetCampaignApprovalOverride(null)}
+                    disabled={campaignApprovalOverrideLoading || !company.isActive}
+                    className={classNames(
+                      buttonBase,
+                      'min-w-[96px] justify-center border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50',
+                    )}
+                  >
+                    {campaignApprovalOverrideLoading ? 'Updating...' : 'Inherit'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetCampaignApprovalOverride(true)}
+                    disabled={campaignApprovalOverrideLoading || !company.isActive}
+                    className={classNames(
+                      buttonBase,
+                      'min-w-[96px] justify-center border border-amber-200 bg-amber-50 text-amber-900 shadow-sm hover:bg-amber-100',
+                    )}
+                  >
+                    {campaignApprovalOverrideLoading ? 'Updating...' : 'Require approval'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetCampaignApprovalOverride(false)}
+                    disabled={campaignApprovalOverrideLoading || !company.isActive}
+                    className={classNames(
+                      buttonBase,
+                      'min-w-[96px] justify-center border border-red-200 bg-red-50 text-red-800 shadow-sm hover:bg-red-100',
+                    )}
+                  >
+                    {campaignApprovalOverrideLoading ? 'Updating...' : 'Skip approval'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
         ) : null}
 
         {documentPreview ? (
@@ -1775,6 +1830,93 @@ export default function CompanyDetailsPage() {
                     Open in new tab
                   </a>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {reviewFeedbackOpen && company ? (
+          <div
+            className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-[1px]"
+            role="presentation"
+            onClick={closeReviewFeedbackModal}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="review-feedback-modal-title"
+              className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h2 id="review-feedback-modal-title" className="text-base font-semibold text-slate-900">
+                  {reviewFeedbackMode === 'reject' ? 'Reject submission' : 'Request changes'}
+                </h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {reviewFeedbackMode === 'reject' ? (
+                    <>
+                      Provide rejection reason <span className="font-medium text-slate-800">(required)</span>. The
+                      company will see this in their account.
+                    </>
+                  ) : (
+                    <>
+                      Describe what the company should update <span className="font-medium text-slate-800">(required)</span>.
+                      Status stays <span className="font-medium text-slate-800">Pending</span> and they will see this
+                      message when they open their company profile.
+                    </>
+                  )}
+                </p>
+              </div>
+              <div className="px-5 py-4">
+                <label htmlFor="review-feedback-text" className="sr-only">
+                  {reviewFeedbackMode === 'reject' ? 'Rejection reason' : 'Requested changes'}
+                </label>
+                <textarea
+                  id="review-feedback-text"
+                  rows={4}
+                  value={reviewFeedbackText}
+                  onChange={(e) => {
+                    setReviewFeedbackText(e.target.value)
+                    if (reviewFeedbackFieldError) setReviewFeedbackFieldError('')
+                  }}
+                  placeholder="Explain what is missing or needs to change…"
+                  disabled={reviewLoading}
+                  className="w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-50"
+                />
+                {reviewFeedbackFieldError ? (
+                  <p className="mt-2 text-xs font-medium text-red-600" role="alert">
+                    {reviewFeedbackFieldError}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={closeReviewFeedbackModal}
+                  disabled={reviewLoading}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void submitReviewFeedback()}
+                  disabled={reviewLoading}
+                  className={classNames(
+                    'rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                    reviewFeedbackMode === 'reject'
+                      ? 'border-red-300 bg-red-600 text-white hover:bg-red-700'
+                      : 'border-amber-300 bg-amber-600 text-white hover:bg-amber-700',
+                  )}
+                >
+                  {reviewLoading
+                    ? reviewFeedbackMode === 'reject'
+                      ? 'Rejecting…'
+                      : 'Saving…'
+                    : reviewFeedbackMode === 'reject'
+                      ? 'Reject submission'
+                      : 'Send feedback'}
+                </button>
               </div>
             </div>
           </div>

@@ -189,37 +189,31 @@ export default function CampaignsPage() {
           }
         />
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="admin-tab-bar" role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={reviewTab === 'pending'}
             onClick={() => setReviewTab('pending')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              reviewTab === 'pending'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${reviewTab === 'pending' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Pending
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={reviewTab === 'approved'}
             onClick={() => setReviewTab('approved')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              reviewTab === 'approved'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${reviewTab === 'approved' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Approved
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={reviewTab === 'rejected'}
             onClick={() => setReviewTab('rejected')}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              reviewTab === 'rejected'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab ${reviewTab === 'rejected' ? 'admin-tab-bar__tab--active' : ''}`}
           >
             Rejected
           </button>
@@ -232,12 +226,12 @@ export default function CampaignsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search name, company, purpose"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--brand-color-2)]/30 focus:ring-2 xl:col-span-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2 xl:col-span-2"
             />
             <select
               value={companyFilter}
               onChange={(e) => setCompanyFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--brand-color-2)]/30 focus:ring-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
             >
               <option value="all">All companies</option>
               {companyOptions.map((companyName) => (
@@ -249,7 +243,7 @@ export default function CampaignsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--brand-color-2)]/30 focus:ring-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
             >
               <option value="all">All statuses</option>
               {statusOptions.map((status) => (
@@ -261,7 +255,7 @@ export default function CampaignsPage() {
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--brand-color-2)]/30 focus:ring-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
             >
               <option value="all">All channels</option>
               {channelOptions.map((channel) => (
@@ -273,7 +267,7 @@ export default function CampaignsPage() {
             <select
               value={approvalFilter}
               onChange={(e) => setApprovalFilter(e.target.value as 'all' | 'approved' | 'not_approved')}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--brand-color-2)]/30 focus:ring-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
             >
               <option value="all">All approvals</option>
               <option value="approved">Approved only</option>
@@ -282,7 +276,7 @@ export default function CampaignsPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--brand-color-2)]/30 focus:ring-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
             >
               <option value="most_recently_sent">Sort: Most recently sent</option>
               <option value="newest_first">Sort: Newest first</option>
@@ -304,7 +298,7 @@ export default function CampaignsPage() {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-[220px]">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : visibleCampaigns.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
@@ -348,7 +342,7 @@ export default function CampaignsPage() {
                         <Link
                           href={`${basePath}/companies/${campaign.companyId}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-[var(--brand-color-2)] hover:underline"
+                          className="text-[var(--admin-ui-accent)] hover:underline"
                         >
                           {campaign.companyName}
                         </Link>

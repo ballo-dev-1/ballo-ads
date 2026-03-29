@@ -55,11 +55,11 @@ const CHART_GRID_STROKE = '#e8e8ee'
 const CHART_GRID_DASH = '6 6'
 
 const KPI_GRADIENTS = [
-  'bg-[linear-gradient(145deg,#fce7f3_0%,#f472b6_45%,#db2777_100%)]',
-  'bg-[linear-gradient(145deg,#ddd6fe_0%,#8b7cf0_48%,#6c5dd3_100%)]',
-  'bg-[linear-gradient(145deg,#bbf7d0_0%,#48bb78_50%,#059669_100%)]',
-  'bg-[linear-gradient(145deg,#fef9c3_0%,#ecc94b_50%,#d97706_100%)]',
-  'bg-[linear-gradient(145deg,#bae6fd_0%,#4299e1_52%,#2563eb_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-4)_45%,var(--brand-color-3)_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_48%,var(--brand-color-2)_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-3)_52%,var(--brand-color-1)_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_50%,var(--brand-color-2)_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_52%,var(--brand-color-1)_100%)]',
 ] as const
 
 function mapOverviewToSnapshot(data: DashboardAnalyticsOverviewResponse | null): BiKpiSnapshot {
@@ -243,7 +243,7 @@ export default function BiDashboardTabContent() {
       </section>
 
       {loading ? (
-        <div className="admin-liquid-card p-12 text-center text-gray-500">Loading BI analytics...</div>
+        <div className="admin-liquid-card p-12 text-center text-[var(--admin-muted)]">Loading BI analytics...</div>
       ) : (
         <>
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">

@@ -117,7 +117,7 @@ export default function PurchaseOrdersPage() {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <div className="rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
@@ -149,7 +149,7 @@ export default function PurchaseOrdersPage() {
                           {po.company ? (
                             <Link
                               href={`${basePath}/companies/${po.company.id}`}
-                              className="text-[var(--brand-color-2)] hover:underline"
+                              className="text-[var(--admin-ui-accent)] hover:underline"
                             >
                               {po.company.name ?? `Company #${po.company.id}`}
                             </Link>
@@ -174,7 +174,7 @@ export default function PurchaseOrdersPage() {
                           <button
                             type="button"
                             onClick={() => openModal(po)}
-                            className="inline-flex items-center justify-center rounded-md p-2 text-[var(--brand-color-2)] hover:bg-gray-100"
+                            className="inline-flex items-center justify-center rounded-md p-2 text-[var(--admin-ui-accent)] hover:bg-gray-100"
                             aria-label="Update status"
                             title="Update status"
                           >
@@ -237,7 +237,7 @@ export default function PurchaseOrdersPage() {
                   id="status-select"
                   value={statusValue}
                   onChange={(e) => setStatusValue(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-[var(--brand-color-2)] focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 focus:ring-2 focus:ring-[var(--admin-ui-accent)] focus:border-transparent"
                   disabled={statusSaving}
                 >
                   {STATUS_OPTIONS.map((s) => (
@@ -260,7 +260,7 @@ export default function PurchaseOrdersPage() {
                   type="button"
                   onClick={handleUpdateStatus}
                   disabled={statusSaving}
-                  className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white hover:opacity-90 disabled:opacity-50"
                 >
                   {statusSaving ? 'Saving…' : 'Save'}
                 </button>

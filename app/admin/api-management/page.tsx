@@ -332,7 +332,7 @@ export default function ApiManagementPage() {
           <label className="block text-sm font-medium text-gray-700 mb-2">Select company</label>
           {loadingCompanies ? (
             <div className="flex items-center justify-center py-6">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
             </div>
           ) : (
             <select
@@ -392,7 +392,7 @@ export default function ApiManagementPage() {
                     className={`px-3 py-2 text-sm ${
                       clientForm.isTestKey
                         ? 'bg-white text-gray-700'
-                        : 'bg-[#0e0e39] text-white'
+                        : 'bg-[var(--brand-color-1)] text-white'
                     }`}
                   >
                     Live
@@ -402,7 +402,7 @@ export default function ApiManagementPage() {
                     onClick={() => setClientForm((p) => ({ ...p, isTestKey: true }))}
                     className={`px-3 py-2 text-sm border-l border-gray-300 ${
                       clientForm.isTestKey
-                        ? 'bg-[#0e0e39] text-white'
+                        ? 'bg-[var(--brand-color-1)] text-white'
                         : 'bg-white text-gray-700'
                     }`}
                   >
@@ -427,7 +427,7 @@ export default function ApiManagementPage() {
                         onClick={() => toggleChannel(channel)}
                         className={`px-3 py-1.5 rounded-full text-xs border ${
                           selected
-                            ? 'bg-[#0e0e39] text-white border-[#0e0e39]'
+                            ? 'bg-[var(--brand-color-1)] text-white border-[var(--brand-color-1)]'
                             : 'bg-white text-gray-700 border-gray-300'
                         }`}
                       >
@@ -440,7 +440,7 @@ export default function ApiManagementPage() {
               <button
                 type="submit"
                 disabled={!companyId || savingClient}
-                className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
               >
                 {savingClient ? 'Creating...' : 'Create API client'}
               </button>
@@ -549,7 +549,7 @@ export default function ApiManagementPage() {
               <button
                 type="submit"
                 disabled={!companyId || allocating}
-                className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
               >
                 {allocating ? 'Allocating...' : 'Allocate credits'}
               </button>
@@ -568,14 +568,14 @@ export default function ApiManagementPage() {
                 loadCreditBalance(companyId)
               }}
               disabled={!companyId || loadingClients}
-              className="text-sm text-[var(--brand-color-2)] hover:underline disabled:opacity-50"
+              className="text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
             >
               Refresh
             </button>
           </div>
           {loadingClients ? (
             <div className="mt-4 flex items-center justify-center py-6">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
             </div>
           ) : apiClients.length === 0 ? (
             <p className="mt-4 text-sm text-gray-500">No API clients found.</p>
@@ -604,10 +604,10 @@ export default function ApiManagementPage() {
                       <td className="px-3 py-2">{client.allowedChannels.join(', ') || '-'}</td>
                       <td className="px-3 py-2">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded text-xs font-medium border ${
+                          className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
                             client.isTestKey
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              ? 'border border-amber-200 bg-amber-50 text-amber-700'
+                              : 'border border-[color-mix(in_srgb,var(--admin-ui-accent)_22%,var(--admin-card-border))] bg-[color-mix(in_srgb,var(--admin-ui-accent)_10%,var(--admin-card))] text-[var(--admin-heading)]'
                           }`}
                         >
                           {client.isTestKey ? 'TEST' : 'LIVE'}
@@ -624,7 +624,7 @@ export default function ApiManagementPage() {
                                 await navigator.clipboard.writeText(client.apiKey ?? '')
                                 toast.success('API key copied')
                               }}
-                              className="text-xs text-[var(--brand-color-2)] hover:underline"
+                              className="text-xs text-[var(--admin-ui-accent)] hover:underline"
                             >
                               Copy
                             </button>
@@ -649,7 +649,7 @@ export default function ApiManagementPage() {
                           type="button"
                           onClick={() => handleRotate(client.id)}
                           disabled={client.isRevoked || rotatingId === client.id}
-                          className="text-xs text-[var(--brand-color-2)] hover:underline disabled:opacity-40"
+                          className="text-xs text-[var(--admin-ui-accent)] hover:underline disabled:opacity-40"
                         >
                           {rotatingId === client.id ? 'Rotating...' : 'Rotate key'}
                         </button>
@@ -693,7 +693,7 @@ export default function ApiManagementPage() {
                 type="button"
                 onClick={handleUsageRefresh}
                 disabled={!companyId || loadingUsage}
-                className="text-sm text-[var(--brand-color-2)] hover:underline disabled:opacity-50"
+                className="text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
               >
                 {loadingUsage ? 'Loading...' : 'Refresh'}
               </button>
@@ -736,7 +736,7 @@ export default function ApiManagementPage() {
             </div>
           ) : loadingUsage ? (
             <div className="mt-4 flex items-center justify-center py-6">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
             </div>
           ) : (
             <p className="mt-4 text-sm text-gray-500">No usage data available.</p>

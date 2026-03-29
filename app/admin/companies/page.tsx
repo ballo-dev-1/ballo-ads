@@ -286,7 +286,7 @@ function CompaniesPageContent() {
               <button
                 type="button"
                 onClick={() => setCreateOpen(true)}
-                className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
+                className="rounded-full bg-[var(--brand-color-1)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
               >
                 Create company
               </button>
@@ -294,39 +294,60 @@ function CompaniesPageContent() {
           }
         />
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="admin-tab-bar" role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={reviewTab === 'pending'}
             onClick={() => setReviewTab('pending')}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
-              reviewTab === 'pending'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab inline-flex items-center gap-1.5 ${reviewTab === 'pending' ? 'admin-tab-bar__tab--active' : ''}`}
           >
-            Pending <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">{reviewCounts.pending}</span>
+            Pending{' '}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                reviewTab === 'pending'
+                  ? 'bg-[color-mix(in_srgb,var(--brand-color-3)_22%,transparent)]'
+                  : 'bg-[var(--admin-heading)]/[0.08] admin-dark:bg-white/15'
+              }`}
+            >
+              {reviewCounts.pending}
+            </span>
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={reviewTab === 'approved'}
             onClick={() => setReviewTab('approved')}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
-              reviewTab === 'approved'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab inline-flex items-center gap-1.5 ${reviewTab === 'approved' ? 'admin-tab-bar__tab--active' : ''}`}
           >
-            Approved <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">{reviewCounts.approved}</span>
+            Approved{' '}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                reviewTab === 'approved'
+                  ? 'bg-[color-mix(in_srgb,var(--brand-color-3)_22%,transparent)]'
+                  : 'bg-[var(--admin-heading)]/[0.08] admin-dark:bg-white/15'
+              }`}
+            >
+              {reviewCounts.approved}
+            </span>
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={reviewTab === 'rejected'}
             onClick={() => setReviewTab('rejected')}
-            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
-              reviewTab === 'rejected'
-                ? 'bg-[#0e0e39] text-white'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+            className={`admin-tab-bar__tab inline-flex items-center gap-1.5 ${reviewTab === 'rejected' ? 'admin-tab-bar__tab--active' : ''}`}
           >
-            Rejected <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[11px]">{reviewCounts.rejected}</span>
+            Rejected{' '}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                reviewTab === 'rejected'
+                  ? 'bg-[color-mix(in_srgb,var(--brand-color-3)_22%,transparent)]'
+                  : 'bg-[var(--admin-heading)]/[0.08] admin-dark:bg-white/15'
+              }`}
+            >
+              {reviewCounts.rejected}
+            </span>
           </button>
         </div>
 
@@ -442,7 +463,7 @@ function CompaniesPageContent() {
                   <button
                     type="submit"
                     disabled={createLoading}
-                    className="px-4 py-2 rounded-lg bg-[#0e0e39] text-white hover:opacity-90 disabled:opacity-50"
+                    className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white hover:opacity-90 disabled:opacity-50"
                   >
                     {createLoading ? 'Creating…' : 'Create'}
                   </button>
@@ -458,7 +479,7 @@ function CompaniesPageContent() {
         )}
         {loading ? (
           <div className="flex items-center justify-center min-h-[320px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <div className="bg-transparent rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
@@ -493,9 +514,9 @@ function CompaniesPageContent() {
                 <button
                   type="button"
                   onClick={() => setFiltersPopoverOpen((o) => !o)}
-                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] ${
+                  className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] ${
                     filtersPopoverOpen
-                      ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                      ? 'bg-[var(--admin-ui-accent)]/10 text-[var(--admin-ui-accent)]'
                       : 'text-gray-700 hover:bg-gray-200'
                   }`}
                   aria-label="Filters"
@@ -505,7 +526,7 @@ function CompaniesPageContent() {
                   <Filter className="w-4 h-4" />
                   <span>Filters</span>
                   {(industryFilter || !filterVerified || !filterPendingVerification || !filterActive || !filterDeactivated) && (
-                    <span className="flex h-2 w-2 rounded-full bg-[var(--brand-color-2)]" aria-hidden />
+                    <span className="flex h-2 w-2 rounded-full bg-[var(--admin-ui-accent)]" aria-hidden />
                   )}
                 </button>
                 {filtersPopoverOpen && (
@@ -519,7 +540,7 @@ function CompaniesPageContent() {
                           id="filter-industry"
                           value={industryFilter}
                           onChange={(e) => setIndustryFilter(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
                         >
                           <option value="">All</option>
                           {uniqueIndustries.map((industry) => (
@@ -537,7 +558,7 @@ function CompaniesPageContent() {
                               type="checkbox"
                               checked={filterVerified}
                               onChange={(e) => setFilterVerified(e.target.checked)}
-                              className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                              className="rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)]"
                             />
                             <span className="text-sm text-gray-700">Verified</span>
                           </label>
@@ -546,7 +567,7 @@ function CompaniesPageContent() {
                               type="checkbox"
                               checked={filterPendingVerification}
                               onChange={(e) => setFilterPendingVerification(e.target.checked)}
-                              className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                              className="rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)]"
                             />
                             <span className="text-sm text-gray-700">Pending verification</span>
                           </label>
@@ -560,7 +581,7 @@ function CompaniesPageContent() {
                               type="checkbox"
                               checked={filterActive}
                               onChange={(e) => setFilterActive(e.target.checked)}
-                              className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                              className="rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)]"
                             />
                             <span className="text-sm text-gray-700">Active</span>
                           </label>
@@ -569,7 +590,7 @@ function CompaniesPageContent() {
                               type="checkbox"
                               checked={filterDeactivated}
                               onChange={(e) => setFilterDeactivated(e.target.checked)}
-                              className="rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)]"
+                              className="rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)]"
                             />
                             <span className="text-sm text-gray-700">Deactivated</span>
                           </label>
@@ -588,7 +609,7 @@ function CompaniesPageContent() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search name, email, phone, industry, sender ID"
-                  className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                  className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
                 />
               </div>
               <select
@@ -618,7 +639,7 @@ function CompaniesPageContent() {
                   onClick={() => setViewMode('list')}
                   className={`inline-flex items-center justify-center rounded-md p-2 transition ${
                     viewMode === 'list'
-                      ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                      ? 'bg-[var(--admin-ui-accent)]/10 text-[var(--admin-ui-accent)]'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                   aria-label="List view"
@@ -631,7 +652,7 @@ function CompaniesPageContent() {
                   onClick={() => setViewMode('grid')}
                   className={`inline-flex items-center justify-center rounded-md p-2 transition ${
                     viewMode === 'grid'
-                      ? 'bg-[var(--brand-color-2)]/10 text-[var(--brand-color-2)]'
+                      ? 'bg-[var(--admin-ui-accent)]/10 text-[var(--admin-ui-accent)]'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                   aria-label="Grid view"
@@ -662,7 +683,7 @@ function CompaniesPageContent() {
                     <button
                       type="button"
                       onClick={() => handleSort('name')}
-                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                     >
                       Company
                       <SortIcon column="name" />
@@ -673,7 +694,7 @@ function CompaniesPageContent() {
                     <button
                       type="button"
                       onClick={() => handleSort('verified')}
-                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                     >
                       Verified
                       <SortIcon column="verified" />
@@ -683,7 +704,7 @@ function CompaniesPageContent() {
                     <button
                       type="button"
                       onClick={() => handleSort('lifecycle')}
-                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                     >
                       Lifecycle
                       <SortIcon column="lifecycle" />
@@ -693,7 +714,7 @@ function CompaniesPageContent() {
                     <button
                       type="button"
                       onClick={() => handleSort('senderId')}
-                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] rounded"
+                      className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                     >
                       Sender ID
                       <SortIcon column="senderId" />
@@ -727,7 +748,7 @@ function CompaniesPageContent() {
                           router.push(`${basePath}/companies/${company.id}`)
                         }
                       }}
-                      className="border-b border-gray-100 hover:bg-[var(--brand-color-2)]/5 transition-colors cursor-pointer group"
+                      className="border-b border-gray-100 hover:bg-[var(--admin-ui-accent)]/5 transition-colors cursor-pointer group"
                     >
                       <td className="py-3.5 px-4">
                         <input
@@ -741,7 +762,7 @@ function CompaniesPageContent() {
                           }
                         />
                       </td>
-                      <td className="py-3.5 px-5 text-sm font-medium text-gray-900 group-hover:text-[var(--brand-color-2)] transition-colors">
+                      <td className="py-3.5 px-5 text-sm font-medium text-gray-900 group-hover:text-[var(--admin-ui-accent)] transition-colors">
                         <div>{company.name}</div>
                         <div className="text-xs font-normal text-gray-500">{company.email || '—'}</div>
                       </td>
@@ -750,7 +771,7 @@ function CompaniesPageContent() {
                           <a
                             href={`tel:${company.phoneNumber}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-[var(--brand-color-2)] hover:text-[var(--brand-color-1)] hover:underline underline-offset-1"
+                            className="text-[var(--admin-ui-accent)] hover:text-[var(--brand-color-1)] hover:underline underline-offset-1"
                           >
                             {company.phoneNumber}
                           </a>
@@ -836,7 +857,7 @@ function CompaniesPageContent() {
                         router.push(`${basePath}/companies/${company.id}`)
                       }
                     }}
-                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[var(--brand-color-2)]/40 hover:shadow-md cursor-pointer"
+                    className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[var(--admin-ui-accent)]/40 hover:shadow-md cursor-pointer"
                   >
                     <div className="mb-3 flex items-start justify-between gap-2">
                       <input
@@ -878,7 +899,7 @@ function CompaniesPageContent() {
                           <a
                             href={`tel:${company.phoneNumber}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-[var(--brand-color-2)] hover:text-[var(--brand-color-1)] hover:underline underline-offset-1"
+                            className="text-[var(--admin-ui-accent)] hover:text-[var(--brand-color-1)] hover:underline underline-offset-1"
                           >
                             {company.phoneNumber}
                           </a>

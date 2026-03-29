@@ -85,7 +85,7 @@ export function useConfirmDialog() {
             className={`rounded-lg px-3 py-2 text-xs font-semibold text-white transition-colors ${
               state.tone === 'danger'
                 ? 'border border-red-700 bg-red-600 hover:bg-red-700'
-                : 'border border-[var(--brand-color-2)] bg-[var(--brand-color-2)] hover:bg-[var(--brand-color-1)]'
+                : 'border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] hover:bg-[var(--brand-color-1)]'
             }`}
           >
             {state.confirmLabel ?? 'Confirm'}

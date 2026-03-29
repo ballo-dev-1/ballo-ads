@@ -165,7 +165,7 @@ export default function SmsProviderRoutesPanel() {
             <select
               value={providerKey}
               onChange={(e) => setProviderKey(e.target.value as ProviderKey)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
             >
               <option value="tumani">Tumani</option>
               <option value="mtn_smpp">MTN SMPP</option>
@@ -177,7 +177,7 @@ export default function SmsProviderRoutesPanel() {
             <select
               value={predicateType}
               onChange={(e) => setPredicateType(e.target.value as PredicateType)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
             >
               <option value="mtn_prefix">mtn_prefix</option>
               <option value="default">default</option>
@@ -190,7 +190,7 @@ export default function SmsProviderRoutesPanel() {
               <input
                 value={predicateValue}
                 onChange={(e) => setPredicateValue(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
                 placeholder="e.g. 26076,26096,26056"
               />
             </div>
@@ -206,7 +206,7 @@ export default function SmsProviderRoutesPanel() {
               type="number"
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
             />
           </div>
 
@@ -221,7 +221,7 @@ export default function SmsProviderRoutesPanel() {
           </div>
           <button
             type="submit"
-            className="inline-flex items-center px-4 py-2 bg-[#0e0e39] text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
+            className="inline-flex items-center px-4 py-2 bg-[var(--brand-color-1)] text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
           >
             Add route
           </button>
@@ -231,7 +231,7 @@ export default function SmsProviderRoutesPanel() {
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden mt-6">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <div className="overflow-x-auto bg-transparent p-4">
@@ -358,7 +358,7 @@ export default function SmsProviderRoutesPanel() {
                           <form onSubmit={handleSaveEdit} className="flex items-center gap-2">
                             <button
                               type="submit"
-                              className="text-sm text-[var(--brand-color-2)] hover:underline disabled:opacity-50"
+                              className="text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
                             >
                               Save
                             </button>

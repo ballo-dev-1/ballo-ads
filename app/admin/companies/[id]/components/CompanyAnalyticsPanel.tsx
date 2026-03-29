@@ -1,8 +1,18 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import {
+  BadgeCheck,
+  CheckCircle2,
+  Megaphone,
+  ShieldCheck,
+  SignalHigh,
+} from 'lucide-react'
 import {
   adminApi,
+  type AdsCampaignResponse,
+  type CompanyLeanResponse,
+  type CompanyReviewStatus,
   type DashboardAnalyticsFunnelResponse,
   type DashboardAnalyticsModerationResponse,
   type DashboardAnalyticsOverviewResponse,
@@ -10,6 +20,70 @@ import {
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { buildDashboardKpiCards, summarizeTrendTotals } from '@/app/admin/dashboard/analyticsViewModel'
+
+export type CompanyOverviewSnapshot = {
+  isActive: boolean
+  reviewStatus: CompanyReviewStatus
+  reviewReason?: string | null
+  senderStatusLabel: string
+  senderIdHint: string
+  campaignsTotal: number
+  activeCampaignsCount: number
+  approvedRate: string
+  approvedCampaignsCount: number
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string
+  value: ReactNode
+  hint?: string
+  icon: ReactNode
+}) {
+  return (
+    <article className="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+        {icon}
+      </div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">{label}</p>
+      <p className="mt-1 text-base font-semibold text-slate-800">{value}</p>
+      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+    </article>
+  )
+}
+
+function buildOverviewSnapshotFromData(
+  company: CompanyLeanResponse,
+  campaigns: AdsCampaignResponse[],
+): CompanyOverviewSnapshot {
+  const reviewStatus: CompanyReviewStatus =
+    company.reviewStatus ?? (company.isCompanyVerified ? 'Approved' : 'Pending')
+  const approvedCampaignsCount = campaigns.filter((c) => c.isApproved).length
+  const activeCampaignsCount = campaigns.filter((c) => c.status.toLowerCase().includes('active')).length
+  let senderStatusLabel = 'Pending'
+  if (!company.senderId) {
+    senderStatusLabel = 'No sender ID'
+  } else if (company.isApprovedSenderId) {
+    senderStatusLabel = 'Approved'
+  }
+  const approvedRate =
+    campaigns.length === 0 ? '0%' : `${Math.round((approvedCampaignsCount / campaigns.length) * 100)}%`
+  return {
+    isActive: company.isActive,
+    reviewStatus,
+    reviewReason: company.reviewReason,
+    senderStatusLabel,
+    senderIdHint: company.senderId ? company.senderId : 'Not configured',
+    campaignsTotal: campaigns.length,
+    activeCampaignsCount,
+    approvedRate,
+    approvedCampaignsCount,
+  }
+}
 
 type RangePreset = '7d' | '40d' | '90d' | 'lifetime'
 type ChannelFilter = 'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility'
@@ -22,8 +96,16 @@ function formatCompact(value: number): string {
   return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value)
 }
 
-export default function CompanyAnalyticsPanel({ companyId }: { companyId: number }) {
+export default function CompanyAnalyticsPanel({
+  companyId,
+  overviewSnapshot: overviewSnapshotProp,
+}: {
+  companyId: number
+  overviewSnapshot?: CompanyOverviewSnapshot | null
+}) {
   const { env } = useApiEnv()
+  const [fetchedOverviewSnapshot, setFetchedOverviewSnapshot] = useState<CompanyOverviewSnapshot | null>(null)
+  const [overviewSnapshotLoading, setOverviewSnapshotLoading] = useState(false)
   const [rangePreset, setRangePreset] = useState<RangePreset>('lifetime')
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('All')
   const [overviewCurrent, setOverviewCurrent] = useState<DashboardAnalyticsOverviewResponse | null>(null)
@@ -119,6 +201,44 @@ export default function CompanyAnalyticsPanel({ companyId }: { companyId: number
     }
   }, [companyId, env, rangePreset, channelFilter])
 
+  useEffect(() => {
+    if (overviewSnapshotProp != null) {
+      setFetchedOverviewSnapshot(null)
+      setOverviewSnapshotLoading(false)
+      return
+    }
+    if (!Number.isFinite(companyId) || companyId <= 0) {
+      setFetchedOverviewSnapshot(null)
+      setOverviewSnapshotLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setOverviewSnapshotLoading(true)
+
+    const load = async () => {
+      try {
+        const [company, campaigns] = await Promise.all([
+          adminApi.getCompanyById(companyId),
+          adminApi.getCompanyCampaignsAll(companyId),
+        ])
+        if (cancelled) return
+        setFetchedOverviewSnapshot(buildOverviewSnapshotFromData(company, campaigns))
+      } catch {
+        if (!cancelled) setFetchedOverviewSnapshot(null)
+      } finally {
+        if (!cancelled) setOverviewSnapshotLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [companyId, env, overviewSnapshotProp])
+
+  const overviewSnapshot = overviewSnapshotProp ?? fetchedOverviewSnapshot
+
   const kpiCards = useMemo(
     () => buildDashboardKpiCards(overviewCurrent, overviewPrevious),
     [overviewCurrent, overviewPrevious],
@@ -132,7 +252,7 @@ export default function CompanyAnalyticsPanel({ companyId }: { companyId: number
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[320px] rounded-2xl border border-slate-200 bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
       </div>
     )
   }
@@ -142,6 +262,53 @@ export default function CompanyAnalyticsPanel({ companyId }: { companyId: number
       {error ? (
         <div className="rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-800 px-5 py-4 shadow-sm">
           {error}
+        </div>
+      ) : null}
+
+      {overviewSnapshotLoading && !overviewSnapshot ? (
+        <div className="flex min-h-[120px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--admin-ui-accent)]" />
+        </div>
+      ) : overviewSnapshot ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <StatCard
+            label="Lifecycle"
+            value={overviewSnapshot.isActive ? 'Active' : 'Deactivated'}
+            hint={
+              overviewSnapshot.isActive ? 'Operational actions enabled' : 'Operational actions blocked'
+            }
+            icon={<SignalHigh className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Submission review"
+            value={overviewSnapshot.reviewStatus}
+            hint={
+              overviewSnapshot.reviewStatus === 'Rejected'
+                ? (overviewSnapshot.reviewReason ?? 'Reason required')
+                : overviewSnapshot.reviewStatus === 'Pending' && overviewSnapshot.reviewReason
+                  ? overviewSnapshot.reviewReason
+                  : 'Backoffice decision'
+            }
+            icon={<ShieldCheck className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Sender ID"
+            value={overviewSnapshot.senderStatusLabel}
+            hint={overviewSnapshot.senderIdHint}
+            icon={<BadgeCheck className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Campaigns"
+            value={`${overviewSnapshot.campaignsTotal} total`}
+            hint={`${overviewSnapshot.activeCampaignsCount} currently active`}
+            icon={<Megaphone className="h-4 w-4" />}
+          />
+          <StatCard
+            label="Approval rate"
+            value={overviewSnapshot.approvedRate}
+            hint={`${overviewSnapshot.approvedCampaignsCount} approved`}
+            icon={<CheckCircle2 className="h-4 w-4" />}
+          />
         </div>
       ) : null}
 
@@ -249,7 +416,7 @@ export default function CompanyAnalyticsPanel({ companyId }: { companyId: number
               <p className="flex items-center justify-between"><span>Activated</span><strong>{funnel?.activated ?? 0}</strong></p>
               <p className="flex items-center justify-between"><span>Completed</span><strong>{funnel?.completed ?? 0}</strong></p>
             </div>
-            <p className="mt-3 text-sm font-medium text-indigo-700">Completion rate: {(funnel?.completionRate ?? 0).toFixed(2)}%</p>
+            <p className="mt-3 text-sm font-medium text-[var(--admin-ui-accent)]">Completion rate: {(funnel?.completionRate ?? 0).toFixed(2)}%</p>
           </div>
           <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900">Moderation Velocity</h3>

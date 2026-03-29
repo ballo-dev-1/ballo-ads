@@ -97,10 +97,10 @@ function formatDateTime(value?: string) {
 }
 
 const BRAND_COLORS = {
-  primary: '#0e0e39',
-  secondary: '#1d5a9a',
-  accent: '#4b8ed0',
-  soft: '#dbeafe',
+  primary: '#020055',
+  secondary: '#0b4d8c',
+  accent: '#2273af',
+  soft: '#bdd4dc',
   success: '#16a34a',
   warning: '#d97706',
   danger: '#dc2626',
@@ -570,7 +570,7 @@ export default function ApmPage() {
               type="button"
               onClick={() => load()}
               disabled={loading || refreshing}
-              className="inline-flex items-center gap-2 self-start rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
+              className="inline-flex items-center gap-2 self-start rounded-full bg-[var(--brand-color-1)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 md:self-auto"
             >
               {loading || refreshing ? 'Refreshing...' : 'Refresh now'}
             </button>
@@ -585,7 +585,7 @@ export default function ApmPage() {
 
         {loading && !overview && !channels && !links ? (
           <div className="flex items-center justify-center min-h-[220px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <>
@@ -978,7 +978,7 @@ export default function ApmPage() {
                       checked={platformSettings.requireCampaignApproval}
                       onChange={(e) => void handleRequireCampaignApprovalToggle(e.target.checked)}
                       disabled={updatingPlatformSettings}
-                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)] disabled:opacity-60"
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)] disabled:opacity-60"
                     />
                   </label>
 
@@ -994,7 +994,7 @@ export default function ApmPage() {
                       checked={platformSettings.requireSenderIdApproval}
                       onChange={(e) => void handleRequireSenderIdApprovalToggle(e.target.checked)}
                       disabled={updatingPlatformSettings}
-                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--brand-color-2)] focus:ring-[var(--brand-color-2)] disabled:opacity-60"
+                      className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[var(--admin-ui-accent)] focus:ring-[var(--admin-ui-accent)] disabled:opacity-60"
                     />
                   </label>
 
@@ -1061,17 +1061,17 @@ export default function ApmPage() {
                     >
                       <h3 className="text-sm font-semibold text-gray-900 capitalize">{group.environment}</h3>
                       <div className="mt-3 space-y-2 text-sm">
-                        <a className="block text-[var(--brand-color-2)] hover:underline break-all" href={group.apiBaseUrl} target="_blank" rel="noreferrer">
+                        <a className="block text-[var(--admin-ui-accent)] hover:underline break-all" href={group.apiBaseUrl} target="_blank" rel="noreferrer">
                           API Base: {group.apiBaseUrl}
                         </a>
-                        <a className="block text-[var(--brand-color-2)] hover:underline break-all" href={group.hangfireDashboardUrl} target="_blank" rel="noreferrer">
+                        <a className="block text-[var(--admin-ui-accent)] hover:underline break-all" href={group.hangfireDashboardUrl} target="_blank" rel="noreferrer">
                           Hangfire: {group.hangfireDashboardUrl}
                         </a>
-                        <a className="block text-[var(--brand-color-2)] hover:underline break-all" href={group.seqUrl} target="_blank" rel="noreferrer">
+                        <a className="block text-[var(--admin-ui-accent)] hover:underline break-all" href={group.seqUrl} target="_blank" rel="noreferrer">
                           Seq: {group.seqUrl}
                         </a>
                         {group.grafanaUrl ? (
-                          <a className="block text-[var(--brand-color-2)] hover:underline break-all" href={group.grafanaUrl} target="_blank" rel="noreferrer">
+                          <a className="block text-[var(--admin-ui-accent)] hover:underline break-all" href={group.grafanaUrl} target="_blank" rel="noreferrer">
                             Grafana: {group.grafanaUrl}
                           </a>
                         ) : (

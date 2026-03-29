@@ -145,14 +145,14 @@ export default function MtnWhitelistedSenderIdsPanel() {
               value={newSenderId}
               onChange={(e) => setNewSenderId(e.target.value)}
               placeholder="e.g. MyBrand"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)]"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)]"
               disabled={submitting}
             />
           </div>
           <button
             type="submit"
             disabled={submitting || !newSenderId.trim()}
-            className="inline-flex items-center px-4 py-2 bg-[#0e0e39] text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
+            className="inline-flex items-center px-4 py-2 bg-[var(--brand-color-1)] text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
           >
             Add
           </button>
@@ -162,7 +162,7 @@ export default function MtnWhitelistedSenderIdsPanel() {
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <div className="overflow-x-auto bg-transparent p-4">
@@ -191,14 +191,14 @@ export default function MtnWhitelistedSenderIdsPanel() {
                               type="text"
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
-                              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-2)] w-40"
+                              className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] w-40"
                               autoFocus
                               disabled={submitting}
                             />
                             <button
                               type="submit"
                               disabled={submitting || !editValue.trim()}
-                              className="text-sm text-[var(--brand-color-2)] hover:underline disabled:opacity-50"
+                              className="text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
                             >
                               Save
                             </button>

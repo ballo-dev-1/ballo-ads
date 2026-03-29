@@ -29,10 +29,41 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+  overscroll-behavior: none;
+}
+
 body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Pointer on interactive links and buttons (disabled stays not-allowed) */
+a[href]:not([aria-disabled="true"]),
+area[href],
+button:not(:disabled),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="reset"]:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+input[type="reset"]:disabled,
+[role="button"][aria-disabled="true"],
+a[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 .glitch-text {
@@ -68,8 +99,9 @@ body {
 }
 
 .admin-shell[data-admin-theme="light"] {
-  --admin-ui-accent: #6c5dd3;
-  --admin-accent: #6c5dd3;
+  /* Accent inherits .admin-shell brand tokens */
+  --admin-header-bar: color-mix(in srgb, var(--admin-bg-canvas) 88%, var(--admin-card));
+  --admin-control-hover: #f1f5f9;
   background: var(--admin-bg-canvas) !important;
 }
 
@@ -83,6 +115,8 @@ body {
   --admin-accent-ink: #f1f5f9;
   --admin-bg-canvas: #161825;
   --admin-chart-grid: #3d4159;
+  --admin-header-bar: color-mix(in srgb, var(--admin-card) 58%, var(--admin-bg-canvas));
+  --admin-control-hover: color-mix(in srgb, var(--admin-card) 82%, #ffffff);
   background: var(--admin-bg-canvas) !important;
 }
 
@@ -91,6 +125,149 @@ body {
   width: 1.125rem;
   height: 1.125rem;
   flex-shrink: 0;
+}
+
+/*
+ * Header nav: circular triggers — white surface, hairline border, soft lift
+ * (aligned with reference search pill / icon row).
+ */
+.admin-header-icon-btn {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--admin-card-border);
+  background: var(--admin-card);
+  color: var(--admin-muted);
+  cursor: pointer;
+  box-shadow:
+    0 1px 2px rgba(27, 29, 33, 0.04),
+    0 4px 14px rgba(27, 29, 33, 0.07);
+  transition:
+    box-shadow 0.25s var(--liquid-ease),
+    border-color 0.25s var(--liquid-ease),
+    color 0.25s var(--liquid-ease),
+    background-color 0.25s var(--liquid-ease);
+}
+
+.admin-shell[data-admin-theme="light"] .admin-header-icon-btn:hover {
+  color: var(--admin-heading);
+  border-color: color-mix(in srgb, var(--admin-ui-accent) 24%, var(--admin-card-border));
+  box-shadow:
+    0 2px 4px rgba(27, 29, 33, 0.05),
+    0 8px 22px rgba(27, 29, 33, 0.1);
+}
+
+.admin-shell[data-admin-theme="light"] .admin-header-icon-btn:focus-visible {
+  outline: none;
+  border-color: var(--admin-ui-accent);
+  box-shadow:
+    0 1px 2px rgba(27, 29, 33, 0.05),
+    0 4px 14px rgba(27, 29, 33, 0.08),
+    0 0 0 2px color-mix(in srgb, var(--admin-ui-accent) 28%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-header-icon-btn {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--admin-card);
+  color: #94a3b8;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.28);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-header-icon-btn:hover {
+  color: #e2e8f0;
+  background: var(--admin-control-hover);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 8px 22px rgba(0, 0, 0, 0.32);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-header-icon-btn:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--brand-color-4) 55%, transparent);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--brand-color-4) 22%, transparent);
+}
+
+/* Profile control: same chrome as icon row, pill width */
+.admin-header-profile-btn {
+  display: flex;
+  height: 2.5rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--admin-card-border);
+  background: var(--admin-card);
+  padding-left: 0.2rem;
+  padding-right: 0.45rem;
+  color: var(--admin-muted);
+  box-shadow:
+    0 1px 2px rgba(27, 29, 33, 0.04),
+    0 4px 14px rgba(27, 29, 33, 0.07);
+  transition:
+    box-shadow 0.25s var(--liquid-ease),
+    border-color 0.25s var(--liquid-ease),
+    color 0.25s var(--liquid-ease),
+    background-color 0.25s var(--liquid-ease);
+}
+
+.admin-shell[data-admin-theme="light"] .admin-header-profile-btn:hover {
+  color: var(--admin-heading);
+  border-color: color-mix(in srgb, var(--admin-ui-accent) 24%, var(--admin-card-border));
+  box-shadow:
+    0 2px 4px rgba(27, 29, 33, 0.05),
+    0 8px 22px rgba(27, 29, 33, 0.1);
+}
+
+.admin-shell[data-admin-theme="light"] .admin-header-profile-btn:focus-visible {
+  outline: none;
+  border-color: var(--admin-ui-accent);
+  box-shadow:
+    0 1px 2px rgba(27, 29, 33, 0.05),
+    0 4px 14px rgba(27, 29, 33, 0.08),
+    0 0 0 2px color-mix(in srgb, var(--admin-ui-accent) 28%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-header-profile-btn {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--admin-card);
+  color: #94a3b8;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.28);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-header-profile-btn:hover {
+  color: #e2e8f0;
+  background: var(--admin-control-hover);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    0 8px 22px rgba(0, 0, 0, 0.32);
+}
+
+.admin-header-profile-avatar {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--admin-bg-canvas);
+  color: var(--admin-muted);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-header-profile-avatar {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
 }
 
 /* Main column: large left radius, interlocks with sidebar */
@@ -178,14 +355,160 @@ body {
   color: #e2e8f0;
 }
 
-/* Sidebar — reference-style purple; fillet size matches active tab left radius */
+/* Horizontal page tabs — rounded-top active pill, full-width rule, brand accent bar */
+.admin-tab-bar {
+  --admin-tab-radius: 12px;
+  --admin-tab-indicator-h: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.125rem 0.25rem;
+  border-bottom: 1px solid var(--admin-card-border);
+  margin-bottom: 1rem;
+}
+
+.admin-tab-bar__tab {
+  position: relative;
+  z-index: 0;
+  margin-bottom: -1px;
+  border: none;
+  background: transparent;
+  color: var(--admin-muted);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  padding: 0.65rem 1.15rem calc(0.7rem + var(--admin-tab-indicator-h));
+  border-radius: var(--admin-tab-radius) var(--admin-tab-radius) 0 0;
+  cursor: pointer;
+  transition:
+    color 0.2s var(--liquid-ease),
+    background-color 0.2s var(--liquid-ease),
+    font-weight 0.15s var(--liquid-ease);
+}
+
+.admin-tab-bar__tab:hover {
+  color: var(--admin-heading);
+}
+
+.admin-tab-bar__tab:focus-visible {
+  outline: none;
+  color: var(--admin-heading);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--admin-ui-accent) 35%, transparent);
+  border-radius: var(--admin-tab-radius) var(--admin-tab-radius) 0 0;
+}
+
+.admin-tab-bar__tab--active {
+  z-index: 1;
+  background: color-mix(in srgb, var(--admin-card) 72%, var(--brand-color-5) 28%);
+  color: var(--brand-color-3);
+  font-weight: 700;
+  box-shadow:
+    1px 0 0 var(--admin-card-border),
+    -1px 0 0 var(--admin-card-border),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 70%, var(--admin-card-border));
+}
+
+.admin-tab-bar__tab--active::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 0;
+  height: var(--admin-tab-indicator-h);
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--brand-color-3),
+    var(--brand-color-4)
+  );
+  pointer-events: none;
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-tab-bar__tab--active {
+  background: color-mix(in srgb, var(--admin-card) 88%, var(--brand-color-2) 12%);
+  color: var(--brand-color-4);
+  box-shadow:
+    1px 0 0 var(--admin-card-border),
+    -1px 0 0 var(--admin-card-border),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 12%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-tab-bar__tab--active::after {
+  background: linear-gradient(90deg, var(--brand-color-4), var(--brand-color-3));
+}
+
+/*
+ * Sidebar — full brand palette on a 168deg sweep:
+ * cyan highlight (4+2) → ocean blue (2) → primary blue (3+1) → deep navy (1), shallow 5-tint on text/hover only.
+ */
 .admin-sidebar-surface {
-  --admin-sidebar-bg: linear-gradient(168deg, #8b7cf0 0%, #6c5dd3 52%, #5548b8 100%);
+  --admin-sidebar-bg: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--brand-color-4) 25%, var(--brand-color-2) 75%) 0%,
+    var(--brand-color-2) 20%,
+    color-mix(in srgb, var(--brand-color-3) 35%, var(--brand-color-2) 65%) 44%,
+    color-mix(in srgb, var(--brand-color-3) 18%, var(--brand-color-1) 82%) 70%,
+    var(--brand-color-1) 88%,
+    color-mix(in srgb, var(--brand-color-1) 88%, var(--brand-color-2) 12%) 100%
+  );
   --admin-sidebar-tab-pill-radius: calc(var(--radius-liquid) * 0.45);
   --admin-sidebar-inverse-size: var(--admin-sidebar-tab-pill-radius);
-  /* Opaque fillet shadow for translucent hovers (rgba row fill + rgba shadow causes dark corner artifacts) */
-  --admin-sidebar-fillet-mask: color-mix(in srgb, #6c5dd3 58%, #5548b8 42%);
+  /* Typography & chrome on gradient (brand-tinted, not generic gray/white-only) */
+  --admin-sidebar-fg: color-mix(in srgb, #ffffff 90%, var(--brand-color-5) 10%);
+  --admin-sidebar-fg-muted: color-mix(in srgb, #ffffff 72%, var(--brand-color-5) 28%);
+  --admin-sidebar-hover-row: color-mix(in srgb, #ffffff 11%, var(--brand-color-1) 89%);
+  --admin-sidebar-toggle-bg: color-mix(in srgb, #ffffff 88%, var(--brand-color-4) 12%);
+  --admin-sidebar-toggle-border: color-mix(in srgb, var(--brand-color-4) 45%, #ffffff 55%);
+  --admin-sidebar-toggle-icon: var(--brand-color-1);
+  --admin-sidebar-collapsed-active-bg: color-mix(in srgb, #ffffff 92%, var(--brand-color-4) 8%);
+  --admin-sidebar-collapsed-active-fg: var(--brand-color-1);
   background: var(--admin-sidebar-bg);
+  color: var(--admin-sidebar-fg);
+}
+
+.admin-sidebar-toggle-btn {
+  border: 1px solid var(--admin-sidebar-toggle-border);
+  background: var(--admin-sidebar-toggle-bg);
+  color: var(--admin-sidebar-toggle-icon);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--brand-color-1) 12%, transparent),
+    0 6px 18px color-mix(in srgb, var(--brand-color-1) 18%, transparent);
+}
+
+.admin-sidebar-toggle-btn:hover {
+  background: color-mix(in srgb, var(--admin-sidebar-toggle-bg) 82%, var(--brand-color-4) 18%);
+}
+
+.admin-sidebar-toggle-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-color-4) 65%, #ffffff 35%);
+  outline-offset: 2px;
+}
+
+/* Collapsed rail: active row (pill on gradient) */
+.admin-sidebar-nav-collapsed-active {
+  background: var(--admin-sidebar-collapsed-active-bg);
+  color: var(--admin-sidebar-collapsed-active-fg);
+  box-shadow:
+    0 2px 8px color-mix(in srgb, var(--brand-color-1) 14%, transparent),
+    0 8px 22px color-mix(in srgb, var(--brand-color-1) 12%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] .admin-sidebar-nav-collapsed-active {
+  background: var(--admin-card);
+  color: var(--brand-color-4);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.28),
+    0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+/* Curved inverse-fillets: opacity only (no geometry / shadow tween — avoids “slide”) */
+@keyframes admin-sidebar-fillet-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /*
@@ -193,18 +516,21 @@ body {
  * the rounded cutout lets the real sidebar show through.
  */
 .admin-sidebar-nav-item-active {
-  --admin-sidebar-tab-fill: #ffffff;
+  --admin-sidebar-tab-fill: #f9f9fb;
   position: relative;
   z-index: 2;
   overflow: visible;
   border-radius: var(--admin-sidebar-tab-pill-radius) 0 0 var(--admin-sidebar-tab-pill-radius);
   background: var(--admin-sidebar-tab-fill) !important;
-  color: var(--admin-accent-ink);
+  color: var(--brand-color-1);
   box-shadow: none;
-  transition: all 0.3s var(--liquid-ease);
+  /* Don’t transition border-radius / width / padding — that reads as sliding; fillets fade in via pseudos */
+  transition:
+    background-color 0.3s var(--liquid-ease),
+    color 0.3s var(--liquid-ease);
 }
 
-/* Inactive row: inset pill by default; on hover match active rail + fillets */
+/* Inactive row: inset pill; hover = same shape, straight edges (no inverse fillet — only active uses curves) */
 .admin-sidebar-nav-item-inactive {
   position: relative;
   z-index: 1;
@@ -213,25 +539,15 @@ body {
   width: calc(100% - 0.75rem);
   border-radius: 0.75rem;
   padding-right: 1rem;
-  transition:
-    margin 0.3s var(--liquid-ease),
-    width 0.3s var(--liquid-ease),
-    border-radius 0.3s var(--liquid-ease),
-    background-color 0.3s var(--liquid-ease),
-    padding-right 0.3s var(--liquid-ease);
+  transition: background-color 0.3s var(--liquid-ease);
 }
 
 .admin-sidebar-nav-item-inactive:hover {
-  z-index: 2;
-  margin-right: 0;
-  width: 100%;
-  border-radius: var(--admin-sidebar-tab-pill-radius) 0 0 var(--admin-sidebar-tab-pill-radius);
-  background-color: rgb(255 255 255 / 0.1);
-  padding-right: 0;
+  background-color: var(--admin-sidebar-hover-row);
 }
 
-/* Keep label/icon above the inverse-fillet pseudos */
-.admin-sidebar-nav-item-active > span,
+/* Keep label/icon above the inverse-fillet pseudos (rail bridge is absolute, z-index 0) */
+.admin-sidebar-nav-item-active > span:not(.admin-sidebar-active-rail-bridge),
 .admin-sidebar-nav-item-inactive > span {
   position: relative;
   z-index: 1;
@@ -240,13 +556,41 @@ body {
 .admin-shell[data-admin-theme="dark"] .admin-sidebar-nav-item-active {
   --admin-sidebar-tab-fill: var(--admin-card);
   background: var(--admin-card) !important;
-  color: #f1f5f9;
+  color: var(--brand-color-4);
+}
+
+.admin-sidebar-nav-item-inactive::before,
+.admin-sidebar-nav-item-inactive::after {
+  display: none;
+}
+
+/*
+ * Extra pseudo on a child (button only has two pseudos): fills the straight vertical
+ * segment between the two corner fillets so the sidebar doesn’t flash through mid-transition.
+ */
+.admin-sidebar-active-rail-bridge {
+  position: absolute;
+  right: 0;
+  top: var(--admin-sidebar-inverse-size);
+  bottom: var(--admin-sidebar-inverse-size);
+  width: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.admin-sidebar-active-rail-bridge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: calc(var(--admin-sidebar-inverse-size) * 0.65);
+  background: var(--admin-sidebar-tab-fill);
+  animation: admin-sidebar-fillet-fade-in 0.22s ease-out 0.08s both;
 }
 
 .admin-sidebar-nav-item-active::before,
-.admin-sidebar-nav-item-active::after,
-.admin-sidebar-nav-item-inactive::before,
-.admin-sidebar-nav-item-inactive::after {
+.admin-sidebar-nav-item-active::after {
   content: '';
   position: absolute;
   right: 0;
@@ -254,23 +598,16 @@ body {
   height: var(--admin-sidebar-inverse-size);
   background: transparent;
   pointer-events: none;
+  z-index: 1;
+  animation: admin-sidebar-fillet-fade-in 0.22s ease-out 0.08s both;
 }
 
-.admin-sidebar-nav-item-active::before,
-.admin-sidebar-nav-item-inactive::before {
+.admin-sidebar-nav-item-active::before {
   top: calc(-1 * var(--admin-sidebar-inverse-size));
 }
 
-.admin-sidebar-nav-item-active::after,
-.admin-sidebar-nav-item-inactive::after {
+.admin-sidebar-nav-item-active::after {
   bottom: calc(-1 * var(--admin-sidebar-inverse-size));
-}
-
-/* Inactive: hide fillet geometry until hover */
-.admin-sidebar-nav-item-inactive::before,
-.admin-sidebar-nav-item-inactive::after {
-  border-radius: 0;
-  box-shadow: none;
 }
 
 .admin-sidebar-nav-item-active::before {
@@ -285,21 +622,6 @@ body {
   box-shadow:
     calc(var(--admin-sidebar-inverse-size) / 2) calc(-1 * var(--admin-sidebar-inverse-size) / 2) 0
     calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
-}
-
-/* Solid mask matches sidebar hue — avoids premultiplied / double-alpha corners on translucent hover */
-.admin-sidebar-nav-item-inactive:hover::before {
-  border-bottom-right-radius: var(--admin-sidebar-inverse-size);
-  box-shadow:
-    calc(var(--admin-sidebar-inverse-size) / 2) calc(var(--admin-sidebar-inverse-size) / 2) 0
-    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-fillet-mask);
-}
-
-.admin-sidebar-nav-item-inactive:hover::after {
-  border-top-right-radius: var(--admin-sidebar-inverse-size);
-  box-shadow:
-    calc(var(--admin-sidebar-inverse-size) / 2) calc(-1 * var(--admin-sidebar-inverse-size) / 2) 0
-    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-fillet-mask);
 }
 
 /* Default tables — light separators */
@@ -502,4 +824,138 @@ body {
     opacity: 1;
     transform: none;
   }
+
+  .admin-sidebar-nav-item-active::before,
+  .admin-sidebar-nav-item-active::after {
+    animation: none;
+    opacity: 1;
+  }
+
+  .admin-sidebar-active-rail-bridge::before {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/*
+ * Dark admin theme: light-mode Tailwind neutrals (gray/slate) stay dark-colored by default,
+ * which hides copy on dark canvases. Map them to admin tokens. Specificity stays below
+ * utilities that include the `admin-dark:` variant (extra class wins).
+ */
+.admin-shell[data-admin-theme="dark"] :where(
+  .text-black,
+  .text-gray-950,
+  .text-gray-900,
+  .text-gray-800,
+  .text-slate-950,
+  .text-slate-900,
+  .text-slate-800
+) {
+  color: var(--admin-heading);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(
+  .text-gray-700,
+  .text-gray-600,
+  .text-slate-700,
+  .text-slate-600
+) {
+  color: color-mix(in srgb, var(--admin-heading) 88%, var(--admin-muted) 12%);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(
+  .text-gray-500,
+  .text-gray-400,
+  .text-gray-300,
+  .text-slate-500,
+  .text-slate-400,
+  .text-slate-300
+) {
+  color: var(--admin-muted);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.bg-white) {
+  background-color: var(--admin-card);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-slate-50,
+  .bg-slate-100
+) {
+  background-color: color-mix(in srgb, var(--admin-card) 58%, var(--admin-bg-canvas));
+}
+
+.admin-shell[data-admin-theme="dark"] :where(
+  .bg-slate-50\/40,
+  .bg-slate-50\/60,
+  .bg-slate-50\/70
+) {
+  background-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--admin-card) 58%, var(--admin-bg-canvas)) 75%,
+    transparent
+  );
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.bg-gray-200, .bg-slate-200) {
+  background-color: color-mix(in srgb, var(--admin-card) 72%, #ffffff 28%);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300,
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-300
+) {
+  border-color: var(--admin-card-border);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.border-gray-200\/80) {
+  border-color: color-mix(in srgb, var(--admin-card-border) 82%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.border-slate-200\/80, .border-slate-300\/80) {
+  border-color: color-mix(in srgb, var(--admin-card-border) 82%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.divide-gray-100) > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--admin-card-border);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-gray-50):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-gray-100):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-slate-50):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-slate-100):hover {
+  background-color: var(--admin-control-hover);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-gray-200):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-slate-200):hover {
+  background-color: color-mix(in srgb, var(--admin-card) 68%, var(--admin-bg-canvas));
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.hover\:text-gray-600):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:text-gray-800):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:text-slate-600):hover,
+.admin-shell[data-admin-theme="dark"] :where(.hover\:text-slate-800):hover {
+  color: var(--admin-heading);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.hover\:bg-slate-50\/80):hover {
+  background-color: color-mix(in srgb, var(--admin-control-hover) 85%, transparent);
+}
+
+.admin-shell[data-admin-theme="dark"] :where(.disabled\:bg-slate-100:disabled),
+.admin-shell[data-admin-theme="dark"] :where(.disabled\:bg-gray-100:disabled) {
+  background-color: color-mix(in srgb, var(--admin-card) 52%, var(--admin-bg-canvas));
+}
+
+.admin-shell[data-admin-theme="dark"] input::placeholder,
+.admin-shell[data-admin-theme="dark"] textarea::placeholder {
+  color: var(--admin-muted);
+  opacity: 0.88;
 }

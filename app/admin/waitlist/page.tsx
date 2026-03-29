@@ -179,7 +179,7 @@ export default function WaitlistDashboard() {
               <button
                 onClick={() => handleExport('pdf')}
                 disabled={!!exportingFormat}
-                className="rounded-full bg-[#0f1222] px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-full bg-[var(--brand-color-1)] px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {exportingFormat === 'pdf' ? 'Exporting…' : 'Export PDF'}
               </button>

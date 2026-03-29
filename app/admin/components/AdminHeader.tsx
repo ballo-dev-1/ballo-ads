@@ -37,11 +37,6 @@ export function HeaderActions({ className = '' }: { className?: string }) {
     }
   }
 
-  const surface = isDark
-    ? 'border-white/10 bg-[#27293d] text-slate-200 hover:bg-[#303450]'
-    : 'border-gray-200/80 bg-white text-gray-600 hover:bg-gray-50'
-  const avatarBg = isDark ? 'bg-white/10' : 'bg-gray-100'
-
   return (
     <div className={`flex items-center justify-end gap-2 sm:gap-3 ${className}`.trim()}>
       <NotificationBell />
@@ -49,19 +44,19 @@ export function HeaderActions({ className = '' }: { className?: string }) {
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className={`admin-liquid-transition flex h-10 cursor-pointer items-center gap-2 rounded-full border px-2 shadow-sm ${surface}`}
+          className="admin-header-profile-btn"
           aria-label="Profile menu"
         >
-          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${avatarBg}`}>
+          <div className="admin-header-profile-avatar">
             <User className="admin-icon" strokeWidth={1.5} />
           </div>
-          <ChevronDown className="admin-icon opacity-60" strokeWidth={1.5} />
+          <ChevronDown className="admin-icon opacity-70" strokeWidth={1.5} />
         </button>
 
         {open && (
           <div
             className={`absolute right-0 z-50 mt-2 w-48 rounded-xl border py-1 shadow-xl ${
-              isDark ? 'border-white/10 bg-[#27293d]' : 'border-gray-200 bg-white'
+              isDark ? 'border-white/10 bg-[var(--admin-card)]' : 'border-gray-200 bg-white'
             }`}
           >
             <button
@@ -93,14 +88,13 @@ export default function AdminHeader() {
   }
 
   const barBg = isDark
-    ? 'border-white/[0.08] bg-[#1e2135]/90'
+    ? 'border-white/[0.08] bg-[color-mix(in_srgb,var(--admin-header-bar)_92%,transparent)]'
     : 'border-[color:var(--admin-card-border)] bg-[color:var(--admin-bg-canvas)]/95'
   const searchBg = isDark
-    ? 'border-white/10 bg-[#27293d] text-slate-100 placeholder:text-slate-500'
-    : 'border-[color:var(--admin-card-border)] bg-white text-[var(--admin-heading)] placeholder:text-[var(--admin-muted)] shadow-sm'
-  const iconBtn = isDark
-    ? 'border-white/10 bg-[#27293d] text-slate-200 hover:bg-[#303450]'
-    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+    ? 'border-white/10 bg-[var(--admin-card)] text-slate-100 placeholder:text-slate-500'
+    : 'border-[color:var(--admin-card-border)] bg-white text-[var(--admin-heading)] placeholder:text-[var(--admin-muted)]'
+  const searchShadowLight =
+    'shadow-[0_1px_2px_rgba(27,29,33,0.04),0_4px_14px_rgba(27,29,33,0.07)] focus-visible:shadow-[0_2px_4px_rgba(27,29,33,0.05),0_8px_22px_rgba(27,29,33,0.1)]'
 
   return (
     <header
@@ -115,7 +109,7 @@ export default function AdminHeader() {
           type="search"
           placeholder="Search here..."
           aria-label="Search backoffice"
-          className={`admin-liquid-transition h-10 w-full rounded-full border pl-10 pr-4 text-[0.8125rem] outline-none focus-visible:border-[var(--admin-ui-accent)] focus-visible:ring-2 focus-visible:ring-[var(--admin-ui-accent)]/25 ${searchBg}`}
+          className={`admin-liquid-transition h-10 w-full rounded-full border pl-10 pr-4 text-[0.8125rem] outline-none focus-visible:border-[var(--admin-ui-accent)] focus-visible:ring-2 focus-visible:ring-[var(--admin-ui-accent)]/25 ${searchBg} ${isDark ? 'shadow-sm' : searchShadowLight}`}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               const q = (e.target as HTMLInputElement).value.trim()
@@ -129,7 +123,7 @@ export default function AdminHeader() {
         <button
           type="button"
           onClick={toggleTheme}
-          className={`admin-liquid-transition flex h-10 w-10 items-center justify-center rounded-full border shadow-sm ${iconBtn}`}
+          className="admin-header-icon-btn"
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {theme === 'dark' ? <Sun className="admin-icon" strokeWidth={1.5} /> : <Moon className="admin-icon" strokeWidth={1.5} />}
@@ -137,7 +131,7 @@ export default function AdminHeader() {
         <button
           type="button"
           onClick={() => router.push(`${basePath}/api-management`)}
-          className={`admin-liquid-transition flex h-10 w-10 items-center justify-center rounded-full border shadow-sm ${iconBtn}`}
+          className="admin-header-icon-btn"
           aria-label="API settings"
         >
           <Settings className="admin-icon" strokeWidth={1.5} />

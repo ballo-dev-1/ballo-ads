@@ -15,16 +15,22 @@ export default function CompanyAnalyticsPage() {
   const invalidId = typeof idParam !== 'string' || idParam === '' || Number.isNaN(numericId)
 
   const breadcrumb = (
-    <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-white/80">
-      <Link href={`${basePath}/companies`} className="hover:text-white hover:underline">
+    <div className="mb-6 flex flex-wrap items-center gap-1 text-xs text-[var(--admin-muted)]">
+      <Link
+        href={`${basePath}/companies`}
+        className="transition-colors hover:text-[var(--admin-heading)] hover:underline"
+      >
         Companies
       </Link>
-      <span>/</span>
-      <Link href={`${basePath}/companies/${numericId}`} className="hover:text-white hover:underline">
+      <span className="opacity-50">/</span>
+      <Link
+        href={`${basePath}/companies/${numericId}`}
+        className="transition-colors hover:text-[var(--admin-heading)] hover:underline"
+      >
         {`Company ${numericId}`}
       </Link>
-      <span>/</span>
-      <span>Analytics</span>
+      <span className="opacity-50">/</span>
+      <span className="font-medium text-[var(--admin-heading)]">Analytics</span>
     </div>
   )
 
@@ -53,7 +59,7 @@ export default function CompanyAnalyticsPage() {
             actions={
               <Link
                 href={`${basePath}/companies/${numericId}`}
-                className="rounded-full bg-[#0f1222] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
+                className="rounded-full bg-[var(--brand-color-1)] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-black"
               >
                 Back to company
               </Link>

@@ -76,7 +76,7 @@ export default function TransactionsPage() {
           variant="slate"
           actions={
             canViewWalletBalance ? (
-              <div className="rounded-full bg-[#0f1222] px-5 py-3 text-white shadow-lg">
+              <div className="rounded-full bg-[var(--brand-color-1)] px-5 py-3 text-white shadow-lg">
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-white/75">
                   Lipila wallet balance
                 </div>
@@ -106,7 +106,7 @@ export default function TransactionsPage() {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--brand-color-2)]" />
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
           </div>
         ) : (
           <div className="rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">

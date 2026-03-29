@@ -245,7 +245,7 @@ function Dashboard() {
     {
       label: 'Paused',
       value: reliabilitySummary.pausedChannelsCount,
-      className: 'bg-violet-500',
+      className: 'bg-[var(--admin-ui-accent)]',
     },
   ]
   const tallestIncidentBar = Math.max(...incidentBars.map((bar) => bar.value), 1)
@@ -279,26 +279,22 @@ function Dashboard() {
                 ) : null}
               </div>
             ) : null}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="admin-tab-bar" role="tablist">
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === 'operations'}
                 onClick={() => setActiveTab('operations')}
-                className={`inline-flex items-center gap-2 text-[0.8125rem] font-semibold ${
-                  activeTab === 'operations'
-                    ? 'admin-btn-primary'
-                    : 'admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-5 py-2 text-[var(--admin-muted)] shadow-sm hover:border-[var(--admin-ui-accent)]/35 hover:text-[var(--admin-heading)] admin-dark:border-white/10 admin-dark:bg-white/5 admin-dark:text-slate-300 admin-dark:hover:border-[var(--brand-color-4)]/30 admin-dark:hover:bg-white/10'
-                }`}
+                className={`admin-tab-bar__tab ${activeTab === 'operations' ? 'admin-tab-bar__tab--active' : ''}`}
               >
                 Operations Stats
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={activeTab === 'bi'}
                 onClick={() => setActiveTab('bi')}
-                className={`inline-flex items-center gap-2 text-[0.8125rem] font-semibold ${
-                  activeTab === 'bi'
-                    ? 'admin-btn-primary'
-                    : 'admin-liquid-transition rounded-full border border-[color:var(--admin-card-border)] bg-white px-5 py-2 text-[var(--admin-muted)] shadow-sm hover:border-[var(--admin-ui-accent)]/35 hover:text-[var(--admin-heading)] admin-dark:border-white/10 admin-dark:bg-white/5 admin-dark:text-slate-300 admin-dark:hover:border-[var(--brand-color-4)]/30 admin-dark:hover:bg-white/10'
-                }`}
+                className={`admin-tab-bar__tab ${activeTab === 'bi' ? 'admin-tab-bar__tab--active' : ''}`}
               >
                 BI Stats
               </button>
@@ -328,7 +324,7 @@ function Dashboard() {
                       <path d="M0 20 L24 12 L48 22 L72 6 L96 16 L120 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,#6ee7b7_0%,#34d399_50%,#10b981_100%)] p-4 text-white shadow-lg shadow-emerald-500/20">
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-4)_48%,var(--brand-color-3)_100%)] p-4 text-white shadow-lg shadow-[color-mix(in_srgb,var(--brand-color-3)_35%,transparent)]">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Activation</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(activeCount)}</p>
                     <p className="mt-1 text-sm text-white/85">{orderActivationRate}% of recent orders</p>
@@ -336,7 +332,7 @@ function Dashboard() {
                       <path d="M0 28 L30 14 L55 22 L80 8 L105 18 L120 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,#fcd34d_0%,#fbbf24_50%,#f59e0b_100%)] p-4 text-white shadow-lg shadow-amber-500/20">
+                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_42%,var(--brand-color-2)_100%)] p-4 text-white shadow-lg shadow-[color-mix(in_srgb,var(--brand-color-2)_40%,transparent)]">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Pending review</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(pendingCount)}</p>
                     <p className="mt-1 text-sm text-white/85">{pendingRate}% awaiting action</p>
@@ -502,7 +498,7 @@ function Dashboard() {
                     <p className="flex items-center justify-between"><span>Activated</span><strong>{funnel?.activated ?? 0}</strong></p>
                     <p className="flex items-center justify-between"><span>Completed</span><strong>{funnel?.completed ?? 0}</strong></p>
                   </div>
-                  <p className="mt-3 text-sm font-medium text-indigo-700">
+                  <p className="mt-3 text-sm font-medium text-[var(--admin-ui-accent)]">
                     Completion rate: {(funnel?.completionRate ?? 0).toFixed(2)}%
                   </p>
                 </div>
@@ -535,7 +531,7 @@ function Dashboard() {
                   <div
                     className="grid h-32 w-32 place-items-center rounded-full"
                     style={{
-                      background: `conic-gradient(#6c5dd3 ${orderActivationRate}%, #e8e4f6 ${orderActivationRate}% 100%)`,
+                      background: `conic-gradient(var(--admin-ui-accent) ${orderActivationRate}%, color-mix(in srgb, var(--admin-ui-accent) 14%, var(--admin-card)) ${orderActivationRate}% 100%)`,
                     }}
                   >
                     <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center shadow-inner">
@@ -585,10 +581,10 @@ function Dashboard() {
                   <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Reliability Pulse</h2>
                   <p className="mt-1 text-sm text-[var(--admin-muted)]">Latest incident and control state.</p>
                 </div>
-                <div className="rounded-2xl bg-[linear-gradient(145deg,#f6f8ff_0%,#fdfdff_100%)] p-4">
+                <div className="rounded-2xl bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-5)_40%,#ffffff)_0%,var(--admin-card)_100%)] p-4">
                   <svg viewBox="0 0 320 120" className="h-24 w-full">
-                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="#e8e4f6" strokeWidth="10" strokeLinecap="round" />
-                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="#6c5dd3" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="color-mix(in srgb, var(--admin-ui-accent) 16%, var(--admin-card-border))" strokeWidth="10" strokeLinecap="round" />
+                    <path d="M5 83 C40 18, 80 110, 120 58 C155 16, 190 96, 225 44 C250 14, 286 72, 315 30" fill="none" stroke="var(--admin-ui-accent)" strokeWidth="3" strokeLinecap="round" />
                   </svg>
                   <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded-xl bg-white/90 p-3">
@@ -597,7 +593,7 @@ function Dashboard() {
                     </div>
                     <div className="rounded-xl bg-white/90 p-3">
                       <p className="text-xs uppercase tracking-wide text-gray-500">Paused channels</p>
-                      <p className="mt-1 text-lg font-semibold text-violet-700">{reliabilitySummary.pausedChannelsCount}</p>
+                      <p className="mt-1 text-lg font-semibold text-[var(--admin-ui-accent)]">{reliabilitySummary.pausedChannelsCount}</p>
                     </div>
                   </div>
                 </div>
@@ -618,7 +614,7 @@ function Dashboard() {
                   >
                     <p className="font-semibold text-[var(--admin-heading)]">View Waitlist</p>
                     <p className="mt-1 text-sm text-[var(--admin-muted)]">Manage all waitlist entries</p>
-                    <p className="mt-3 text-xs font-medium text-blue-600 group-hover:underline">Open module</p>
+                    <p className="mt-3 text-xs font-medium text-[var(--admin-ui-accent)] group-hover:underline">Open module</p>
                   </button>
                   <button
                     onClick={() => router.push(`${basePath}/purchase-orders`)}
@@ -626,7 +622,7 @@ function Dashboard() {
                   >
                     <p className="font-semibold text-[var(--admin-heading)]">Purchase Orders</p>
                     <p className="mt-1 text-sm text-[var(--admin-muted)]">View and manage all orders</p>
-                    <p className="mt-3 text-xs font-medium text-indigo-600 group-hover:underline">Open module</p>
+                    <p className="mt-3 text-xs font-medium text-[var(--admin-ui-accent)] group-hover:underline">Open module</p>
                   </button>
                   <button
                     onClick={() => router.push(`${basePath}/transactions`)}
@@ -638,7 +634,7 @@ function Dashboard() {
                   </button>
                 </div>
                 <div className="mt-5 rounded-[var(--radius-liquid)] bg-[var(--brand-color-3)]/10 px-4 py-3">
-                  <Link href={apmRoute} className="inline-flex items-center gap-2 text-sm font-medium text-violet-700 hover:underline">
+                  <Link href={apmRoute} className="inline-flex items-center gap-2 text-sm font-medium text-[var(--admin-ui-accent)] hover:underline">
                     Open reliability incident response dashboard
                   </Link>
                 </div>

@@ -52,10 +52,7 @@ export default function NotificationBell() {
     if (link) router.push(link)
   }
 
-  const btnSurface = isDark
-    ? 'border-white/10 bg-[#27293d] text-slate-200 hover:bg-[#303450]'
-    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-  const panelSurface = isDark ? 'border-white/10 bg-[#27293d]' : 'border-gray-200 bg-white'
+  const panelSurface = isDark ? 'border-white/10 bg-[var(--admin-card)]' : 'border-gray-200 bg-white'
   const panelHeader = isDark ? 'border-white/10' : 'border-gray-200'
   const panelTitle = isDark ? 'text-slate-100' : 'text-gray-800'
 
@@ -64,7 +61,7 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`relative flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-colors ${btnSurface}`}
+        className="admin-header-icon-btn relative"
         aria-label="Notifications"
       >
         <Bell className="admin-icon" strokeWidth={1.5} />
@@ -91,7 +88,7 @@ export default function NotificationBell() {
                   if (!approved) return
                   markAllRead()
                 }}
-                className="text-sm text-[var(--brand-color-3)] hover:text-[var(--brand-color-2)]"
+                className="text-sm text-[var(--admin-ui-accent)] hover:text-[var(--admin-accent-deep)]"
               >
                 Mark all read
               </button>
@@ -115,7 +112,13 @@ export default function NotificationBell() {
                       onClick={() => handleNotificationClick(n.id, n.link)}
                       className={`w-full border-b px-4 py-3 text-left transition-colors last:border-0 ${
                         isDark ? 'border-white/5 hover:bg-white/5' : 'border-gray-100 hover:bg-gray-50'
-                      } ${!n.read ? (isDark ? 'bg-[var(--brand-color-3)]/15' : 'bg-blue-50/50') : ''}`}
+                      } ${
+                        !n.read
+                          ? isDark
+                            ? 'bg-[color-mix(in_srgb,var(--admin-ui-accent)_18%,transparent)]'
+                            : 'bg-[color-mix(in_srgb,var(--admin-ui-accent)_10%,#ffffff)]'
+                          : ''
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className={`text-sm font-medium ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{n.title}</p>

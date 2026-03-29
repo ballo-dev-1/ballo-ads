@@ -56,9 +56,9 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className=" fixed top-0 left-0 w-screen min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0e0e39] via-[#1a1a4e] to-[#0e0e39] px-4">
+    <div className=" fixed top-0 left-0 w-screen min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--brand-color-1)] via-[var(--brand-color-2)] to-[var(--brand-color-1)] px-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-[#0e0e39] mb-2">Backoffice Login</h1>
+        <h1 className="text-3xl font-bold text-[var(--brand-color-1)] mb-2">Backoffice Login</h1>
         <p className="text-gray-600 mb-4">Enter your credentials to access the dashboard</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +71,7 @@ export default function AdminLogin() {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e0e39] focus:border-transparent outline-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-1)] focus:border-transparent outline-none"
               placeholder="Enter your email"
               required
             />
@@ -87,14 +87,14 @@ export default function AdminLogin() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0e0e39] focus:border-transparent outline-none"
+                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-1)] focus:border-transparent outline-none"
                 placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[#0e0e39] focus:outline-none"
+                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[var(--brand-color-1)] focus:outline-none"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
               >
@@ -112,7 +112,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#0e0e39] text-white py-3 rounded-lg font-semibold hover:bg-[#1a1a4e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[var(--brand-color-1)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--brand-color-2)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>

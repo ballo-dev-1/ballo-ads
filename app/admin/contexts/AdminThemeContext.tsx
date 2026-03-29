@@ -67,7 +67,7 @@ export function AdminThemeProvider({
   return (
     <AdminThemeContext.Provider value={value}>
       <div
-        className={`admin-shell flex h-screen overflow-hidden antialiased ${className}`.trim()}
+        className={`admin-shell flex h-screen min-h-0 overflow-hidden antialiased ${className}`.trim()}
         data-admin-theme={theme}
         suppressHydrationWarning
       >
