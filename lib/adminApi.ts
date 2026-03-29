@@ -564,6 +564,16 @@ export type CompanyLeanResponse = {
 
 export type CompanyReviewStatus = "Pending" | "Approved" | "Rejected";
 
+/** MNO keys accepted for submit-to-MNOs flows */
+export type CompanyMnoNetworkKey = "Mtn" | "Airtel" | "Zamtel" | "Zedmobile";
+
+export type SubmitCompanyToMnosPayload = {
+  networks: CompanyMnoNetworkKey[];
+  submissionType: "review-dashboard" | "generated-letter";
+  recipientEmail?: string;
+  recipientName?: string;
+};
+
 export type CompanyMemberRole = "Member" | "Admin" | "SuperAdmin";
 
 export type CompanyMemberResponse = {
@@ -1800,6 +1810,21 @@ export const adminApi = {
       {
         method: "PATCH",
         body: JSON.stringify({ network, approve }),
+        authToken,
+      },
+    ).then(mapCompanyLeanResponse),
+
+  /** Submits sender ID registration to mobile network operators (MNOs). Backend: POST …/companies/{id}/submit-to-mnos */
+  submitCompanyToMnos: (
+    companyId: number,
+    payload: SubmitCompanyToMnosPayload,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/submit-to-mnos`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
         authToken,
       },
     ).then(mapCompanyLeanResponse),

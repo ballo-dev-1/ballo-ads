@@ -27,6 +27,7 @@ import {
   Twitter,
   Youtube,
   ListChecks,
+  X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -36,6 +37,7 @@ import {
   type CompanyMemberResponse,
   type CompanyMemberRole,
   type CompanyReviewStatus,
+  type SubmitCompanyToMnosPayload,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
@@ -301,6 +303,21 @@ export default function CompanyDetailsPage() {
   const [campaignsLoading, setCampaignsLoading] = useState(false)
   const [lifecycleLoading, setLifecycleLoading] = useState(false)
   const [campaignApprovalOverrideLoading, setCampaignApprovalOverrideLoading] = useState(false)
+  const [submitToMnosLoading, setSubmitToMnosLoading] = useState(false)
+  const [submitToMnosModalOpen, setSubmitToMnosModalOpen] = useState(false)
+  const [submitToMnosStep, setSubmitToMnosStep] = useState<1 | 2 | 3>(1)
+  const [submitToMnosNetworks, setSubmitToMnosNetworks] = useState<Record<NetworkKey, boolean>>({
+    Mtn: false,
+    Airtel: false,
+    Zamtel: false,
+    Zedmobile: false,
+  })
+  const [submitToMnosSubmissionType, setSubmitToMnosSubmissionType] = useState<
+    'review-dashboard' | 'generated-letter' | null
+  >(null)
+  const [submitToMnosRecipientEmail, setSubmitToMnosRecipientEmail] = useState('')
+  const [submitToMnosRecipientName, setSubmitToMnosRecipientName] = useState('')
+  const [submitToMnosStepError, setSubmitToMnosStepError] = useState('')
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const numericId = id != null ? Number(id) : NaN
@@ -788,6 +805,138 @@ export default function CompanyDetailsPage() {
     }))
   }, [networkRows])
 
+  const closeSubmitToMnosModal = () => {
+    setSubmitToMnosModalOpen(false)
+    setSubmitToMnosStepError('')
+    setSubmitToMnosLoading(false)
+  }
+
+  const openSubmitToMnosModal = () => {
+    if (!company?.isActive) {
+      toast.error('Cannot submit for a deactivated company')
+      return
+    }
+    setSubmitToMnosStep(1)
+    setSubmitToMnosNetworks({ Mtn: false, Airtel: false, Zamtel: false, Zedmobile: false })
+    setSubmitToMnosSubmissionType(null)
+    setSubmitToMnosRecipientEmail((company.email ?? '').trim())
+    setSubmitToMnosRecipientName('')
+    setSubmitToMnosStepError('')
+    setSubmitToMnosModalOpen(true)
+  }
+
+  const submitToMnosLetterPreview = useMemo(() => {
+    if (!company) return ''
+    const labels: Record<NetworkKey, string> = {
+      Mtn: 'MTN',
+      Airtel: 'Airtel',
+      Zamtel: 'Zamtel',
+      Zedmobile: 'Zedmobile',
+    }
+    const selected = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const)
+      .filter((k) => submitToMnosNetworks[k])
+      .map((k) => labels[k])
+    return [
+      '[Generated letter — preview]',
+      '',
+      'To whom it may concern,',
+      '',
+      `Re: Sender ID registration — ${company.name ?? 'Company'}`,
+      '',
+      `Sender ID: ${company.senderId ?? '—'}`,
+      `Requested MNOs: ${selected.length ? selected.join(', ') : '—'}`,
+      '',
+      'This letter is generated for MNO review. A PDF or formal template can be attached when the export pipeline is connected.',
+      '',
+      `Company contact email: ${company.email ?? '—'}`,
+    ].join('\n')
+  }, [company, submitToMnosNetworks])
+
+  const executeSubmitToMnos = async () => {
+    if (!company) return
+    const submissionType = submitToMnosSubmissionType
+    if (!submissionType) {
+      setSubmitToMnosStepError('Select a submission type.')
+      return
+    }
+    const networks = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const).filter(
+      (k) => submitToMnosNetworks[k],
+    )
+    if (networks.length === 0) {
+      setSubmitToMnosStepError('Select at least one MNO.')
+      return
+    }
+    const emailTrim = submitToMnosRecipientEmail.trim()
+    const nameTrim = submitToMnosRecipientName.trim()
+    if (submissionType === 'generated-letter') {
+      if (!emailTrim || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
+        setSubmitToMnosStepError('Enter a valid recipient email.')
+        return
+      }
+    }
+    const payload: SubmitCompanyToMnosPayload = {
+      networks,
+      submissionType,
+      ...(submissionType === 'generated-letter'
+        ? { recipientEmail: emailTrim, recipientName: nameTrim || undefined }
+        : {}),
+    }
+    setSubmitToMnosLoading(true)
+    try {
+      const updated = await adminApi.submitCompanyToMnos(company.id, payload)
+      setCompany((prev) => (prev ? { ...prev, ...updated } : null))
+      toast.success(
+        submissionType === 'review-dashboard'
+          ? 'Submitted to MNO review dashboard.'
+          : 'Generated letter submission sent.',
+      )
+      closeSubmitToMnosModal()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to submit to MNOs')
+    } finally {
+      setSubmitToMnosLoading(false)
+    }
+  }
+
+  const submitToMnosGoNext = () => {
+    setSubmitToMnosStepError('')
+    if (submitToMnosStep === 1) {
+      const any = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const).some(
+        (k) => submitToMnosNetworks[k],
+      )
+      if (!any) {
+        setSubmitToMnosStepError('Select at least one MNO.')
+        return
+      }
+      setSubmitToMnosStep(2)
+      return
+    }
+    if (submitToMnosStep === 2) {
+      if (!submitToMnosSubmissionType) {
+        setSubmitToMnosStepError('Select a submission type.')
+        return
+      }
+      if (submitToMnosSubmissionType === 'generated-letter') {
+        setSubmitToMnosStep(3)
+        return
+      }
+      void executeSubmitToMnos()
+    }
+  }
+
+  const submitToMnosGoBack = () => {
+    setSubmitToMnosStepError('')
+    if (submitToMnosStep === 1) {
+      closeSubmitToMnosModal()
+      return
+    }
+    if (submitToMnosStep === 3) {
+      setSubmitToMnosStep(2)
+      return
+    }
+    setSubmitToMnosStep(1)
+  }
+
   const applyNetworkStatus = async (
     network: NetworkKey,
     status: NetworkStatus,
@@ -1068,7 +1217,7 @@ export default function CompanyDetailsPage() {
 
   if (invalidId) {
     return (
-      <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="min-h-0 min-w-0 flex-1 p-4 sm:p-6">
         <div className="mx-auto w-full max-w-6xl space-y-5">
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-sm">
             Invalid company ID
@@ -1080,7 +1229,7 @@ export default function CompanyDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="min-h-0 min-w-0 flex-1 p-4 sm:p-6">
         <div className="mx-auto w-full max-w-6xl space-y-5">
           <AdminHero
             title="Company details"
@@ -1099,7 +1248,7 @@ export default function CompanyDetailsPage() {
 
   if (error || !company) {
     return (
-      <div className="flex-1 overflow-auto p-4 sm:p-6">
+      <div className="min-h-0 min-w-0 flex-1 p-4 sm:p-6">
         <div className="mx-auto w-full max-w-6xl space-y-5">
           <AdminHero
             title="Company details"
@@ -1117,7 +1266,7 @@ export default function CompanyDetailsPage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-4 sm:p-6">
+    <div className="min-h-0 min-w-0 flex-1 p-4 sm:p-6">
       <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-6">
         <AdminHero
           topSlot={breadcrumb}
@@ -1367,39 +1516,54 @@ export default function CompanyDetailsPage() {
                         <p className="text-sm text-slate-600">
                           Review company details before granting access.
                         </p>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col gap-2">
+                          <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                            <button
+                              type="button"
+                              onClick={() => handleSetReviewStatus('Approved')}
+                              disabled={reviewLoading || !company.isActive}
+                              className={classNames(
+                                buttonBase,
+                                'min-w-0 w-full justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                              )}
+                            >
+                              {reviewLoading ? 'Updating...' : 'Approve'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetReviewStatus('Rejected')}
+                              disabled={reviewLoading || !company.isActive}
+                              className={classNames(
+                                buttonBase,
+                                'min-w-0 w-full justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
+                              )}
+                            >
+                              {reviewLoading ? 'Updating...' : 'Reject'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSetReviewStatus('Pending')}
+                              disabled={reviewLoading || !company.isActive}
+                              className={classNames(
+                                buttonBase,
+                                'min-w-0 w-full justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
+                              )}
+                            >
+                              {reviewLoading ? 'Updating...' : 'Request changes'}
+                            </button>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => handleSetReviewStatus('Approved')}
-                            disabled={reviewLoading || !company.isActive}
+                            onClick={() => openSubmitToMnosModal()}
+                            disabled={
+                              reviewLoading || submitToMnosLoading || !company.isActive
+                            }
                             className={classNames(
                               buttonBase,
-                              'min-w-[96px] justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                              'w-full mt-5 justify-center border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] text-white shadow-sm hover:bg-[var(--brand-color-1)]',
                             )}
                           >
-                            {reviewLoading ? 'Updating...' : 'Approve'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSetReviewStatus('Rejected')}
-                            disabled={reviewLoading || !company.isActive}
-                            className={classNames(
-                              buttonBase,
-                              'min-w-[96px] justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
-                            )}
-                          >
-                            {reviewLoading ? 'Updating...' : 'Reject'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSetReviewStatus('Pending')}
-                            disabled={reviewLoading || !company.isActive}
-                            className={classNames(
-                              buttonBase,
-                              'min-w-[96px] justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
-                            )}
-                          >
-                            {reviewLoading ? 'Updating...' : 'Request changes'}
+                            {submitToMnosLoading ? 'Submitting…' : 'Submit to MNOs'}
                           </button>
                         </div>
                         {reviewStatus === 'Rejected' && company.reviewReason ? (
@@ -1829,6 +1993,223 @@ export default function CompanyDetailsPage() {
                   >
                     Open in new tab
                   </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {submitToMnosModalOpen && company ? (
+          <div
+            className="fixed inset-0 z-[86] flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-[1px]"
+            role="presentation"
+            onClick={closeSubmitToMnosModal}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="submit-to-mnos-modal-title"
+              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                <div>
+                  <h2 id="submit-to-mnos-modal-title" className="text-base font-semibold text-slate-900">
+                    Submit to MNOs
+                  </h2>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Step {submitToMnosStep}
+                    {submitToMnosStep === 1
+                      ? ' — Select MNOs'
+                      : submitToMnosStep === 2
+                        ? ' — Submission type'
+                        : ' — Letter & recipient'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSubmitToMnosModal}
+                  className="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+                {submitToMnosStep === 1 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-600">
+                      Choose one or more mobile network operators to include in this submission.
+                    </p>
+                    <div className="space-y-2">
+                      {networkRows.map((row) => (
+                        <label
+                          key={row.key}
+                          className={classNames(
+                            'flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition',
+                            submitToMnosNetworks[row.key]
+                              ? 'border-[var(--admin-ui-accent)] bg-[color-mix(in_srgb,var(--admin-ui-accent)_8%,transparent)]'
+                              : 'border-slate-200 hover:border-slate-300',
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={submitToMnosNetworks[row.key]}
+                            onChange={() =>
+                              setSubmitToMnosNetworks((prev) => ({
+                                ...prev,
+                                [row.key]: !prev[row.key],
+                              }))
+                            }
+                            className="h-4 w-4 rounded border-slate-300 text-[var(--admin-ui-accent)]"
+                          />
+                          <img
+                            src={row.logoSrc}
+                            alt=""
+                            className="h-8 w-8 shrink-0 rounded-full border border-slate-200 bg-white object-contain"
+                          />
+                          <span className="text-sm font-medium text-slate-800">{row.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {submitToMnosStep === 2 ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-600">How should this submission be delivered?</p>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitToMnosSubmissionType('review-dashboard')
+                          if (submitToMnosStepError) setSubmitToMnosStepError('')
+                        }}
+                        className={classNames(
+                          'w-full rounded-xl border px-4 py-3 text-left transition',
+                          submitToMnosSubmissionType === 'review-dashboard'
+                            ? 'border-[var(--admin-ui-accent)] ring-2 ring-[var(--admin-ui-accent)]/25'
+                            : 'border-slate-200 hover:border-slate-300',
+                        )}
+                      >
+                        <span className="block text-sm font-semibold text-slate-900">
+                          Submit to MNO review dashboard
+                        </span>
+                        <span className="mt-1 block text-xs text-slate-600">
+                          Send this company’s sender ID details to the operator review dashboard.
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitToMnosSubmissionType('generated-letter')
+                          if (submitToMnosStepError) setSubmitToMnosStepError('')
+                        }}
+                        className={classNames(
+                          'w-full rounded-xl border px-4 py-3 text-left transition',
+                          submitToMnosSubmissionType === 'generated-letter'
+                            ? 'border-[var(--admin-ui-accent)] ring-2 ring-[var(--admin-ui-accent)]/25'
+                            : 'border-slate-200 hover:border-slate-300',
+                        )}
+                      >
+                        <span className="block text-sm font-semibold text-slate-900">
+                          Submit generated letter
+                        </span>
+                        <span className="mt-1 block text-xs text-slate-600">
+                          Continue to letter preview and email the letter to a recipient.
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {submitToMnosStep === 3 ? (
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Letter preview
+                      </h3>
+                      <pre className="mt-2 max-h-[40vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800">
+                        {submitToMnosLetterPreview}
+                      </pre>
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Email recipient details
+                      </h3>
+                      <div className="space-y-2">
+                        <label htmlFor="mno-letter-recipient-name" className="sr-only">
+                          Recipient name
+                        </label>
+                        <input
+                          id="mno-letter-recipient-name"
+                          type="text"
+                          value={submitToMnosRecipientName}
+                          onChange={(e) => {
+                            setSubmitToMnosRecipientName(e.target.value)
+                            if (submitToMnosStepError) setSubmitToMnosStepError('')
+                          }}
+                          placeholder="Recipient name (optional)"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                          autoComplete="name"
+                        />
+                        <label htmlFor="mno-letter-recipient-email" className="sr-only">
+                          Recipient email
+                        </label>
+                        <input
+                          id="mno-letter-recipient-email"
+                          type="email"
+                          value={submitToMnosRecipientEmail}
+                          onChange={(e) => {
+                            setSubmitToMnosRecipientEmail(e.target.value)
+                            if (submitToMnosStepError) setSubmitToMnosStepError('')
+                          }}
+                          placeholder="Recipient email (required)"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                          autoComplete="email"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {submitToMnosStepError ? (
+                  <p className="mt-3 text-sm font-medium text-red-600" role="alert">
+                    {submitToMnosStepError}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={submitToMnosGoBack}
+                  disabled={submitToMnosLoading}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  {submitToMnosStep === 1 ? 'Cancel' : 'Back'}
+                </button>
+                <div className="flex gap-2">
+                  {submitToMnosStep === 3 ? (
+                    <button
+                      type="button"
+                      onClick={() => void executeSubmitToMnos()}
+                      disabled={submitToMnosLoading}
+                      className="rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--brand-color-1)] disabled:opacity-50"
+                    >
+                      {submitToMnosLoading ? 'Submitting…' : 'Submit'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={submitToMnosGoNext}
+                      disabled={submitToMnosLoading}
+                      className="rounded-lg border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--brand-color-1)] disabled:opacity-50"
+                    >
+                      {submitToMnosLoading ? 'Submitting…' : 'Continue'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
