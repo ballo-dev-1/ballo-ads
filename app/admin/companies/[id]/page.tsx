@@ -48,7 +48,6 @@ import { notifyBackofficeEvent } from '@/lib/notifications/client'
 import CompanyAnalyticsPanel, {
   type CompanyOverviewSnapshot,
 } from '@/app/admin/companies/[id]/components/CompanyAnalyticsPanel'
-import LetterOfConsentBackendPreview from '@/app/components/letter-of-consent/LetterOfConsentBackendPreview'
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -826,24 +825,31 @@ export default function CompanyDetailsPage() {
     setSubmitToMnosModalOpen(true)
   }
 
-  const submitToMnosLetterPayload = useMemo(() => {
-    if (!company) return null
-    const networks = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const)
-      .filter((k) => submitToMnosNetworks[k])
-      .map((k) => String(k))
-    return {
-      companyId: company.id,
-      companyName: company.name,
-      senderId: company.senderId,
-      networks: networks.length ? networks : ['Mtn'],
-      physicalAddress: company.physicalAddress,
-      phoneNumber: company.phoneNumber,
-      email: company.email,
-      websiteUrl: company.websiteUrl,
-      description: company.description,
-      industry: company.industry,
-      submittedAt: new Date().toISOString(),
+  const submitToMnosLetterPreview = useMemo(() => {
+    if (!company) return ''
+    const labels: Record<NetworkKey, string> = {
+      Mtn: 'MTN',
+      Airtel: 'Airtel',
+      Zamtel: 'Zamtel',
+      Zedmobile: 'Zedmobile',
     }
+    const selected = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const)
+      .filter((k) => submitToMnosNetworks[k])
+      .map((k) => labels[k])
+    return [
+      '[Generated letter — preview]',
+      '',
+      'To whom it may concern,',
+      '',
+      `Re: Sender ID registration — ${company.name ?? 'Company'}`,
+      '',
+      `Sender ID: ${company.senderId ?? '—'}`,
+      `Requested MNOs: ${selected.length ? selected.join(', ') : '—'}`,
+      '',
+      'This letter is generated for MNO review. A PDF or formal template can be attached when the export pipeline is connected.',
+      '',
+      `Company contact email: ${company.email ?? '—'}`,
+    ].join('\n')
   }, [company, submitToMnosNetworks])
 
   const executeSubmitToMnos = async () => {
@@ -880,26 +886,6 @@ export default function CompanyDetailsPage() {
       const updated = await adminApi.submitCompanyToMnos(company.id, payload)
       setCompany((prev) => (prev ? { ...prev, ...updated } : null))
       if (submissionType === 'review-dashboard') {
-        void fetch('/api/mtn-review/submissions', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            companyId: company.id,
-            companyName: company.name,
-            senderId: company.senderId,
-            networks,
-            registrationDocumentUrl: company.registrationDocumentUrl,
-            signatureImageUrl: company.signatureImageUrl,
-            profileImageUrl: company.profileImageUrl,
-            email: company.email,
-            phoneNumber: company.phoneNumber,
-            physicalAddress: company.physicalAddress,
-            industry: company.industry,
-            description: company.description,
-            websiteUrl: company.websiteUrl,
-          }),
-        }).catch(() => undefined)
         toast.success(
           (t) => (
             <div className="text-sm">
@@ -1691,7 +1677,7 @@ export default function CompanyDetailsPage() {
                                       <img
                                         src={item.logoSrc}
                                         alt={`${item.label} logo`}
-                                        className="h-5 w-5 rounded-full object overflow-visible"
+                                        className="h-5 w-5 rounded-full border border-slate-200 object-contain bg-white"
                                       />
                                       <span className="font-medium">{item.label}</span>
                                     </a>
@@ -2156,14 +2142,13 @@ export default function CompanyDetailsPage() {
 
                 {submitToMnosStep === 3 ? (
                   <div className="space-y-4">
-                    <div className="max-h-[52vh] overflow-y-auto pr-1">
-                      {submitToMnosLetterPayload && company ? (
-                        <LetterOfConsentBackendPreview
-                          payload={submitToMnosLetterPayload}
-                          compact
-                          downloadFileNamePrefix={`company-${company.id}`}
-                        />
-                      ) : null}
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Letter preview
+                      </h3>
+                      <pre className="mt-2 max-h-[40vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800">
+                        {submitToMnosLetterPreview}
+                      </pre>
                     </div>
                     <div className="space-y-3">
                       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
