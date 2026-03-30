@@ -6,6 +6,10 @@ import {
   ADMIN_TOKEN_COOKIE,
 } from "@/lib/adminAuth";
 import { getAdminBasePath, getAdminEnvFromPathname } from "@/lib/adminNamespace";
+import {
+  MTN_REVIEW_SESSION_COOKIE,
+  MTN_REVIEW_SESSION_VALUE,
+} from "@/lib/mtnReviewAuth";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -70,9 +74,34 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  const isMtnReviewRoot = pathname === "/mtn-review";
+  const isMtnReviewNested = pathname.startsWith("/mtn-review/");
+  const isMtnLogin = pathname === "/mtn-review/login";
+  if (isMtnReviewRoot || isMtnReviewNested) {
+    const mtnSession = request.cookies.get(MTN_REVIEW_SESSION_COOKIE)?.value;
+    const mtnAuthed = mtnSession === MTN_REVIEW_SESSION_VALUE;
+    if (isMtnLogin) {
+      if (mtnAuthed) {
+        return NextResponse.redirect(new URL("/mtn-review", request.url));
+      }
+      return NextResponse.next();
+    }
+    if (!mtnAuthed) {
+      const login = new URL("/mtn-review/login", request.url);
+      login.searchParams.set("return", pathname);
+      return NextResponse.redirect(login);
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/dev-admin/:path*", "/staging-admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/dev-admin/:path*",
+    "/staging-admin/:path*",
+    "/mtn-review",
+    "/mtn-review/:path*",
+  ],
 };
