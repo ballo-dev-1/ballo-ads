@@ -317,6 +317,8 @@ export default function CompanyDetailsPage() {
   >(null)
   const [submitToMnosRecipientEmail, setSubmitToMnosRecipientEmail] = useState('')
   const [submitToMnosRecipientName, setSubmitToMnosRecipientName] = useState('')
+  const [submitToMnosCcRaw, setSubmitToMnosCcRaw] = useState('')
+  const [submitToMnosBccRaw, setSubmitToMnosBccRaw] = useState('')
   const [submitToMnosStepError, setSubmitToMnosStepError] = useState('')
   const { confirm, confirmDialog } = useConfirmDialog()
 
@@ -821,6 +823,8 @@ export default function CompanyDetailsPage() {
     setSubmitToMnosSubmissionType(null)
     setSubmitToMnosRecipientEmail((company.email ?? '').trim())
     setSubmitToMnosRecipientName('')
+    setSubmitToMnosCcRaw('')
+    setSubmitToMnosBccRaw('')
     setSubmitToMnosStepError('')
     setSubmitToMnosModalOpen(true)
   }
@@ -868,9 +872,27 @@ export default function CompanyDetailsPage() {
     }
     const emailTrim = submitToMnosRecipientEmail.trim()
     const nameTrim = submitToMnosRecipientName.trim()
+    const cc = submitToMnosCcRaw
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean)
+    const bcc = submitToMnosBccRaw
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean)
+    const hasInvalidCc = cc.some((x) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x))
+    const hasInvalidBcc = bcc.some((x) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x))
     if (submissionType === 'generated-letter') {
       if (!emailTrim || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
         setSubmitToMnosStepError('Enter a valid recipient email.')
+        return
+      }
+      if (hasInvalidCc) {
+        setSubmitToMnosStepError('Enter valid CC email addresses (comma-separated).')
+        return
+      }
+      if (hasInvalidBcc) {
+        setSubmitToMnosStepError('Enter valid BCC email addresses (comma-separated).')
         return
       }
     }
@@ -878,7 +900,12 @@ export default function CompanyDetailsPage() {
       networks,
       submissionType,
       ...(submissionType === 'generated-letter'
-        ? { recipientEmail: emailTrim, recipientName: nameTrim || undefined }
+        ? {
+            recipientEmail: emailTrim,
+            recipientName: nameTrim || undefined,
+            cc: cc.length > 0 ? cc : undefined,
+            bcc: bcc.length > 0 ? bcc : undefined,
+          }
         : {}),
     }
     setSubmitToMnosLoading(true)
@@ -2184,6 +2211,36 @@ export default function CompanyDetailsPage() {
                           placeholder="Recipient email (required)"
                           className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
                           autoComplete="email"
+                        />
+                        <label htmlFor="mno-letter-recipient-cc" className="sr-only">
+                          CC email addresses
+                        </label>
+                        <input
+                          id="mno-letter-recipient-cc"
+                          type="text"
+                          value={submitToMnosCcRaw}
+                          onChange={(e) => {
+                            setSubmitToMnosCcRaw(e.target.value)
+                            if (submitToMnosStepError) setSubmitToMnosStepError('')
+                          }}
+                          placeholder="CC emails (comma-separated, optional)"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                          autoComplete="off"
+                        />
+                        <label htmlFor="mno-letter-recipient-bcc" className="sr-only">
+                          BCC email addresses
+                        </label>
+                        <input
+                          id="mno-letter-recipient-bcc"
+                          type="text"
+                          value={submitToMnosBccRaw}
+                          onChange={(e) => {
+                            setSubmitToMnosBccRaw(e.target.value)
+                            if (submitToMnosStepError) setSubmitToMnosStepError('')
+                          }}
+                          placeholder="BCC emails (comma-separated, optional)"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                          autoComplete="off"
                         />
                       </div>
                     </div>

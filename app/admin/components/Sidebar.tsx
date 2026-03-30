@@ -14,6 +14,7 @@ import {
   Receipt,
   PlugZap,
   Activity,
+  Settings,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -68,6 +69,7 @@ export default function Sidebar() {
     { label: 'SMS Providers', suffix: '/sms-providers', icon: Megaphone, isActive: activeStartsWith('/sms-providers') },
     { label: 'API Management', suffix: '/api-management', icon: PlugZap, isActive: activeStartsWith('/api-management') },
     { label: 'APM & Reliability', suffix: '/apm', icon: Activity, isActive: activeStartsWith('/apm') },
+    { label: 'Settings', suffix: '/settings/mno-sender-id-email', icon: Settings, isActive: activeStartsWith('/settings') },
   ]
 
   if (isLoginPage) {

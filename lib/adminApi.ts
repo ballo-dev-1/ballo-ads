@@ -572,6 +572,8 @@ export type SubmitCompanyToMnosPayload = {
   submissionType: "review-dashboard" | "generated-letter";
   recipientEmail?: string;
   recipientName?: string;
+  cc?: string[];
+  bcc?: string[];
 };
 
 export type CompanyMemberRole = "Member" | "Admin" | "SuperAdmin";
@@ -668,11 +670,15 @@ export type PlatformSettingsResponse = {
   id?: number;
   requireCampaignApproval: boolean;
   requireSenderIdApproval: boolean;
+  mnoSenderIdRequestReplyToEmailPrimary: string;
+  mnoSenderIdRequestReplyToEmailSecondary: string;
 };
 
 export type PlatformSettingsUpdateRequest = {
   requireCampaignApproval?: boolean;
   requireSenderIdApproval?: boolean;
+  mnoSenderIdRequestReplyToEmailPrimary?: string;
+  mnoSenderIdRequestReplyToEmailSecondary?: string;
 };
 
 export type PricingModelResponse = {
@@ -2581,6 +2587,14 @@ export const adminApi = {
       requireSenderIdApproval: Boolean(
         (result.RequireSenderIdApproval ?? result.requireSenderIdApproval) ?? true,
       ),
+      mnoSenderIdRequestReplyToEmailPrimary: String(
+        (result.MnoSenderIdRequestReplyToEmailPrimary ?? result.mnoSenderIdRequestReplyToEmailPrimary) ??
+          "george.m@balloinnovations.com",
+      ),
+      mnoSenderIdRequestReplyToEmailSecondary: String(
+        (result.MnoSenderIdRequestReplyToEmailSecondary ?? result.mnoSenderIdRequestReplyToEmailSecondary) ??
+          "lombe.lusale@balloinnovations.com",
+      ),
     } satisfies PlatformSettingsResponse;
   },
 
@@ -2603,6 +2617,14 @@ export const adminApi = {
       ),
       requireSenderIdApproval: Boolean(
         (result.RequireSenderIdApproval ?? result.requireSenderIdApproval) ?? true,
+      ),
+      mnoSenderIdRequestReplyToEmailPrimary: String(
+        (result.MnoSenderIdRequestReplyToEmailPrimary ?? result.mnoSenderIdRequestReplyToEmailPrimary) ??
+          "george.m@balloinnovations.com",
+      ),
+      mnoSenderIdRequestReplyToEmailSecondary: String(
+        (result.MnoSenderIdRequestReplyToEmailSecondary ?? result.mnoSenderIdRequestReplyToEmailSecondary) ??
+          "lombe.lusale@balloinnovations.com",
       ),
     } satisfies PlatformSettingsResponse;
   },
