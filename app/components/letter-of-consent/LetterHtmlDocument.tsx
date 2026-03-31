@@ -1,17 +1,15 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
-import { Download, Printer } from 'lucide-react'
+import { Printer } from 'lucide-react'
 
 type Props = {
   html: string
-  /** Used for downloaded .html filename */
-  fileNamePrefix?: string
   /** Tighter chrome for modals */
   compact?: boolean
 }
 
-export default function LetterHtmlDocument({ html, fileNamePrefix, compact }: Props) {
+export default function LetterHtmlDocument({ html, compact }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const handlePrint = useCallback(() => {
@@ -38,17 +36,6 @@ export default function LetterHtmlDocument({ html, fileNamePrefix, compact }: Pr
     })
   }, [])
 
-  const handleDownloadHtml = useCallback(() => {
-    const safe = (fileNamePrefix || 'letter-of-consent').replace(/[^a-z0-9-_]/gi, '_')
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${safe}.html`
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [html, fileNamePrefix])
-
   const h = compact ? 'min-h-[280px]' : 'min-h-[480px]'
 
   return (
@@ -65,14 +52,6 @@ export default function LetterHtmlDocument({ html, fileNamePrefix, compact }: Pr
           >
             <Printer className="h-4 w-4" />
             Print / Save as PDF
-          </button>
-          <button
-            type="button"
-            onClick={handleDownloadHtml}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
-          >
-            <Download className="h-4 w-4" />
-            Download HTML
           </button>
         </div>
       </div>

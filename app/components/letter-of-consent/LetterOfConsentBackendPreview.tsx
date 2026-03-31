@@ -6,13 +6,11 @@ import LetterHtmlDocument from '@/app/components/letter-of-consent/LetterHtmlDoc
 
 type Props = {
   payload: LetterPreviewRequestBody
-  downloadFileNamePrefix?: string
   compact?: boolean
 }
 
 export default function LetterOfConsentBackendPreview({
   payload,
-  downloadFileNamePrefix,
   compact,
 }: Props) {
   const [html, setHtml] = useState<string | null>(null)
@@ -77,11 +75,5 @@ export default function LetterOfConsentBackendPreview({
 
   if (!html) return null
 
-  return (
-    <LetterHtmlDocument
-      html={html}
-      fileNamePrefix={downloadFileNamePrefix}
-      compact={compact}
-    />
-  )
+  return <LetterHtmlDocument html={html} compact={compact} />
 }

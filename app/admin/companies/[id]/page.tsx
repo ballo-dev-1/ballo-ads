@@ -45,6 +45,7 @@ import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 import { notifyBackofficeEvent } from '@/lib/notifications/client'
+import LetterOfConsentBackendPreview from '@/app/components/letter-of-consent/LetterOfConsentBackendPreview'
 import CompanyAnalyticsPanel, {
   type CompanyOverviewSnapshot,
 } from '@/app/admin/companies/[id]/components/CompanyAnalyticsPanel'
@@ -829,32 +830,41 @@ export default function CompanyDetailsPage() {
     setSubmitToMnosModalOpen(true)
   }
 
-  const submitToMnosLetterPreview = useMemo(() => {
+  const selectedSubmitToMnosNetworks = useMemo(
+    () => (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const).filter((k) => submitToMnosNetworks[k]),
+    [submitToMnosNetworks],
+  )
+
+  const submitToMnosEmailPreview = useMemo(() => {
     if (!company) return ''
-    const labels: Record<NetworkKey, string> = {
-      Mtn: 'MTN',
-      Airtel: 'Airtel',
-      Zamtel: 'Zamtel',
-      Zedmobile: 'Zedmobile',
-    }
-    const selected = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const)
-      .filter((k) => submitToMnosNetworks[k])
-      .map((k) => labels[k])
+    const selected =
+      selectedSubmitToMnosNetworks.length > 0
+        ? selectedSubmitToMnosNetworks
+            .map((network) => {
+              if (network === 'Mtn') return 'MTN'
+              if (network === 'Airtel') return 'Airtel'
+              if (network === 'Zamtel') return 'Zamtel'
+              return 'Zedmobile'
+            })
+            .join(', ')
+        : 'MTN'
+    const senderId = company.senderId ?? 'N/A'
+    const companyName = company.name ?? 'the client company'
     return [
-      '[Generated letter — preview]',
+      `Subject: Sender ID approval request — ${senderId}`,
       '',
-      'To whom it may concern,',
+      'Dear MTN Team,',
       '',
-      `Re: Sender ID registration — ${company.name ?? 'Company'}`,
+      `Please assist with approval of sender ID "${senderId}" for ${companyName} for our BalloAds SMPP account (Source IP: 167.172.100.128).`,
       '',
-      `Sender ID: ${company.senderId ?? '—'}`,
-      `Requested MNOs: ${selected.length ? selected.join(', ') : '—'}`,
+      'Please find attached the client consent letter for your review and approval.',
+      'Kindly proceed with approval and share confirmation once completed.',
       '',
-      'This letter is generated for MNO review. A PDF or formal template can be attached when the export pipeline is connected.',
-      '',
-      `Company contact email: ${company.email ?? '—'}`,
+      'Regards,',
+      'Ballo Ads Team',
+      company.email ? `Company contact: ${company.email}` : '',
     ].join('\n')
-  }, [company, submitToMnosNetworks])
+  }, [company, selectedSubmitToMnosNetworks])
 
   const executeSubmitToMnos = async () => {
     if (!company) return
@@ -863,10 +873,8 @@ export default function CompanyDetailsPage() {
       setSubmitToMnosStepError('Select a submission type.')
       return
     }
-    const networks = (['Mtn', 'Airtel', 'Zamtel', 'Zedmobile'] as const).filter(
-      (k) => submitToMnosNetworks[k],
-    )
-    if (networks.length === 0) {
+    const networks = selectedSubmitToMnosNetworks
+    if (selectedSubmitToMnosNetworks.length === 0) {
       setSubmitToMnosStepError('Select at least one MNO.')
       return
     }
@@ -2171,11 +2179,35 @@ export default function CompanyDetailsPage() {
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Email preview
+                      </h3>
+                      <pre className="mt-2 max-h-[28vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800">
+                        {submitToMnosEmailPreview}
+                      </pre>
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Letter preview
                       </h3>
-                      <pre className="mt-2 max-h-[40vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800">
-                        {submitToMnosLetterPreview}
-                      </pre>
+                      <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <LetterOfConsentBackendPreview
+                          payload={{
+                            companyId: company.id,
+                            companyName: company.name,
+                            senderId: company.senderId,
+                            networks: selectedSubmitToMnosNetworks.length
+                              ? selectedSubmitToMnosNetworks
+                              : ['Mtn'],
+                            physicalAddress: company.physicalAddress,
+                            phoneNumber: company.phoneNumber,
+                            email: company.email,
+                            websiteUrl: company.websiteUrl,
+                            description: company.description,
+                            industry: company.industry,
+                          }}
+                          compact
+                        />
+                      </div>
                     </div>
                     <div className="space-y-3">
                       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">

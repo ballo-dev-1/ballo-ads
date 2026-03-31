@@ -6,10 +6,11 @@ import { adminApi, type TumaniBalanceResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 import MtnWhitelistedSenderIdsPanel from '@/app/admin/components/MtnWhitelistedSenderIdsPanel'
+import MtnReviewerApprovalsPanel from '@/app/admin/components/MtnReviewerApprovalsPanel'
 import SmsProviderRoutesPanel from '@/app/admin/components/SmsProviderRoutesPanel'
 
 type SmsProviderTab = 'tumani' | 'mtn' | 'routes'
-type MtnInnerTab = 'whitelisted'
+type MtnInnerTab = 'whitelisted' | 'reviewers'
 
 export default function SmsProvidersClient() {
   const { env } = useApiEnv()
@@ -41,6 +42,11 @@ export default function SmsProvidersClient() {
     if (mtnTab === 'whitelisted') {
       setActiveTab('mtn')
       setActiveMtnInnerTab('whitelisted')
+      return
+    }
+    if (mtnTab === 'reviewers') {
+      setActiveTab('mtn')
+      setActiveMtnInnerTab('reviewers')
       return
     }
   }, [searchParams])
@@ -134,11 +140,22 @@ export default function SmsProvidersClient() {
               >
                 Whitelisted sender IDs
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeMtnInnerTab === 'reviewers'}
+                onClick={() => setActiveMtnInnerTab('reviewers')}
+                className={`admin-tab-bar__tab ${activeMtnInnerTab === 'reviewers' ? 'admin-tab-bar__tab--active' : ''}`}
+              >
+                Reviewer approvals
+              </button>
             </div>
 
             {activeMtnInnerTab === 'whitelisted' ? (
               <MtnWhitelistedSenderIdsPanel />
-            ) : null}
+            ) : (
+              <MtnReviewerApprovalsPanel />
+            )}
           </section>
         ) : (
           <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5 space-y-4">

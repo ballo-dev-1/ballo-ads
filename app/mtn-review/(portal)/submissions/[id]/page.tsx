@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, ExternalLink } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import LetterHtmlDocument from '@/app/components/letter-of-consent/LetterHtmlDocument'
 import LetterOfConsentBackendPreview from '@/app/components/letter-of-consent/LetterOfConsentBackendPreview'
 
@@ -67,7 +67,7 @@ function DocCard({
           Open <ExternalLink className="h-3 w-3" />
         </a>
       </div>
-      <div className="h-64 bg-slate-50">
+      <div className="h-[360px] bg-slate-50 sm:h-[440px] lg:h-[560px]">
         {kind === 'image' ? (
           // eslint-disable-next-line @next/next/no-img-element -- external MNO URLs
           <img src={url} alt="" className="h-full w-full object-contain" />
@@ -86,6 +86,8 @@ export default function MtnReviewSubmissionDetailPage() {
   const [row, setRow] = useState<Submission | null>(null)
   const [error, setError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'documents' | 'letter'>('documents')
+  const [activeDocIndex, setActiveDocIndex] = useState(0)
 
   const load = useCallback(() => {
     if (!id) return
@@ -128,6 +130,43 @@ export default function MtnReviewSubmissionDetailPage() {
     }
   }
 
+  const pending = row?.status === 'pending'
+  const documents = useMemo(
+    () =>
+      row
+        ? [
+            {
+              id: 'registration',
+              title: 'Registration document',
+              url: row.registrationDocumentUrl,
+              kind: row.registrationDocumentUrl ? docKindFromUrl(row.registrationDocumentUrl) : 'pdf',
+            },
+            {
+              id: 'signature',
+              title: 'Signature (authorized signatory)',
+              url: row.signatureImageUrl,
+              kind: 'image' as const,
+            },
+            {
+              id: 'profile',
+              title: 'Company logo / profile',
+              url: row.profileImageUrl,
+              kind: 'image' as const,
+            },
+          ].filter((doc) => Boolean(doc.url))
+        : [],
+    [row],
+  )
+  const currentDocument = documents[activeDocIndex] ?? null
+
+  useEffect(() => {
+    if (documents.length === 0) {
+      setActiveDocIndex(0)
+      return
+    }
+    setActiveDocIndex((prev) => Math.min(prev, documents.length - 1))
+  }, [documents.length])
+
   if (error && !row) {
     return (
       <div className="space-y-4">
@@ -146,7 +185,8 @@ export default function MtnReviewSubmissionDetailPage() {
     return <p className="text-sm text-slate-600">Loading…</p>
   }
 
-  const pending = row.status === 'pending'
+  const letterGenerationError = row.letterGenerationError
+  const showStoredLetterHtml = Boolean(row.letterHtml && !letterGenerationError)
 
   return (
     <div className="space-y-8">
@@ -198,28 +238,45 @@ export default function MtnReviewSubmissionDetailPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           Company details
         </h2>
-        <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-slate-500">Industry</dt>
-            <dd className="font-medium text-slate-900">{row.industry ?? '—'}</dd>
+
+        <dl className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Industry</dt>
+            <dd className="text-sm font-medium text-slate-900">{row.industry ?? '—'}</dd>
           </div>
-          <div>
-            <dt className="text-slate-500">Email</dt>
-            <dd className="font-medium text-slate-900">{row.email ?? '—'}</dd>
+          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Email</dt>
+            <dd className="text-sm font-medium text-slate-900 break-words">
+              {row.email ? (
+                <a className="text-sky-700 hover:underline" href={`mailto:${row.email}`}>
+                  {row.email}
+                </a>
+              ) : (
+                '—'
+              )}
+            </dd>
           </div>
-          <div>
-            <dt className="text-slate-500">Phone</dt>
-            <dd className="font-medium text-slate-900">{row.phoneNumber ?? '—'}</dd>
+          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Phone</dt>
+            <dd className="text-sm font-medium text-slate-900">
+              {row.phoneNumber ? (
+                <a className="text-sky-700 hover:underline" href={`tel:${row.phoneNumber}`}>
+                  {row.phoneNumber}
+                </a>
+              ) : (
+                '—'
+              )}
+            </dd>
           </div>
-          <div className="sm:col-span-2">
-            <dt className="text-slate-500">Address</dt>
-            <dd className="font-medium text-slate-900">{row.physicalAddress ?? '—'}</dd>
+          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-start">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Address</dt>
+            <dd className="text-sm font-medium text-slate-900">{row.physicalAddress ?? '—'}</dd>
           </div>
-          <div className="sm:col-span-2">
-            <dt className="text-slate-500">Website</dt>
-            <dd className="font-medium text-slate-900">
+          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Website</dt>
+            <dd className="text-sm font-medium text-slate-900 break-all">
               {row.websiteUrl ? (
-                <a href={row.websiteUrl} className="text-sky-600 hover:underline" target="_blank" rel="noreferrer">
+                <a href={row.websiteUrl} className="text-sky-700 hover:underline" target="_blank" rel="noreferrer">
                   {row.websiteUrl}
                 </a>
               ) : (
@@ -227,66 +284,159 @@ export default function MtnReviewSubmissionDetailPage() {
               )}
             </dd>
           </div>
+          <div className="grid gap-2 px-4 py-3 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Networks</dt>
+            <dd className="text-sm font-medium text-slate-900">
+              {row.networks?.length ? row.networks.join(', ') : '—'}
+            </dd>
+          </div>
         </dl>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Uploaded documents
-        </h2>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <DocCard
-            title="Registration document"
-            url={row.registrationDocumentUrl}
-            kind={
-              row.registrationDocumentUrl
-                ? docKindFromUrl(row.registrationDocumentUrl)
-                : 'pdf'
-            }
-          />
-          <DocCard title="Signature (authorized signatory)" url={row.signatureImageUrl} kind="image" />
-          {row.profileImageUrl ? (
-            <DocCard title="Company logo / profile" url={row.profileImageUrl} kind="image" />
-          ) : null}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="border-b border-slate-200 pb-3">
+          <div
+            role="tablist"
+            aria-label="Submission content sections"
+            className="flex flex-wrap items-center gap-2"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'documents'}
+              aria-controls="submission-documents-panel"
+              id="submission-documents-tab"
+              onClick={() => setActiveTab('documents')}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                activeTab === 'documents'
+                  ? 'border-sky-300 bg-sky-50 text-sky-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
+              }`}
+            >
+              Uploaded documents
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'letter'}
+              aria-controls="submission-letter-panel"
+              id="submission-letter-tab"
+              onClick={() => setActiveTab('letter')}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                activeTab === 'letter'
+                  ? 'border-sky-300 bg-sky-50 text-sky-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
+              }`}
+            >
+              Letter / consent
+            </button>
+          </div>
         </div>
-      </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Letter / consent
-        </h2>
-        <p className="mt-2 text-xs text-slate-600">
-          Formal letter generated from submitted company details. Recipient and body adapt to the
-          primary selected MNO (first network on the submission).
-        </p>
-        <div className="mt-4 space-y-2">
-          {row.letterGenerationError ? (
-            <p className="text-xs text-amber-800">
-              Letter samples were not generated automatically ({row.letterGenerationError}). The
-              preview may use placeholder SMS lines.
+        {activeTab === 'documents' ? (
+          <div
+            id="submission-documents-panel"
+            role="tabpanel"
+            aria-labelledby="submission-documents-tab"
+            className="space-y-4 pt-5"
+          >
+            <p className="text-xs text-slate-600">
+              Review documents attached to this submission before taking action.
             </p>
-          ) : null}
-          {row.letterHtml ? (
-            <LetterHtmlDocument html={row.letterHtml} fileNamePrefix={row.id} />
-          ) : (
-            <LetterOfConsentBackendPreview
-              payload={{
-                companyId: row.companyId,
-                companyName: row.companyName,
-                senderId: row.senderId,
-                networks: row.networks?.length ? row.networks : ['Mtn'],
-                physicalAddress: row.physicalAddress,
-                phoneNumber: row.phoneNumber,
-                email: row.email,
-                websiteUrl: row.websiteUrl,
-                description: row.description,
-                industry: row.industry,
-                submittedAt: row.submittedAt,
-              }}
-              downloadFileNamePrefix={row.id}
-            />
-          )}
-        </div>
+            {currentDocument ? (
+              <div className="space-y-3">
+                <DocCard title={currentDocument.title} url={currentDocument.url} kind={currentDocument.kind} />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-xs text-slate-500">
+                    Document {activeDocIndex + 1} of {documents.length}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveDocIndex((prev) => (prev - 1 + documents.length) % documents.length)
+                      }
+                      disabled={documents.length <= 1}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Prev
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveDocIndex((prev) => (prev + 1) % documents.length)}
+                      disabled={documents.length <= 1}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Next
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {documents.length > 1 ? (
+                  <div className="flex items-center gap-2">
+                    {documents.map((doc, idx) => {
+                      const active = idx === activeDocIndex
+                      return (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          onClick={() => setActiveDocIndex(idx)}
+                          aria-label={`View ${doc.title}`}
+                          className={`h-2.5 w-2.5 rounded-full transition ${
+                            active ? 'bg-sky-600' : 'bg-slate-300 hover:bg-slate-400'
+                          }`}
+                        />
+                      )
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-4">
+                <p className="text-sm font-medium text-slate-700">Uploaded documents</p>
+                <p className="mt-1 text-xs text-slate-500">No documents were provided.</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            id="submission-letter-panel"
+            role="tabpanel"
+            aria-labelledby="submission-letter-tab"
+            className="space-y-3 pt-5"
+          >
+            <p className="text-xs text-slate-600">
+              Formal letter generated from submitted company details. Recipient and body adapt to
+              the primary selected MNO (first network on the submission).
+            </p>
+            {letterGenerationError ? (
+              <p className="text-xs text-amber-800">
+                Letter samples were not generated automatically ({letterGenerationError}). The
+                preview may use placeholder SMS lines.
+              </p>
+            ) : null}
+            {showStoredLetterHtml ? (
+              <LetterHtmlDocument html={row.letterHtml} />
+            ) : (
+              <LetterOfConsentBackendPreview
+                payload={{
+                  companyId: row.companyId,
+                  companyName: row.companyName,
+                  senderId: row.senderId,
+                  networks: row.networks?.length ? row.networks : ['Mtn'],
+                  physicalAddress: row.physicalAddress,
+                  phoneNumber: row.phoneNumber,
+                  email: row.email,
+                  websiteUrl: row.websiteUrl,
+                  description: row.description,
+                  industry: row.industry,
+                  submittedAt: row.submittedAt,
+                }}
+              />
+            )}
+          </div>
+        )}
       </section>
     </div>
   )

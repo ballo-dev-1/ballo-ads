@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { ChevronRight, Clock3, Fingerprint, Network } from 'lucide-react'
 
 type Row = {
   id: string
@@ -23,26 +23,58 @@ function statusStyles(status: string) {
   return 'bg-amber-100 text-amber-900 border-amber-200'
 }
 
+function submissionAccent(status: string) {
+  if (status === 'accepted') return 'bg-gradient-to-r from-sky-400 via-cyan-500 to-teal-600'
+  if (status === 'withdrawn') return 'bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-600'
+  return 'bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500'
+}
+
 export default function MtnReviewSubmissionsPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'withdrawn'>(
+    'all',
+  )
 
   useEffect(() => {
+    setLoading(true)
     void fetch('/api/mtn-review/submissions')
       .then((r) => {
         if (!r.ok) throw new Error('unauthorized')
         return r.json()
       })
-      .then((data: { submissions?: Row[] }) => setRows(data.submissions ?? []))
+      .then((data: { submissions?: Row[] }) =>
+        setRows(
+          [...(data.submissions ?? [])].sort(
+            (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+          ),
+        ),
+      )
       .catch(() => setError('Unable to load submissions.'))
+      .finally(() => setLoading(false))
   }, [])
 
+  const counts = useMemo(() => {
+    return {
+      total: rows.length,
+      pending: rows.filter((r) => r.status === 'pending').length,
+      accepted: rows.filter((r) => r.status === 'accepted').length,
+      withdrawn: rows.filter((r) => r.status === 'withdrawn').length,
+    }
+  }, [rows])
+
+  const filteredRows = useMemo(() => {
+    if (statusFilter === 'all') return rows
+    return rows.filter((r) => r.status === statusFilter)
+  }, [rows, statusFilter])
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Submissions</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Submissions</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Open a row to review documents, company details, and accept or withdraw.
+          Open a submission to review documents, company details, and approve or withdraw.
         </p>
       </div>
 
@@ -52,39 +84,101 @@ export default function MtnReviewSubmissionsPage() {
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <ul className="divide-y divide-slate-100">
-          {rows.map((r) => (
-            <li key={r.id}>
+      <div className="space-y-4">
+        <div>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Queue filters
+          </h2>
+          <div className="flex flex-wrap gap-2">
+          {[
+            { key: 'all', label: 'All', count: counts.total },
+            { key: 'pending', label: 'Pending', count: counts.pending },
+            { key: 'accepted', label: 'Accepted', count: counts.accepted },
+            { key: 'withdrawn', label: 'Withdrawn', count: counts.withdrawn },
+          ].map((opt) => {
+            const active = statusFilter === opt.key
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() =>
+                  setStatusFilter(opt.key as 'all' | 'pending' | 'accepted' | 'withdrawn')
+                }
+                className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                  active
+                    ? 'border-sky-300 bg-sky-50 text-sky-700 shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
+                }`}
+              >
+                {opt.label}
+                <span className="rounded-full bg-black/5 px-2 py-0.5 tabular-nums">{opt.count}</span>
+              </button>
+            )
+          })}
+        </div>
+        </div>
+
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {loading ? (
+            <li className="rounded-2xl border border-slate-200/80 bg-white px-4 py-10 text-center text-sm text-slate-500 shadow-sm">
+              Loading submissions…
+            </li>
+          ) : null}
+          {filteredRows.map((r) => (
+            <li
+              key={r.id}
+              className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md"
+            >
+              <div className={`h-1.5 w-full ${submissionAccent(r.status)}`} />
               <Link
                 href={`/mtn-review/submissions/${r.id}`}
-                className="flex items-center gap-4 px-4 py-4 transition hover:bg-slate-50"
+                className="block h-full p-4 transition hover:bg-slate-50/70"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-900">
-                    {r.companyName ?? 'Unknown company'}
-                  </p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Sender ID: {r.senderId ?? '—'} · Networks:{' '}
-                    {r.networks?.length ? r.networks.join(', ') : '—'}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Submitted {new Date(r.submittedAt).toLocaleString()}
-                  </p>
+                <div className="flex min-h-[170px] flex-col">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <p className="line-clamp-2 text-base font-semibold text-slate-900">
+                      {r.companyName ?? 'Unknown company'}
+                    </p>
+                    <span
+                      className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusStyles(r.status)}`}
+                    >
+                      {r.status}
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    <p className="flex items-center gap-1.5 text-xs text-slate-600">
+                      <Fingerprint className="h-3.5 w-3.5 text-slate-400" />
+                      Sender ID:{' '}
+                      <span className="truncate font-medium text-slate-700">{r.senderId ?? '—'}</span>
+                    </p>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-600">
+                      <Network className="h-3.5 w-3.5 text-slate-400" />
+                      Networks:{' '}
+                      <span className="truncate font-medium text-slate-700">
+                        {r.networks?.length ? r.networks.join(', ') : '—'}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <Clock3 className="h-3.5 w-3.5 text-slate-400" />
+                      Submitted {new Date(r.submittedAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center justify-end border-t border-slate-100 pt-3 text-xs font-semibold text-sky-700">
+                    View details
+                    <ChevronRight className="ml-1 h-4 w-4 shrink-0" />
+                  </div>
                 </div>
-                <span
-                  className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusStyles(r.status)}`}
-                >
-                  {r.status}
-                </span>
-                <ChevronRight className="h-5 w-5 shrink-0 text-slate-400" />
               </Link>
             </li>
           ))}
+          {!loading && filteredRows.length === 0 && !error ? (
+            <li className="rounded-2xl border border-slate-200/80 bg-white px-4 py-12 text-center text-sm text-slate-500 shadow-sm">
+              {rows.length === 0
+                ? 'No submissions yet.'
+                : `No ${statusFilter === 'all' ? '' : statusFilter + ' '}submissions found.`}
+            </li>
+          ) : null}
         </ul>
-        {rows.length === 0 && !error ? (
-          <p className="px-4 py-12 text-center text-sm text-slate-500">No submissions yet.</p>
-        ) : null}
       </div>
     </div>
   )

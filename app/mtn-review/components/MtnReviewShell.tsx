@@ -20,7 +20,7 @@ export default function MtnReviewShell({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <aside className="flex w-56 shrink-0 flex-col bg-[#0a1628] text-white">
         <div className="border-b border-white/10 px-4 py-5">
           <p className="text-lg font-bold tracking-tight">Ballo Ads</p>
