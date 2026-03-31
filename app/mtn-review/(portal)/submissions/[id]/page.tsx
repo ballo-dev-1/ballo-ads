@@ -186,7 +186,7 @@ export default function MtnReviewSubmissionDetailPage() {
   }
 
   const letterGenerationError = row.letterGenerationError
-  const showStoredLetterHtml = Boolean(row.letterHtml && !letterGenerationError)
+  const showStoredLetterHtml = Boolean(row.letterHtml)
 
   return (
     <div className="space-y-8">
@@ -417,7 +417,7 @@ export default function MtnReviewSubmissionDetailPage() {
               </p>
             ) : null}
             {showStoredLetterHtml ? (
-              <LetterHtmlDocument html={row.letterHtml} />
+              <LetterHtmlDocument html={row.letterHtml ?? ''} />
             ) : (
               <LetterOfConsentBackendPreview
                 payload={{

@@ -582,6 +582,27 @@ export type SubmitCompanyToMnosPayload = {
   recipientName?: string;
   cc?: string[];
   bcc?: string[];
+  forceRegenerate?: boolean;
+  useStoredSnapshot?: boolean;
+  letterHtmlOverride?: string;
+  emailSubjectOverride?: string;
+  emailBodyHtmlOverride?: string;
+  emailPreviewBody?: string;
+};
+
+export type CompanyMnoSubmissionHistoryItem = {
+  id: string;
+  submittedAt: string;
+  submissionType: string;
+  status: string;
+  networks: string[];
+  submittedRecipientEmail?: string;
+  submittedCc: string[];
+  submittedBcc: string[];
+  submittedEmailSubject?: string;
+  submittedEmailBodyHtml?: string;
+  submittedLetterHtml?: string;
+  submittedByUserId?: number;
 };
 
 export type CompanyMemberRole = "Member" | "Admin" | "SuperAdmin";
@@ -923,6 +944,28 @@ function mapCompanyMemberResponse(r: Record<string, unknown>): CompanyMemberResp
           email: (userRaw.Email ?? userRaw.email) as string | undefined,
         }
       : undefined,
+  };
+}
+
+function mapCompanyMnoSubmissionHistoryItem(
+  r: Record<string, unknown>,
+): CompanyMnoSubmissionHistoryItem {
+  const submittedCcRaw = (r.SubmittedCc ?? r.submittedCc) as unknown;
+  const submittedBccRaw = (r.SubmittedBcc ?? r.submittedBcc) as unknown;
+  const networksRaw = (r.Networks ?? r.networks) as unknown;
+  return {
+    id: String(r.Id ?? r.id ?? ""),
+    submittedAt: String(r.SubmittedAt ?? r.submittedAt ?? ""),
+    submissionType: String(r.SubmissionType ?? r.submissionType ?? "generated-letter"),
+    status: String(r.Status ?? r.status ?? "submitted"),
+    networks: Array.isArray(networksRaw) ? networksRaw.map((x) => String(x)) : [],
+    submittedRecipientEmail: (r.SubmittedRecipientEmail ?? r.submittedRecipientEmail) as string | undefined,
+    submittedCc: Array.isArray(submittedCcRaw) ? submittedCcRaw.map((x) => String(x)) : [],
+    submittedBcc: Array.isArray(submittedBccRaw) ? submittedBccRaw.map((x) => String(x)) : [],
+    submittedEmailSubject: (r.SubmittedEmailSubject ?? r.submittedEmailSubject) as string | undefined,
+    submittedEmailBodyHtml: (r.SubmittedEmailBodyHtml ?? r.submittedEmailBodyHtml) as string | undefined,
+    submittedLetterHtml: (r.SubmittedLetterHtml ?? r.submittedLetterHtml) as string | undefined,
+    submittedByUserId: (r.SubmittedByUserId ?? r.submittedByUserId) as number | undefined,
   };
 }
 
@@ -1842,6 +1885,12 @@ export const adminApi = {
         authToken,
       },
     ).then(mapCompanyLeanResponse),
+
+  getCompanyMnoSubmissions: (companyId: number, authToken?: string) =>
+    request<Record<string, unknown>[]>(
+      `${BACKOFFICE}/companies/${companyId}/mno-submissions`,
+      { authToken },
+    ).then((list) => list.map(mapCompanyMnoSubmissionHistoryItem)),
 
   updateCompanySenderId: (
     companyId: number,

@@ -36,6 +36,7 @@ import {
   type CompanyLeanResponse,
   type CompanyMemberResponse,
   type CompanyMemberRole,
+  type CompanyMnoSubmissionHistoryItem,
   type CompanyReviewStatus,
   type SubmitCompanyToMnosPayload,
 } from '@/lib/adminApi'
@@ -320,7 +321,14 @@ export default function CompanyDetailsPage() {
   const [submitToMnosRecipientName, setSubmitToMnosRecipientName] = useState('')
   const [submitToMnosCcRaw, setSubmitToMnosCcRaw] = useState('')
   const [submitToMnosBccRaw, setSubmitToMnosBccRaw] = useState('')
+  const [submitToMnosEmailSubjectOverride, setSubmitToMnosEmailSubjectOverride] = useState('')
+  const [submitToMnosEmailBodyHtmlOverride, setSubmitToMnosEmailBodyHtmlOverride] = useState('')
+  const [submitToMnosLetterHtmlOverride, setSubmitToMnosLetterHtmlOverride] = useState('')
+  const [submitToMnosPreviewLoading, setSubmitToMnosPreviewLoading] = useState(false)
+  const [submitToMnosDidRegenerate, setSubmitToMnosDidRegenerate] = useState(false)
   const [submitToMnosStepError, setSubmitToMnosStepError] = useState('')
+  const [mnoSubmissionHistory, setMnoSubmissionHistory] = useState<CompanyMnoSubmissionHistoryItem[]>([])
+  const [mnoSubmissionHistoryLoading, setMnoSubmissionHistoryLoading] = useState(false)
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const numericId = id != null ? Number(id) : NaN
@@ -396,6 +404,37 @@ export default function CompanyDetailsPage() {
 
     loadCampaigns()
 
+    return () => {
+      cancelled = true
+    }
+  }, [company, invalidId, env])
+
+  useEffect(() => {
+    if (invalidId || !company) {
+      setMnoSubmissionHistory([])
+      return
+    }
+
+    let cancelled = false
+    const loadHistory = async () => {
+      setMnoSubmissionHistoryLoading(true)
+      try {
+        const data = await adminApi.getCompanyMnoSubmissions(company.id)
+        if (!cancelled) {
+          setMnoSubmissionHistory(data)
+        }
+      } catch {
+        if (!cancelled) {
+          setMnoSubmissionHistory([])
+        }
+      } finally {
+        if (!cancelled) {
+          setMnoSubmissionHistoryLoading(false)
+        }
+      }
+    }
+
+    void loadHistory()
     return () => {
       cancelled = true
     }
@@ -819,13 +858,23 @@ export default function CompanyDetailsPage() {
       toast.error('Cannot submit for a deactivated company')
       return
     }
+    const latestSnapshot = mnoSubmissionHistory[0]
+    const defaultSubject = `Sender ID approval request - ${company.name ?? 'Company'} (${company.senderId?.trim() || 'N/A'})`
     setSubmitToMnosStep(1)
     setSubmitToMnosNetworks({ Mtn: false, Airtel: false, Zamtel: false, Zedmobile: false })
     setSubmitToMnosSubmissionType(null)
-    setSubmitToMnosRecipientEmail((company.email ?? '').trim())
+    setSubmitToMnosRecipientEmail(latestSnapshot?.submittedRecipientEmail?.trim() || (company.email ?? '').trim())
     setSubmitToMnosRecipientName('')
-    setSubmitToMnosCcRaw('')
-    setSubmitToMnosBccRaw('')
+    setSubmitToMnosCcRaw((latestSnapshot?.submittedCc ?? []).join(', '))
+    setSubmitToMnosBccRaw((latestSnapshot?.submittedBcc ?? []).join(', '))
+    setSubmitToMnosEmailSubjectOverride(latestSnapshot?.submittedEmailSubject || defaultSubject)
+    setSubmitToMnosEmailBodyHtmlOverride(
+      latestSnapshot?.submittedEmailBodyHtml ||
+        latestSnapshot?.submittedLetterHtml ||
+        '',
+    )
+    setSubmitToMnosLetterHtmlOverride(latestSnapshot?.submittedLetterHtml || '')
+    setSubmitToMnosDidRegenerate(false)
     setSubmitToMnosStepError('')
     setSubmitToMnosModalOpen(true)
   }
@@ -837,17 +886,6 @@ export default function CompanyDetailsPage() {
 
   const submitToMnosEmailPreview = useMemo(() => {
     if (!company) return ''
-    const selected =
-      selectedSubmitToMnosNetworks.length > 0
-        ? selectedSubmitToMnosNetworks
-            .map((network) => {
-              if (network === 'Mtn') return 'MTN'
-              if (network === 'Airtel') return 'Airtel'
-              if (network === 'Zamtel') return 'Zamtel'
-              return 'Zedmobile'
-            })
-            .join(', ')
-        : 'MTN'
     const senderId = company.senderId ?? 'N/A'
     const companyName = company.name ?? 'the client company'
     return [
@@ -866,7 +904,49 @@ export default function CompanyDetailsPage() {
     ].join('\n')
   }, [company, selectedSubmitToMnosNetworks])
 
-  const executeSubmitToMnos = async () => {
+  const fetchRegeneratedContent = async () => {
+    if (!company) return
+    setSubmitToMnosPreviewLoading(true)
+    setSubmitToMnosStepError('')
+    try {
+      const response = await fetch('/api/mtn-review/letter-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          companyId: company.id,
+          companyName: company.name,
+          senderId: company.senderId,
+          networks: selectedSubmitToMnosNetworks.length ? selectedSubmitToMnosNetworks : ['Mtn'],
+          physicalAddress: company.physicalAddress,
+          phoneNumber: company.phoneNumber,
+          email: company.email,
+          websiteUrl: company.websiteUrl,
+          description: company.description,
+          industry: company.industry,
+        }),
+      })
+      const data = (await response.json().catch(() => ({}))) as { letterHtml?: string; error?: string }
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`)
+      }
+      if (!data.letterHtml?.trim()) {
+        throw new Error('Generated letter preview was empty')
+      }
+      const defaultSubject = `Sender ID approval request - ${company.name ?? 'Company'} (${company.senderId?.trim() || 'N/A'})`
+      setSubmitToMnosLetterHtmlOverride(data.letterHtml)
+      setSubmitToMnosEmailBodyHtmlOverride(data.letterHtml)
+      setSubmitToMnosEmailSubjectOverride(defaultSubject)
+      setSubmitToMnosDidRegenerate(true)
+      toast.success('Regenerated letter content')
+    } catch (e: unknown) {
+      setSubmitToMnosStepError(e instanceof Error ? e.message : 'Failed to regenerate content')
+    } finally {
+      setSubmitToMnosPreviewLoading(false)
+    }
+  }
+
+  const executeSubmitToMnos = async (forceRegenerate = false) => {
     if (!company) return
     const submissionType = submitToMnosSubmissionType
     if (!submissionType) {
@@ -913,6 +993,12 @@ export default function CompanyDetailsPage() {
             recipientName: nameTrim || undefined,
             cc: cc.length > 0 ? cc : undefined,
             bcc: bcc.length > 0 ? bcc : undefined,
+            forceRegenerate: forceRegenerate || submitToMnosDidRegenerate,
+            useStoredSnapshot: true,
+            letterHtmlOverride: submitToMnosLetterHtmlOverride.trim() || undefined,
+            emailSubjectOverride: submitToMnosEmailSubjectOverride.trim() || undefined,
+            emailBodyHtmlOverride: submitToMnosEmailBodyHtmlOverride.trim() || undefined,
+            emailPreviewBody: submitToMnosEmailPreview,
           }
         : {}),
     }
@@ -941,6 +1027,8 @@ export default function CompanyDetailsPage() {
       } else {
         toast.success('Generated letter submission sent.')
       }
+      const history = await adminApi.getCompanyMnoSubmissions(company.id)
+      setMnoSubmissionHistory(history)
       closeSubmitToMnosModal()
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to submit to MNOs')
@@ -968,6 +1056,9 @@ export default function CompanyDetailsPage() {
         return
       }
       if (submitToMnosSubmissionType === 'generated-letter') {
+        if (!submitToMnosLetterHtmlOverride.trim() && !mnoSubmissionHistory[0]) {
+          void fetchRegeneratedContent()
+        }
         setSubmitToMnosStep(3)
         return
       }
@@ -2050,6 +2141,36 @@ export default function CompanyDetailsPage() {
           </div>
         ) : null}
 
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold text-slate-900">Submitted MNO history</h3>
+            {mnoSubmissionHistoryLoading ? (
+              <span className="text-xs text-slate-500">Loading…</span>
+            ) : null}
+          </div>
+          {mnoSubmissionHistory.length === 0 ? (
+            <p className="mt-2 text-sm text-slate-600">No generated-letter submissions yet.</p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {mnoSubmissionHistory.map((item) => (
+                <details key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-slate-800">
+                    {new Date(item.submittedAt).toLocaleString()} · {item.submittedRecipientEmail ?? 'No recipient'} ·{' '}
+                    {item.status}
+                  </summary>
+                  <div className="mt-3 space-y-2 text-xs text-slate-700">
+                    <p>Networks: {(item.networks || []).join(', ') || 'N/A'}</p>
+                    <p>Subject: {item.submittedEmailSubject || 'N/A'}</p>
+                    <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded border border-slate-200 bg-white p-2">
+                      {item.submittedEmailBodyHtml || item.submittedLetterHtml || '(No stored content)'}
+                    </pre>
+                  </div>
+                </details>
+              ))}
+            </div>
+          )}
+        </section>
+
         {submitToMnosModalOpen && company ? (
           <div
             className="fixed inset-0 z-[86] flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-[1px]"
@@ -2177,6 +2298,19 @@ export default function CompanyDetailsPage() {
 
                 {submitToMnosStep === 3 ? (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs text-slate-600">
+                        Reuse previous submitted content by default. Regenerate only when needed.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void fetchRegeneratedContent()}
+                        disabled={submitToMnosPreviewLoading || submitToMnosLoading}
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                      >
+                        {submitToMnosPreviewLoading ? 'Regenerating…' : 'Regenerate content'}
+                      </button>
+                    </div>
                     <div>
                       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Email preview
@@ -2275,6 +2409,39 @@ export default function CompanyDetailsPage() {
                           autoComplete="off"
                         />
                       </div>
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Editable submitted content
+                      </h3>
+                      <input
+                        type="text"
+                        value={submitToMnosEmailSubjectOverride}
+                        onChange={(e) => {
+                          setSubmitToMnosEmailSubjectOverride(e.target.value)
+                          if (submitToMnosStepError) setSubmitToMnosStepError('')
+                        }}
+                        placeholder="Email subject"
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                      />
+                      <textarea
+                        value={submitToMnosEmailBodyHtmlOverride}
+                        onChange={(e) => {
+                          setSubmitToMnosEmailBodyHtmlOverride(e.target.value)
+                          if (submitToMnosStepError) setSubmitToMnosStepError('')
+                        }}
+                        placeholder="Email body HTML"
+                        className="h-28 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                      />
+                      <textarea
+                        value={submitToMnosLetterHtmlOverride}
+                        onChange={(e) => {
+                          setSubmitToMnosLetterHtmlOverride(e.target.value)
+                          if (submitToMnosStepError) setSubmitToMnosStepError('')
+                        }}
+                        placeholder="Letter HTML"
+                        className="h-40 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                      />
                     </div>
                   </div>
                 ) : null}
