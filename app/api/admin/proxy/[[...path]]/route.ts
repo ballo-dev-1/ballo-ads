@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ADMIN_ENV_COOKIE, ADMIN_TOKEN_COOKIE } from "@/lib/adminAuth";
 import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from "@/lib/adminApi";
-
-const ALLOWED_BASES = [
-  DEV_API_BASE.replace(/\/+$/, ""),
-  STAGING_API_BASE.replace(/\/+$/, ""),
-  PROD_API_BASE.replace(/\/+$/, ""),
-  "http://localhost:5238",
-  "http://127.0.0.1:5238",
-];
+import { resolveProxyBaseUrl } from "@/lib/adminProxyBase";
 
 function getFallbackBase(primaryBase: string): string | null {
   if (primaryBase === DEV_API_BASE.replace(/\/+$/, "")) {
@@ -85,14 +78,22 @@ async function proxy(
   const baseFromEnvCookie = getBaseFromEnvCookie(
     cookieStore.get(ADMIN_ENV_COOKIE)?.value,
   );
-  const baseFromRequest = baseFromHeader || baseFromEnvCookie;
+  const allowLocalBackendProxy =
+    (process.env.ALLOW_LOCAL_BACKEND_PROXY ?? "").trim().toLowerCase() ===
+    "true";
+  const resolvedBase = resolveProxyBaseUrl({
+    baseFromHeader,
+    baseFromEnvCookie,
+    allowLocalBackendProxy,
+  });
 
-  if (!baseFromRequest || !ALLOWED_BASES.includes(baseFromRequest)) {
+  if (!resolvedBase.ok) {
     return NextResponse.json(
       { error: "Invalid or missing X-Api-Base header" },
       { status: 400 },
     );
   }
+  const baseFromRequest = resolvedBase.baseUrl;
 
   const token = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value;
   if (!token) {
