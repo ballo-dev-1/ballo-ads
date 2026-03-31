@@ -74,6 +74,14 @@ export type BackofficeUserResponse = {
   roles: string[];
 };
 
+export type MtnReviewerAccountResponse = {
+  id: number;
+  email: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  reviewedAt?: string;
+};
+
 export type PurchaseOrderResponse = {
   id?: number;
   company?: CompanyLeanResponse;
@@ -2143,6 +2151,31 @@ export const adminApi = {
       method: "DELETE",
       authToken,
     }),
+
+  getMtnReviewers: (
+    status?: "pending" | "approved" | "rejected",
+    authToken?: string,
+  ) => {
+    const query = status ? `?status=${encodeURIComponent(status)}` : "";
+    return request<MtnReviewerAccountResponse[]>(
+      `${BACKOFFICE}/mtn-reviewers${query}`,
+      { authToken },
+    );
+  },
+
+  updateMtnReviewerStatus: (
+    reviewerId: number,
+    status: "approved" | "rejected",
+    authToken?: string,
+  ) =>
+    request<MtnReviewerAccountResponse>(
+      `${BACKOFFICE}/mtn-reviewers/${reviewerId}/status`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+        authToken,
+      },
+    ),
 
   getClients: (
     companyId: number,

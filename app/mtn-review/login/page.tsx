@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 export default function MtnReviewLoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -30,7 +31,7 @@ export default function MtnReviewLoginPage() {
       const res = await fetch('/api/mtn-review/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -52,19 +53,20 @@ export default function MtnReviewLoginPage() {
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white p-8 shadow-2xl">
         <h1 className="text-2xl font-bold text-slate-900">MTN review portal</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Demo: use any non-empty username and password.
+          Sign in with your approved reviewer account.
         </p>
         <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 space-y-4">
           <div>
             <label htmlFor="mtn-user" className="mb-1.5 block text-sm font-medium text-slate-700">
-              Username
+              Email
             </label>
             <input
               id="mtn-user"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-sky-500/30 focus:border-sky-500 focus:ring-2"
-              autoComplete="username"
+              autoComplete="email"
               required
             />
           </div>
@@ -94,6 +96,12 @@ export default function MtnReviewLoginPage() {
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
+          <p className="text-center text-xs text-slate-600">
+            Need access?{' '}
+            <Link href="/mtn-review/signup" className="font-semibold text-sky-600 hover:underline">
+              Create reviewer account
+            </Link>
+          </p>
         </form>
       </div>
     </div>

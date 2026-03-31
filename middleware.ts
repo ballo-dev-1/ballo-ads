@@ -77,10 +77,11 @@ export function middleware(request: NextRequest) {
   const isMtnReviewRoot = pathname === "/mtn-review";
   const isMtnReviewNested = pathname.startsWith("/mtn-review/");
   const isMtnLogin = pathname === "/mtn-review/login";
+  const isMtnSignup = pathname === "/mtn-review/signup";
   if (isMtnReviewRoot || isMtnReviewNested) {
     const mtnSession = request.cookies.get(MTN_REVIEW_SESSION_COOKIE)?.value;
     const mtnAuthed = mtnSession === MTN_REVIEW_SESSION_VALUE;
-    if (isMtnLogin) {
+    if (isMtnLogin || isMtnSignup) {
       if (mtnAuthed) {
         return NextResponse.redirect(new URL("/mtn-review", request.url));
       }

@@ -160,7 +160,7 @@ export default function MtnReviewSubmissionDetailPage() {
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
-              {row.companyName ?? `Company #${row.companyId}`}
+              {row.companyName ?? 'Unknown company'}
             </h1>
             <p className="mt-1 text-sm text-slate-600">
               Sender ID: <span className="font-mono font-medium">{row.senderId ?? '—'}</span> ·
@@ -199,10 +199,6 @@ export default function MtnReviewSubmissionDetailPage() {
           Company details
         </h2>
         <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-slate-500">Company ID</dt>
-            <dd className="font-medium text-slate-900">{row.companyId}</dd>
-          </div>
           <div>
             <dt className="text-slate-500">Industry</dt>
             <dd className="font-medium text-slate-900">{row.industry ?? '—'}</dd>

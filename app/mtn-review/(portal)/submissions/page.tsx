@@ -7,7 +7,6 @@ import { ChevronRight } from 'lucide-react'
 type Row = {
   id: string
   status: string
-  companyId?: number
   companyName?: string
   senderId?: string
   submittedAt: string
@@ -63,7 +62,7 @@ export default function MtnReviewSubmissionsPage() {
               >
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">
-                    {r.companyName ?? `Company #${r.companyId ?? '—'}`}
+                    {r.companyName ?? 'Unknown company'}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-500">
                     Sender ID: {r.senderId ?? '—'} · Networks:{' '}
