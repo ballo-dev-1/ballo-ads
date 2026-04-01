@@ -86,8 +86,7 @@ export default function MtnReviewSubmissionDetailPage() {
   const [row, setRow] = useState<Submission | null>(null)
   const [error, setError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'documents' | 'letter'>('documents')
-  const [activeDocIndex, setActiveDocIndex] = useState(0)
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0)
 
   const load = useCallback(() => {
     if (!id) return
@@ -157,15 +156,31 @@ export default function MtnReviewSubmissionDetailPage() {
         : [],
     [row],
   )
-  const currentDocument = documents[activeDocIndex] ?? null
+  const slides = useMemo(
+    () => [
+      {
+        id: 'letter-consent',
+        title: 'Letter / consent',
+        type: 'letter' as const,
+      },
+      ...documents.map((doc) => ({
+        id: `document-${doc.id}`,
+        title: doc.title,
+        type: 'document' as const,
+        doc,
+      })),
+    ],
+    [documents],
+  )
+  const currentSlide = slides[activeSlideIndex] ?? null
 
   useEffect(() => {
-    if (documents.length === 0) {
-      setActiveDocIndex(0)
+    if (slides.length === 0) {
+      setActiveSlideIndex(0)
       return
     }
-    setActiveDocIndex((prev) => Math.min(prev, documents.length - 1))
-  }, [documents.length])
+    setActiveSlideIndex((prev) => Math.min(prev, slides.length - 1))
+  }, [slides.length])
 
   if (error && !row) {
     return (
@@ -294,149 +309,98 @@ export default function MtnReviewSubmissionDetailPage() {
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="border-b border-slate-200 pb-3">
-          <div
-            role="tablist"
-            aria-label="Submission content sections"
-            className="flex flex-wrap items-center gap-2"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'documents'}
-              aria-controls="submission-documents-panel"
-              id="submission-documents-tab"
-              onClick={() => setActiveTab('documents')}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                activeTab === 'documents'
-                  ? 'border-sky-300 bg-sky-50 text-sky-700'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
-              }`}
-            >
-              Uploaded documents
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'letter'}
-              aria-controls="submission-letter-panel"
-              id="submission-letter-tab"
-              onClick={() => setActiveTab('letter')}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                activeTab === 'letter'
-                  ? 'border-sky-300 bg-sky-50 text-sky-700'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
-              }`}
-            >
-              Letter / consent
-            </button>
-          </div>
-        </div>
+        <div className="space-y-4 pt-1">
+          <p className="text-xs text-slate-600">
+            Review attached documents and generated consent letter before taking action.
+          </p>
 
-        {activeTab === 'documents' ? (
-          <div
-            id="submission-documents-panel"
-            role="tabpanel"
-            aria-labelledby="submission-documents-tab"
-            className="space-y-4 pt-5"
-          >
-            <p className="text-xs text-slate-600">
-              Review documents attached to this submission before taking action.
-            </p>
-            {currentDocument ? (
-              <div className="space-y-3">
-                <DocCard title={currentDocument.title} url={currentDocument.url} kind={currentDocument.kind} />
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs text-slate-500">
-                    Document {activeDocIndex + 1} of {documents.length}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveDocIndex((prev) => (prev - 1 + documents.length) % documents.length)
-                      }
-                      disabled={documents.length <= 1}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" />
-                      Prev
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveDocIndex((prev) => (prev + 1) % documents.length)}
-                      disabled={documents.length <= 1}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Next
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-                {documents.length > 1 ? (
-                  <div className="flex items-center gap-2">
-                    {documents.map((doc, idx) => {
-                      const active = idx === activeDocIndex
-                      return (
-                        <button
-                          key={doc.id}
-                          type="button"
-                          onClick={() => setActiveDocIndex(idx)}
-                          aria-label={`View ${doc.title}`}
-                          className={`h-2.5 w-2.5 rounded-full transition ${
-                            active ? 'bg-sky-600' : 'bg-slate-300 hover:bg-slate-400'
-                          }`}
-                        />
-                      )
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-4">
-                <p className="text-sm font-medium text-slate-700">Uploaded documents</p>
-                <p className="mt-1 text-xs text-slate-500">No documents were provided.</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            id="submission-letter-panel"
-            role="tabpanel"
-            aria-labelledby="submission-letter-tab"
-            className="space-y-3 pt-5"
-          >
-            <p className="text-xs text-slate-600">
-              Formal letter generated from submitted company details. Recipient and body adapt to
-              the primary selected MNO (first network on the submission).
-            </p>
-            {letterGenerationError ? (
-              <p className="text-xs text-amber-800">
-                Letter samples were not generated automatically ({letterGenerationError}). The
-                preview may use placeholder SMS lines.
+          {currentSlide?.type === 'document' ? (
+            <DocCard
+              title={currentSlide.doc.title}
+              url={currentSlide.doc.url}
+              kind={currentSlide.doc.kind}
+            />
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-600">
+                Formal letter generated from submitted company details. Recipient and body adapt
+                to the primary selected MNO (first network on the submission).
               </p>
-            ) : null}
-            {showStoredLetterHtml ? (
-              <LetterHtmlDocument html={row.letterHtml ?? ''} />
-            ) : (
-              <LetterOfConsentBackendPreview
-                payload={{
-                  companyId: row.companyId,
-                  companyName: row.companyName,
-                  senderId: row.senderId,
-                  networks: row.networks?.length ? row.networks : ['Mtn'],
-                  physicalAddress: row.physicalAddress,
-                  phoneNumber: row.phoneNumber,
-                  email: row.email,
-                  websiteUrl: row.websiteUrl,
-                  description: row.description,
-                  industry: row.industry,
-                  submittedAt: row.submittedAt,
-                }}
-              />
-            )}
+              {letterGenerationError ? (
+                <p className="text-xs text-amber-800">
+                  Letter samples were not generated automatically ({letterGenerationError}). The
+                  preview may use placeholder SMS lines.
+                </p>
+              ) : null}
+              {showStoredLetterHtml ? (
+                <LetterHtmlDocument html={row.letterHtml ?? ''} />
+              ) : (
+                <LetterOfConsentBackendPreview
+                  payload={{
+                    companyId: row.companyId,
+                    companyName: row.companyName,
+                    senderId: row.senderId,
+                    networks: row.networks?.length ? row.networks : ['Mtn'],
+                    physicalAddress: row.physicalAddress,
+                    phoneNumber: row.phoneNumber,
+                    email: row.email,
+                    websiteUrl: row.websiteUrl,
+                    description: row.description,
+                    industry: row.industry,
+                    submittedAt: row.submittedAt,
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xs text-slate-500">
+              Item {activeSlideIndex + 1} of {slides.length}: {currentSlide?.title ?? '—'}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveSlideIndex((prev) => (prev - 1 + slides.length) % slides.length)
+                }
+                disabled={slides.length <= 1}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Prev
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSlideIndex((prev) => (prev + 1) % slides.length)}
+                disabled={slides.length <= 1}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-300 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
-        )}
+
+          {slides.length > 1 ? (
+            <div className="flex items-center gap-2">
+              {slides.map((slide, idx) => {
+                const active = idx === activeSlideIndex
+                return (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    onClick={() => setActiveSlideIndex(idx)}
+                    aria-label={`View ${slide.title}`}
+                    className={`h-2.5 w-2.5 rounded-full transition ${
+                      active ? 'bg-sky-600' : 'bg-slate-300 hover:bg-slate-400'
+                    }`}
+                  />
+                )
+              })}
+            </div>
+          ) : null}
+        </div>
       </section>
     </div>
   )
