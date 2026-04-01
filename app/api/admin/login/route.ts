@@ -76,6 +76,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Login failed" }, { status: 500 });
     }
 
+    // Enforce strict backoffice-only login: credentials must be able to access
+    // a protected Backoffice endpoint before we mint admin session cookies.
+    try {
+      const verifyRes = await fetch(`${baseUrl}/Backoffice/permissions`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!verifyRes.ok) {
+        return NextResponse.json(
+          { error: "Backoffice credentials required." },
+          { status: 403 },
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: "Unable to verify backoffice access. Try again." },
+        { status: 502 },
+      );
+    }
+
     const cookieStore = await cookies();
     cookieStore.set(ADMIN_TOKEN_COOKIE, token, {
       httpOnly: true,
