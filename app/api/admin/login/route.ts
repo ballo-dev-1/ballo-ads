@@ -4,6 +4,7 @@ import {
   ADMIN_ENV_COOKIE,
   ADMIN_TOKEN_COOKIE,
   ADMIN_REFRESH_TOKEN_COOKIE,
+  isAdminTokenActive,
 } from "@/lib/adminAuth";
 import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from "@/lib/adminApi";
 
@@ -113,11 +114,17 @@ export async function GET() {
   const tokenEnv = cookieStore.get(ADMIN_ENV_COOKIE)?.value;
 
   // If namespace cookie is missing, middleware will self-heal it on next admin route hit.
-  if (token) {
+  if (token && isAdminTokenActive(token)) {
     return NextResponse.json(
       { authenticated: true, env: tokenEnv ?? null },
       { status: 200 },
     );
+  }
+
+  if (token && !isAdminTokenActive(token)) {
+    cookieStore.delete(ADMIN_TOKEN_COOKIE);
+    cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE);
+    cookieStore.delete(ADMIN_ENV_COOKIE);
   }
 
   return NextResponse.json({ authenticated: false }, { status: 401 });

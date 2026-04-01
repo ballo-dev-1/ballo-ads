@@ -1,8 +1,9 @@
 /**
  * Server-only: call ballo-ads-backend internal MTN review routes.
  *
- * Production: set BACKEND_BASE_URL and MTN_REVIEW_BACKEND_SECRET (must match
- * backend MtnReview:BackendSharedSecret).
+ * Production: set MTN_REVIEW_BACKEND_SECRET (must match backend
+ * MtnReview:BackendSharedSecret). BACKEND_BASE_URL is recommended; if omitted,
+ * it falls back to NEXT_PUBLIC_PROD_API_URL (or https://api.balloads.com).
  *
  * Local next dev: if both are unset, defaults target the deployed dev API
  * (same base as lib/adminApi.ts DEV_API_BASE: NEXT_PUBLIC_DEV_API_URL or
@@ -17,10 +18,25 @@
 
 const SECRET_HEADER = "X-Ballo-Mtn-Review-Backend-Secret";
 
+function normalizeBase(url?: string): string {
+  return (url || "").trim().replace(/\/+$/, "");
+}
+
 /** Aligned with lib/adminApi.ts DEV_API_BASE (deployed dev API). */
 function defaultDevBackendBase(): string {
-  const url = process.env.NEXT_PUBLIC_DEV_API_URL?.trim();
-  return (url || "https://dev-api.balloads.com").replace(/\/+$/, "");
+  return normalizeBase(process.env.NEXT_PUBLIC_DEV_API_URL || "https://dev-api.balloads.com");
+}
+
+/** Production default aligns with admin API prod base. */
+function defaultProdBackendBase(): string {
+  return normalizeBase(process.env.NEXT_PUBLIC_PROD_API_URL || "https://api.balloads.com");
+}
+
+function defaultBackendBaseForRuntime(): string {
+  if (process.env.NODE_ENV === "production") {
+    return defaultProdBackendBase();
+  }
+  return defaultDevBackendBase();
 }
 
 /** Typical local + dev-droplet value; must match MtnReview:BackendSharedSecret on that API. */
@@ -35,18 +51,20 @@ function resolvedBackendConfig(): {
   const secretEnv = process.env.MTN_REVIEW_BACKEND_SECRET?.trim();
 
   if (baseEnv || secretEnv) {
+    const base = normalizeBase(baseEnv || defaultBackendBaseForRuntime());
+    const secret = secretEnv || (process.env.NODE_ENV === "development" ? DEFAULT_DEV_MTN_SECRET : "");
     return {
-      base: (baseEnv ?? "").replace(/\/+$/, ""),
-      secret: secretEnv ?? "",
-      usedImplicitDevDefaults: false,
+      base,
+      secret,
+      usedImplicitDevDefaults: process.env.NODE_ENV === "development" && !baseEnv && !secretEnv,
     };
   }
 
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "production") {
     return {
-      base: defaultDevBackendBase(),
-      secret: DEFAULT_DEV_MTN_SECRET,
-      usedImplicitDevDefaults: true,
+      base: defaultBackendBaseForRuntime(),
+      secret: process.env.NODE_ENV === "development" ? DEFAULT_DEV_MTN_SECRET : "",
+      usedImplicitDevDefaults: process.env.NODE_ENV === "development",
     };
   }
 
@@ -66,7 +84,7 @@ function internalBase(): {
   const { base, secret, usedImplicitDevDefaults } = resolvedBackendConfig();
   if (!base || !secret) {
     throw new Error(
-      "BACKEND_BASE_URL and MTN_REVIEW_BACKEND_SECRET must both be set (or omit both in next dev for local defaults)",
+      "MTN review backend not configured: set MTN_REVIEW_BACKEND_SECRET (and optionally BACKEND_BASE_URL)",
     );
   }
   return { base, secret, usedImplicitDevDefaults };

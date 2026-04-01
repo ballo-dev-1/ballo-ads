@@ -4,6 +4,7 @@ import {
   ADMIN_ENV_COOKIE,
   ADMIN_REFRESH_TOKEN_COOKIE,
   ADMIN_TOKEN_COOKIE,
+  isAdminTokenActive,
 } from "@/lib/adminAuth";
 import { getAdminBasePath, getAdminEnvFromPathname } from "@/lib/adminNamespace";
 import {
@@ -14,6 +15,7 @@ import {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(ADMIN_TOKEN_COOKIE)?.value;
+  const hasActiveToken = token ? isAdminTokenActive(token) : false;
   const tokenEnv = request.cookies.get(ADMIN_ENV_COOKIE)?.value;
   const isAdmin = pathname.startsWith("/admin");
   const isDevAdmin = pathname.startsWith("/dev-admin");
@@ -21,12 +23,12 @@ export function middleware(request: NextRequest) {
   const basePath = getAdminBasePath(pathname);
   const expectedEnv = getAdminEnvFromPathname(pathname);
   const hasMatchingEnv = !tokenEnv || tokenEnv === expectedEnv;
-  const isAuthenticatedForNamespace = Boolean(token) && hasMatchingEnv;
+  const isAuthenticatedForNamespace = hasActiveToken && hasMatchingEnv;
   const loginPath = `${basePath}/login`;
   const dashboardPath = `${basePath}/dashboard`;
 
   // Self-heal legacy sessions that have token but no namespace cookie.
-  if (token && !tokenEnv && (isAdmin || isDevAdmin || isStagingAdmin)) {
+  if (hasActiveToken && !tokenEnv && (isAdmin || isDevAdmin || isStagingAdmin)) {
     const response = NextResponse.next();
     response.cookies.set(ADMIN_ENV_COOKIE, expectedEnv, {
       httpOnly: true,
@@ -44,6 +46,14 @@ export function middleware(request: NextRequest) {
     pathname === "/dev-admin/login" ||
     pathname === "/staging-admin/login"
   ) {
+    if (token && !hasActiveToken) {
+      const response = NextResponse.next();
+      response.cookies.delete(ADMIN_TOKEN_COOKIE);
+      response.cookies.delete(ADMIN_REFRESH_TOKEN_COOKIE);
+      response.cookies.delete(ADMIN_ENV_COOKIE);
+      return response;
+    }
+
     if (isAuthenticatedForNamespace) {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
@@ -69,6 +79,14 @@ export function middleware(request: NextRequest) {
 
   // Protect all admin routes
   if (isAdmin || isDevAdmin || isStagingAdmin) {
+    if (token && !hasActiveToken) {
+      const response = NextResponse.redirect(new URL(loginPath, request.url));
+      response.cookies.delete(ADMIN_TOKEN_COOKIE);
+      response.cookies.delete(ADMIN_REFRESH_TOKEN_COOKIE);
+      response.cookies.delete(ADMIN_ENV_COOKIE);
+      return response;
+    }
+
     if (!isAuthenticatedForNamespace) {
       return NextResponse.redirect(new URL(loginPath, request.url));
     }

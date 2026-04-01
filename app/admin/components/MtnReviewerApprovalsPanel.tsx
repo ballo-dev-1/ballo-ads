@@ -44,23 +44,42 @@ export default function MtnReviewerApprovalsPanel() {
     }
   }
 
+  const filterTabs: Array<{ value: FilterStatus; label: string }> = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
+    { value: 'all', label: 'All' },
+  ]
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-slate-700" htmlFor="reviewer-status-filter">
-          Status
-        </label>
-        <select
-          id="reviewer-status-filter"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-slate-700">Status</span>
+        <div
+          className="inline-flex rounded-lg border border-slate-300 bg-white p-1"
+          role="tablist"
+          aria-label="Reviewer status filter"
         >
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="all">All</option>
-        </select>
+          {filterTabs.map((tab) => {
+            const isActive = statusFilter === tab.value
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  isActive
+                    ? 'bg-[var(--admin-ui-accent)] text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
           Pending: {pendingCount}
         </span>

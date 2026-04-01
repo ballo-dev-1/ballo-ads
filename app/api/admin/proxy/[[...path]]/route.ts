@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ADMIN_ENV_COOKIE, ADMIN_TOKEN_COOKIE } from "@/lib/adminAuth";
+import {
+  ADMIN_ENV_COOKIE,
+  ADMIN_REFRESH_TOKEN_COOKIE,
+  ADMIN_TOKEN_COOKIE,
+  isAdminTokenActive,
+} from "@/lib/adminAuth";
 import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from "@/lib/adminApi";
 import { resolveProxyBaseUrl } from "@/lib/adminProxyBase";
 
@@ -97,6 +102,12 @@ async function proxy(
 
   const token = cookieStore.get(ADMIN_TOKEN_COOKIE)?.value;
   if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isAdminTokenActive(token)) {
+    cookieStore.delete(ADMIN_TOKEN_COOKIE);
+    cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE);
+    cookieStore.delete(ADMIN_ENV_COOKIE);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
