@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   AlertTriangle,
   BadgeCheck,
+  Bold,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -19,13 +20,17 @@ import {
   Globe,
   Instagram,
   Linkedin,
+  List,
   Mail,
   MapPin,
   Phone,
   ShieldX,
   Signature,
   Twitter,
+  Underline,
   Youtube,
+  Italic,
+  ListOrdered,
   ListChecks,
   X,
 } from 'lucide-react'
@@ -53,6 +58,101 @@ import CompanyAnalyticsPanel, {
 
 function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function plainTextToHtml(value: string): string {
+  return value
+    .split('\n\n')
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replaceAll('\n', '<br />')}</p>`)
+    .join('')
+}
+
+function htmlToPlainText(value: string): string {
+  const withBreaks = value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p>/gi, '\n\n')
+    .replace(/<\/div>\s*<div>/gi, '\n')
+    .replace(/<li>/gi, '- ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+  return withBreaks.replace(/\n{3,}/g, '\n\n').trim()
+}
+
+function toTitleCaseWord(value: string): string {
+  if (!value) return value
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+}
+
+function getGreetingName(recipientName: string, recipientEmail: string): string {
+  const fromName = recipientName.trim()
+  if (fromName) return fromName
+  const localPart = recipientEmail.trim().split('@')[0] ?? ''
+  const firstToken = localPart.split(/[._-]+/).find(Boolean) ?? ''
+  const normalized = firstToken.replace(/[^a-zA-Z]/g, '')
+  if (normalized.length > 0) return toTitleCaseWord(normalized)
+  return 'MTN Team'
+}
+
+function applyGreetingToEmailHtml(value: string, greetingName: string): string {
+  const target = `Dear ${escapeHtml(greetingName)},`
+  return value.replace(/Dear\s+[^,<]+(?:\s+[^,<]+)*,?/i, target)
+}
+
+function normalizeEmailBodyHtml(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  let candidate = trimmed
+
+  // Old snapshots sometimes include "Subject:" in the body payload. Keep only the message body.
+  const dearIndex = candidate.search(/Dear\s+[^,]+,/i)
+  if (dearIndex > 0) {
+    candidate = candidate.slice(dearIndex)
+  } else {
+    candidate = candidate.replace(/^Subject:[\s\S]*?(?:<br\s*\/?>|\r?\n){1,2}/i, '')
+  }
+  candidate = candidate.trim()
+  candidate = candidate
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+
+  const hasHtmlTags = /<\/?[a-z][\s\S]*>/i.test(candidate)
+  if (hasHtmlTags) {
+    return candidate
+      .replace(/sender ID\s+&quot;([^"&]+)&quot;/gi, 'sender ID <strong>$1</strong>')
+      .replace(/sender ID\s+"([^"]+)"/gi, 'sender ID <strong>$1</strong>')
+      .replace(/sender ID\s+([A-Za-z0-9_-]{2,})/gi, 'sender ID <strong>$1</strong>')
+  }
+
+  // Recover readable paragraphing from legacy flat plain-text snapshots.
+  const withParagraphHints = candidate
+    .replace(/\s+/g, ' ')
+    .replace(/(Dear\s+[^,]+,)\s*/i, '$1\n\n')
+    .replace(/\s*(Please find attached\b)/i, '\n\n$1')
+    .replace(/\s*(Kindly proceed\b)/i, '\n$1')
+    .replace(/\s*(Regards,)\s*/i, '\n\n$1\n')
+    .replace(/\s*(Company contact:)/i, '\n$1')
+    .trim()
+
+  return plainTextToHtml(withParagraphHints)
+    .replace(/sender ID\s+&quot;([^"&]+)&quot;/gi, 'sender ID <strong>$1</strong>')
+    .replace(/sender ID\s+"([^"]+)"/gi, 'sender ID <strong>$1</strong>')
+    .replace(/sender ID\s+([A-Za-z0-9_-]{2,})/gi, 'sender ID <strong>$1</strong>')
 }
 
 type NetworkKey = 'Mtn' | 'Airtel' | 'Zamtel' | 'Zedmobile'
@@ -329,6 +429,7 @@ export default function CompanyDetailsPage() {
   const [submitToMnosStepError, setSubmitToMnosStepError] = useState('')
   const [mnoSubmissionHistory, setMnoSubmissionHistory] = useState<CompanyMnoSubmissionHistoryItem[]>([])
   const [mnoSubmissionHistoryLoading, setMnoSubmissionHistoryLoading] = useState(false)
+  const submitToMnosEmailEditorRef = useRef<HTMLDivElement | null>(null)
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const numericId = id != null ? Number(id) : NaN
@@ -859,7 +960,6 @@ export default function CompanyDetailsPage() {
       return
     }
     const latestSnapshot = mnoSubmissionHistory[0]
-    const defaultSubject = `Sender ID approval request - ${company.name ?? 'Company'} (${company.senderId?.trim() || 'N/A'})`
     setSubmitToMnosStep(1)
     setSubmitToMnosNetworks({ Mtn: false, Airtel: false, Zamtel: false, Zedmobile: false })
     setSubmitToMnosSubmissionType(null)
@@ -867,11 +967,9 @@ export default function CompanyDetailsPage() {
     setSubmitToMnosRecipientName('')
     setSubmitToMnosCcRaw((latestSnapshot?.submittedCc ?? []).join(', '))
     setSubmitToMnosBccRaw((latestSnapshot?.submittedBcc ?? []).join(', '))
-    setSubmitToMnosEmailSubjectOverride(latestSnapshot?.submittedEmailSubject || defaultSubject)
+    setSubmitToMnosEmailSubjectOverride(latestSnapshot?.submittedEmailSubject || defaultSubmitToMnosEmailSubject)
     setSubmitToMnosEmailBodyHtmlOverride(
-      latestSnapshot?.submittedEmailBodyHtml ||
-        latestSnapshot?.submittedLetterHtml ||
-        '',
+      normalizeEmailBodyHtml(latestSnapshot?.submittedEmailBodyHtml || defaultSubmitToMnosEmailBodyHtml),
     )
     setSubmitToMnosLetterHtmlOverride(latestSnapshot?.submittedLetterHtml || '')
     setSubmitToMnosDidRegenerate(false)
@@ -884,25 +982,67 @@ export default function CompanyDetailsPage() {
     [submitToMnosNetworks],
   )
 
-  const submitToMnosEmailPreview = useMemo(() => {
+  const defaultSubmitToMnosEmailSubject = useMemo(
+    () => `Sender ID approval request - ${company?.name ?? 'Company'} (${company?.senderId?.trim() || 'N/A'})`,
+    [company?.name, company?.senderId],
+  )
+
+  const submitToMnosGreetingName = useMemo(
+    () => getGreetingName(submitToMnosRecipientName, submitToMnosRecipientEmail),
+    [submitToMnosRecipientEmail, submitToMnosRecipientName],
+  )
+
+  const defaultSubmitToMnosEmailBodyHtml = useMemo(() => {
     if (!company) return ''
     const senderId = company.senderId ?? 'N/A'
     const companyName = company.name ?? 'the client company'
     return [
-      `Subject: Sender ID approval request — ${senderId}`,
+      `<p>Dear ${escapeHtml(submitToMnosGreetingName)},</p>`,
+      `<p>Please assist with approval of sender ID <strong>${escapeHtml(senderId)}</strong> for ${escapeHtml(companyName)} for our BalloAds SMPP account (Source IP: 167.172.100.128).</p>`,
+      '<p>Please find attached the client consent letter for your review and approval.<br />Kindly proceed with approval and share confirmation once completed.</p>',
+      '<p>Regards,<br />Ballo Ads Team</p>',
+      company.email ? `<p>Company contact: ${escapeHtml(company.email)}</p>` : '',
+    ]
+      .filter(Boolean)
+      .join('')
+  }, [company, submitToMnosGreetingName])
+
+  const submitToMnosEmailBodyHtmlForSubmit = useMemo(
+    () => applyGreetingToEmailHtml(submitToMnosEmailBodyHtmlOverride, submitToMnosGreetingName),
+    [submitToMnosEmailBodyHtmlOverride, submitToMnosGreetingName],
+  )
+
+  const submitToMnosEmailPreview = useMemo(() => {
+    const subject = submitToMnosEmailSubjectOverride.trim() || defaultSubmitToMnosEmailSubject
+    const bodyText = htmlToPlainText(submitToMnosEmailBodyHtmlForSubmit).trim()
+    return [
+      `Subject: ${subject}`,
       '',
-      'Dear MTN Team,',
-      '',
-      `Please assist with approval of sender ID "${senderId}" for ${companyName} for our BalloAds SMPP account (Source IP: 167.172.100.128).`,
-      '',
-      'Please find attached the client consent letter for your review and approval.',
-      'Kindly proceed with approval and share confirmation once completed.',
-      '',
-      'Regards,',
-      'Ballo Ads Team',
-      company.email ? `Company contact: ${company.email}` : '',
+      bodyText,
     ].join('\n')
-  }, [company, selectedSubmitToMnosNetworks])
+  }, [
+    defaultSubmitToMnosEmailSubject,
+    submitToMnosEmailBodyHtmlForSubmit,
+    submitToMnosEmailSubjectOverride,
+  ])
+
+  useEffect(() => {
+    if (submitToMnosStep !== 3 || !submitToMnosModalOpen) return
+    const editor = submitToMnosEmailEditorRef.current
+    if (!editor) return
+    if (editor.innerHTML !== submitToMnosEmailBodyHtmlOverride) {
+      editor.innerHTML = submitToMnosEmailBodyHtmlOverride
+    }
+  }, [submitToMnosEmailBodyHtmlOverride, submitToMnosModalOpen, submitToMnosStep])
+
+  const applyEmailBodyFormatting = (command: string) => {
+    const editor = submitToMnosEmailEditorRef.current
+    if (!editor) return
+    editor.focus()
+    document.execCommand(command, false)
+    setSubmitToMnosEmailBodyHtmlOverride(editor.innerHTML)
+    if (submitToMnosStepError) setSubmitToMnosStepError('')
+  }
 
   const fetchRegeneratedContent = async () => {
     if (!company) return
@@ -933,10 +1073,7 @@ export default function CompanyDetailsPage() {
       if (!data.letterHtml?.trim()) {
         throw new Error('Generated letter preview was empty')
       }
-      const defaultSubject = `Sender ID approval request - ${company.name ?? 'Company'} (${company.senderId?.trim() || 'N/A'})`
       setSubmitToMnosLetterHtmlOverride(data.letterHtml)
-      setSubmitToMnosEmailBodyHtmlOverride(data.letterHtml)
-      setSubmitToMnosEmailSubjectOverride(defaultSubject)
       setSubmitToMnosDidRegenerate(true)
       toast.success('Regenerated letter content')
     } catch (e: unknown) {
@@ -997,7 +1134,7 @@ export default function CompanyDetailsPage() {
             useStoredSnapshot: true,
             letterHtmlOverride: submitToMnosLetterHtmlOverride.trim() || undefined,
             emailSubjectOverride: submitToMnosEmailSubjectOverride.trim() || undefined,
-            emailBodyHtmlOverride: submitToMnosEmailBodyHtmlOverride.trim() || undefined,
+            emailBodyHtmlOverride: submitToMnosEmailBodyHtmlForSubmit.trim() || undefined,
             emailPreviewBody: submitToMnosEmailPreview,
           }
         : {}),
@@ -2315,9 +2452,78 @@ export default function CompanyDetailsPage() {
                       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Email preview
                       </h3>
-                      <pre className="mt-2 max-h-[28vh] overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-800">
-                        {submitToMnosEmailPreview}
-                      </pre>
+                      <div className="mt-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <input
+                          type="text"
+                          value={submitToMnosEmailSubjectOverride}
+                          onChange={(e) => {
+                            setSubmitToMnosEmailSubjectOverride(e.target.value)
+                            if (submitToMnosStepError) setSubmitToMnosStepError('')
+                          }}
+                          placeholder="Email subject"
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                        />
+                        <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-white p-1">
+                          <button
+                            type="button"
+                            onClick={() => applyEmailBodyFormatting('bold')}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                            aria-label="Bold"
+                            title="Bold"
+                          >
+                            <Bold className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyEmailBodyFormatting('italic')}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                            aria-label="Italic"
+                            title="Italic"
+                          >
+                            <Italic className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyEmailBodyFormatting('underline')}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                            aria-label="Underline"
+                            title="Underline"
+                          >
+                            <Underline className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyEmailBodyFormatting('insertUnorderedList')}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                            aria-label="Bullet list"
+                            title="Bullet list"
+                          >
+                            <List className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => applyEmailBodyFormatting('insertOrderedList')}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                            aria-label="Numbered list"
+                            title="Numbered list"
+                          >
+                            <ListOrdered className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div
+                          ref={submitToMnosEmailEditorRef}
+                          contentEditable
+                          suppressContentEditableWarning
+                          onInput={(event) => {
+                            setSubmitToMnosEmailBodyHtmlOverride(event.currentTarget.innerHTML)
+                            if (submitToMnosStepError) setSubmitToMnosStepError('')
+                          }}
+                          className="min-h-[22vh] max-h-[32vh] overflow-y-auto rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
+                        />
+                        <p className="text-[11px] text-slate-500">
+                          Click in the preview to edit the message directly.
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -2356,7 +2562,14 @@ export default function CompanyDetailsPage() {
                           type="text"
                           value={submitToMnosRecipientName}
                           onChange={(e) => {
-                            setSubmitToMnosRecipientName(e.target.value)
+                            const nextName = e.target.value
+                            setSubmitToMnosRecipientName(nextName)
+                            setSubmitToMnosEmailBodyHtmlOverride((prev) =>
+                              applyGreetingToEmailHtml(
+                                prev,
+                                getGreetingName(nextName, submitToMnosRecipientEmail),
+                              ),
+                            )
                             if (submitToMnosStepError) setSubmitToMnosStepError('')
                           }}
                           placeholder="Recipient name (optional)"
@@ -2371,7 +2584,14 @@ export default function CompanyDetailsPage() {
                           type="email"
                           value={submitToMnosRecipientEmail}
                           onChange={(e) => {
-                            setSubmitToMnosRecipientEmail(e.target.value)
+                            const nextEmail = e.target.value
+                            setSubmitToMnosRecipientEmail(nextEmail)
+                            setSubmitToMnosEmailBodyHtmlOverride((prev) =>
+                              applyGreetingToEmailHtml(
+                                prev,
+                                getGreetingName(submitToMnosRecipientName, nextEmail),
+                              ),
+                            )
                             if (submitToMnosStepError) setSubmitToMnosStepError('')
                           }}
                           placeholder="Recipient email (required)"
@@ -2409,39 +2629,6 @@ export default function CompanyDetailsPage() {
                           autoComplete="off"
                         />
                       </div>
-                    </div>
-                    <div className="space-y-3">
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Editable submitted content
-                      </h3>
-                      <input
-                        type="text"
-                        value={submitToMnosEmailSubjectOverride}
-                        onChange={(e) => {
-                          setSubmitToMnosEmailSubjectOverride(e.target.value)
-                          if (submitToMnosStepError) setSubmitToMnosStepError('')
-                        }}
-                        placeholder="Email subject"
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
-                      />
-                      <textarea
-                        value={submitToMnosEmailBodyHtmlOverride}
-                        onChange={(e) => {
-                          setSubmitToMnosEmailBodyHtmlOverride(e.target.value)
-                          if (submitToMnosStepError) setSubmitToMnosStepError('')
-                        }}
-                        placeholder="Email body HTML"
-                        className="h-28 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
-                      />
-                      <textarea
-                        value={submitToMnosLetterHtmlOverride}
-                        onChange={(e) => {
-                          setSubmitToMnosLetterHtmlOverride(e.target.value)
-                          if (submitToMnosStepError) setSubmitToMnosStepError('')
-                        }}
-                        placeholder="Letter HTML"
-                        className="h-40 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none ring-[var(--admin-ui-accent)]/30 focus:ring-2"
-                      />
                     </div>
                   </div>
                 ) : null}
