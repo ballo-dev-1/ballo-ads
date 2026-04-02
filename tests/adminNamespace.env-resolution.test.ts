@@ -26,6 +26,22 @@ test("getAdminEnv resolves /admin on production domain to prod env", () => {
   assert.equal(env, "prod");
 });
 
+test("getAdminEnv resolves /admin on dev.localhost to dev env", () => {
+  const env = getAdminEnv({
+    pathname: "/admin/dashboard",
+    host: "dev.localhost:3000",
+  });
+  assert.equal(env, "dev");
+});
+
+test("getAdminEnv resolves /admin on staging.localhost to staging env", () => {
+  const env = getAdminEnv({
+    pathname: "/admin/dashboard",
+    host: "staging.localhost:3000",
+  });
+  assert.equal(env, "staging");
+});
+
 test("getAdminEnv keeps namespace fallback for local hosts", () => {
   const env = getAdminEnv({
     pathname: "/dev-admin/dashboard",

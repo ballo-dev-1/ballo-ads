@@ -37,8 +37,18 @@ function inferMtnReviewEnvFromHost(
 ): MtnReviewEnv | null {
   const normalizedHost = normalizeHost(host);
 
-  if (normalizedHost === "dev.balloads.com") return "dev";
-  if (normalizedHost === "staging.balloads.com") return "staging";
+  if (
+    normalizedHost === "dev.balloads.com" ||
+    normalizedHost === "dev.localhost"
+  ) {
+    return "dev";
+  }
+  if (
+    normalizedHost === "staging.balloads.com" ||
+    normalizedHost === "staging.localhost"
+  ) {
+    return "staging";
+  }
   if (
     normalizedHost === "balloads.com" ||
     normalizedHost === "www.balloads.com" ||

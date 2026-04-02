@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   const unauthorized = await requireMtnReviewSession();
   if (unauthorized) return unauthorized;
 
@@ -59,10 +60,14 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const backend = await mtnReviewBackendRequest(`/auth/profile/${reviewer.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ firstName, lastName }),
-    });
+    const backend = await mtnReviewBackendRequest(
+      `/auth/profile/${reviewer.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ firstName, lastName }),
+      },
+      { host },
+    );
     const data = await backend.json().catch(() => ({}));
     if (!backend.ok) {
       return NextResponse.json(

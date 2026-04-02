@@ -26,8 +26,18 @@ function getAdminEnvFromHost(host: string | null | undefined): AdminEnv | null {
   const normalizedHost = normalizeHost(host);
   if (!normalizedHost) return null;
 
-  if (normalizedHost === "dev.balloads.com") return "dev";
-  if (normalizedHost === "staging.balloads.com") return "staging";
+  if (
+    normalizedHost === "dev.balloads.com" ||
+    normalizedHost === "dev.localhost"
+  ) {
+    return "dev";
+  }
+  if (
+    normalizedHost === "staging.balloads.com" ||
+    normalizedHost === "staging.localhost"
+  ) {
+    return "staging";
+  }
   if (
     normalizedHost === "balloads.com" ||
     normalizedHost === "www.balloads.com" ||
