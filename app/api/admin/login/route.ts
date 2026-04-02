@@ -7,6 +7,7 @@ import {
   isAdminTokenActive,
 } from "@/lib/adminAuth";
 import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from "@/lib/adminApi";
+import { getAdminEnv } from "@/lib/adminNamespace";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
@@ -18,12 +19,14 @@ const ALLOWED_BASES = [
   "http://127.0.0.1:5238",
 ];
 
-function getDefaultApiBaseUrl(): string {
-  return (
-    (typeof process !== "undefined" &&
-      process.env.NEXT_PUBLIC_DEV_API_URL) ||
-    DEV_API_BASE
-  );
+function getDefaultApiBaseUrl(request: NextRequest): string {
+  const resolvedEnv = getAdminEnv({
+    pathname: request.nextUrl.pathname,
+    host: request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+  });
+  if (resolvedEnv === "dev") return DEV_API_BASE;
+  if (resolvedEnv === "staging") return STAGING_API_BASE;
+  return PROD_API_BASE;
 }
 
 export async function POST(request: NextRequest) {
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
     const baseUrl =
       baseFromBody && ALLOWED_BASES.includes(baseFromBody)
         ? baseFromBody
-        : getDefaultApiBaseUrl().replace(/\/+$/, "");
+        : getDefaultApiBaseUrl(request).replace(/\/+$/, "");
     const selectedEnv =
       baseUrl === PROD_API_BASE.replace(/\/+$/, "")
         ? "prod"

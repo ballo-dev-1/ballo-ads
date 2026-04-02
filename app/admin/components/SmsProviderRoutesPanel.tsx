@@ -240,6 +240,7 @@ export default function SmsProviderRoutesPanel() {
                 <tr className="border-b border-gray-200 bg-gray-50">
                   <th className="px-5 py-3 text-xs font-semibold text-gray-600 uppercase">Provider</th>
                   <th className="px-5 py-3 text-xs font-semibold text-gray-600 uppercase">Predicate</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-600 uppercase">Sent count</th>
                   <th className="px-5 py-3 text-xs font-semibold text-gray-600 uppercase">Priority</th>
                   <th className="px-5 py-3 text-xs font-semibold text-gray-600 uppercase">Active</th>
                   <th className="px-5 py-3 text-xs font-semibold text-gray-600 uppercase w-28">Actions</th>
@@ -248,7 +249,7 @@ export default function SmsProviderRoutesPanel() {
               <tbody>
                 {list.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-gray-500 text-sm">
+                    <td colSpan={6} className="px-5 py-12 text-center text-gray-500 text-sm">
                       No routes configured.
                     </td>
                   </tr>
@@ -304,6 +305,10 @@ export default function SmsProviderRoutesPanel() {
                             ) : null}
                           </div>
                         )}
+                      </td>
+
+                      <td className="px-5 py-3">
+                        <span className="font-mono text-sm">{row.messageCount}</span>
                       </td>
 
                       <td className="px-5 py-3">

@@ -22,6 +22,33 @@ function normalizeBase(url?: string): string {
   return (url || "").trim().replace(/\/+$/, "");
 }
 
+function normalizeHost(rawHost: string | null | undefined): string | null {
+  if (!rawHost) return null;
+  // Some proxies may pass a comma-separated list; only the first host matters.
+  const firstHost = rawHost.split(",")[0]?.trim().toLowerCase();
+  if (!firstHost) return null;
+  return firstHost.replace(/:\d+$/, "");
+}
+
+export type MtnReviewEnv = "dev" | "staging" | "prod";
+
+function inferMtnReviewEnvFromHost(
+  host: string | null | undefined,
+): MtnReviewEnv | null {
+  const normalizedHost = normalizeHost(host);
+
+  if (normalizedHost === "dev.balloads.com") return "dev";
+  if (normalizedHost === "staging.balloads.com") return "staging";
+  if (
+    normalizedHost === "balloads.com" ||
+    normalizedHost === "www.balloads.com" ||
+    normalizedHost?.endsWith(".balloads.com")
+  ) {
+    return "prod";
+  }
+  return null;
+}
+
 /** Aligned with lib/adminApi.ts DEV_API_BASE (deployed dev API). */
 function defaultDevBackendBase(): string {
   return normalizeBase(process.env.NEXT_PUBLIC_DEV_API_URL || "https://dev-api.balloads.com");
@@ -41,6 +68,51 @@ function defaultBackendBaseForRuntime(): string {
 
 /** Typical local + dev-droplet value; must match MtnReview:BackendSharedSecret on that API. */
 const DEFAULT_DEV_MTN_SECRET = "local-dev-mtn-review-backend-secret";
+
+function baseForEnv(env: MtnReviewEnv): string {
+  if (env === "dev") return defaultDevBackendBase();
+  if (env === "staging")
+    return normalizeBase(
+      process.env.NEXT_PUBLIC_STAGING_API_URL || "https://staging-api.balloads.com",
+    );
+  return defaultProdBackendBase();
+}
+
+function secretForEnv(env: MtnReviewEnv): string {
+  const envSecret =
+    env === "dev"
+      ? process.env.MTN_REVIEW_BACKEND_SECRET_DEV
+      : env === "staging"
+        ? process.env.MTN_REVIEW_BACKEND_SECRET_STAGING
+        : process.env.MTN_REVIEW_BACKEND_SECRET_PROD;
+
+  // Backwards compatible fallback: if env-specific secrets aren't set,
+  // use the generic MTN_REVIEW_BACKEND_SECRET for all envs.
+  const genericSecret = process.env.MTN_REVIEW_BACKEND_SECRET;
+
+  const resolved = (envSecret || genericSecret || "").trim();
+  if (resolved) return resolved;
+
+  // Preserve legacy implicit dev secret behavior when the env is effectively dev.
+  if (env === "dev" && process.env.NODE_ENV === "development") return DEFAULT_DEV_MTN_SECRET;
+  return "";
+}
+
+function resolvedBackendConfigForHost(host: string | null | undefined): {
+  base: string;
+  secret: string;
+  usedImplicitDevDefaults: boolean;
+} {
+  const env = inferMtnReviewEnvFromHost(host);
+  if (!env) {
+    return resolvedBackendConfig();
+  }
+  return {
+    base: baseForEnv(env),
+    secret: secretForEnv(env),
+    usedImplicitDevDefaults: false,
+  };
+}
 
 function resolvedBackendConfig(): {
   base: string;
@@ -71,20 +143,23 @@ function resolvedBackendConfig(): {
   return { base: "", secret: "", usedImplicitDevDefaults: false };
 }
 
-export function isMtnReviewBackendConfigured(): boolean {
-  const { base, secret } = resolvedBackendConfig();
+export function isMtnReviewBackendConfigured(host?: string | null): boolean {
+  const config = host ? resolvedBackendConfigForHost(host) : resolvedBackendConfig();
+  const { base, secret } = config;
   return Boolean(base && secret);
 }
 
-function internalBase(): {
+function internalBase(host?: string | null): {
   base: string;
   secret: string;
   usedImplicitDevDefaults: boolean;
 } {
-  const { base, secret, usedImplicitDevDefaults } = resolvedBackendConfig();
+  const { base, secret, usedImplicitDevDefaults } = host
+    ? resolvedBackendConfigForHost(host)
+    : resolvedBackendConfig();
   if (!base || !secret) {
     throw new Error(
-      "MTN review backend not configured: set MTN_REVIEW_BACKEND_SECRET (and optionally BACKEND_BASE_URL)",
+      "MTN review backend not configured: set MTN_REVIEW_BACKEND_SECRET (and optionally BACKEND_BASE_URL) or per-env MTN_REVIEW_BACKEND_SECRET_* variables",
     );
   }
   return { base, secret, usedImplicitDevDefaults };
@@ -93,8 +168,10 @@ function internalBase(): {
 export async function mtnReviewBackendRequest(
   path: string,
   init?: RequestInit,
+  opts?: { host?: string | null },
 ): Promise<Response> {
-  const { base, secret, usedImplicitDevDefaults } = internalBase();
+  const forwardedHost = opts?.host ?? null;
+  const { base, secret, usedImplicitDevDefaults } = internalBase(forwardedHost);
   const url = `${base}/internal/mtn-review${path.startsWith("/") ? path : `/${path}`}`;
   const headers = new Headers(init?.headers);
   headers.set(SECRET_HEADER, secret);
@@ -118,4 +195,16 @@ export async function mtnReviewBackendRequest(
   } catch {
     return primary;
   }
+}
+
+export function mtnReviewBackendConfigForHost(host?: string | null): {
+  env: MtnReviewEnv;
+  base: string;
+  secret: string;
+  usedImplicitDevDefaults: boolean;
+} {
+  const inferred = inferMtnReviewEnvFromHost(host);
+  const env = inferred || (process.env.NODE_ENV === "production" ? "prod" : "dev");
+  const config = resolvedBackendConfigForHost(host);
+  return { env, ...config };
 }

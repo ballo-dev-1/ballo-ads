@@ -20,13 +20,18 @@ function canIngest(request: NextRequest): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   const unauthorized = await requireMtnReviewSession();
   if (unauthorized) return unauthorized;
 
-  if (isMtnReviewBackendConfigured()) {
+  if (isMtnReviewBackendConfigured(host)) {
     try {
-      const res = await mtnReviewBackendRequest("/submissions", { method: "GET" });
+      const res = await mtnReviewBackendRequest(
+        "/submissions",
+        { method: "GET" },
+        { host },
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         return NextResponse.json(
@@ -49,6 +54,7 @@ export async function POST(request: NextRequest) {
   if (!adminOk && !canIngest(request)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
 
   let body: Record<string, unknown>;
   try {
@@ -61,7 +67,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "companyId required" }, { status: 400 });
   }
 
-  if (isMtnReviewBackendConfigured()) {
+  if (isMtnReviewBackendConfigured(host)) {
     try {
       const payload = {
         companyId: body.companyId,
@@ -97,10 +103,14 @@ export async function POST(request: NextRequest) {
           typeof body.websiteUrl === "string" ? body.websiteUrl : undefined,
       };
 
-      const res = await mtnReviewBackendRequest("/submissions", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      const res = await mtnReviewBackendRequest(
+        "/submissions",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+        { host },
+      );
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         return NextResponse.json(

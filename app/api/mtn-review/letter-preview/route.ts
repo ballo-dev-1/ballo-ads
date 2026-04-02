@@ -12,6 +12,7 @@ import {
  * Auth: admin session OR MTN review portal session.
  */
 export async function POST(req: Request) {
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
   const cookieStore = await cookies();
   const adminOk = Boolean(cookieStore.get(ADMIN_TOKEN_COOKIE)?.value);
   if (!adminOk) {
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     if (unauthorized) return unauthorized;
   }
 
-  if (!isMtnReviewBackendConfigured()) {
+  if (!isMtnReviewBackendConfigured(host)) {
     return NextResponse.json(
       { error: "Backend MTN review integration not configured" },
       { status: 503 },
@@ -39,10 +40,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await mtnReviewBackendRequest("/letter-preview", {
-      method: "POST",
-      body: JSON.stringify(body),
-    });
+    const res = await mtnReviewBackendRequest(
+      "/letter-preview",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      },
+      { host },
+    );
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch (e) {

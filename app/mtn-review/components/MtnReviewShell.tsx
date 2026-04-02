@@ -2,22 +2,50 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ClipboardList, LayoutDashboard, LogOut, Search } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, LogOut, Search, UserRound } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 const nav = [
   { href: '/mtn-review', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/mtn-review/submissions', label: 'Submissions', icon: ClipboardList },
+  { href: '/mtn-review/profile', label: 'Profile', icon: UserRound },
 ]
 
 export default function MtnReviewShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [reviewerName, setReviewerName] = useState('MTN Reviewer')
 
   const signOut = async () => {
     await fetch('/api/mtn-review/logout', { method: 'POST' })
     router.push('/mtn-review/login')
     router.refresh()
   }
+
+  useEffect(() => {
+    void fetch('/api/mtn-review/session')
+      .then((r) => r.json())
+      .then((data: { reviewer?: { firstName?: string; lastName?: string } }) => {
+        const firstName = data.reviewer?.firstName?.trim() ?? ''
+        const lastName = data.reviewer?.lastName?.trim() ?? ''
+        const fullName = `${firstName} ${lastName}`.trim()
+        if (fullName) setReviewerName(fullName)
+      })
+      .catch(() => {
+        // keep fallback name
+      })
+  }, [])
+
+  const reviewerInitials = useMemo(
+    () =>
+      reviewerName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((x) => x[0]?.toUpperCase() ?? '')
+        .join('') || 'MR',
+    [reviewerName],
+  )
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -61,7 +89,7 @@ export default function MtnReviewShell({ children }: { children: React.ReactNode
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center gap-4 border-b border-slate-200/80 bg-white px-6 shadow-sm">
-          <div className="relative max-w-xl flex-1">
+          <div className="relative w-full max-w-xl">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
@@ -71,9 +99,12 @@ export default function MtnReviewShell({ children }: { children: React.ReactNode
               aria-readonly
             />
           </div>
-          <span className="hidden text-sm text-slate-500 sm:inline">MTN reviewer</span>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-xs font-bold text-white">
-            M
+          <div className="flex-1" />
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-slate-500 sm:inline">{reviewerName}</span>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-xs font-bold text-white">
+              {reviewerInitials}
+            </div>
           </div>
         </header>
         <main className="min-h-0 flex-1 overflow-auto p-6">{children}</main>

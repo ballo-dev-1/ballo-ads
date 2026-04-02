@@ -38,11 +38,13 @@ export default function MtnReviewDashboardPage() {
   const stats = useMemo(() => {
     const pending = submissions.filter((s) => s.status === 'pending').length
     const accepted = submissions.filter((s) => s.status === 'accepted').length
+    const requestChanges = submissions.filter((s) => s.status === 'request_changes').length
     const withdrawn = submissions.filter((s) => s.status === 'withdrawn').length
     return {
       total: submissions.length,
       pending,
       accepted,
+      requestChanges,
       withdrawn,
     }
   }, [submissions])
@@ -61,16 +63,22 @@ export default function MtnReviewDashboardPage() {
         'bg-gradient-to-br from-amber-400 via-orange-400 to-rose-500 text-white',
     },
     {
+      label: 'Request changes',
+      value: stats.requestChanges,
+      className:
+        'bg-gradient-to-br from-sky-400 via-cyan-500 to-teal-600 text-white',
+    },
+    {
       label: 'Withdrawn',
       value: stats.withdrawn,
       className:
-        'bg-gradient-to-br from-sky-400 via-cyan-500 to-teal-600 text-white',
+        'bg-gradient-to-br from-fuchsia-400 via-pink-500 to-rose-600 text-white',
     },
     {
       label: 'Total submissions',
       value: stats.total,
       className:
-        'bg-gradient-to-br from-fuchsia-400 via-pink-500 to-rose-600 text-white',
+        'bg-gradient-to-br from-indigo-400 via-blue-500 to-sky-600 text-white',
     },
   ]
 
@@ -122,7 +130,7 @@ export default function MtnReviewDashboardPage() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {statCards.map((card) => (
           <div
             key={card.label}

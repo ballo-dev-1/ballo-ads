@@ -16,7 +16,7 @@ import {
   registerBaseUrlGetter,
   setApiBaseUrl,
 } from '@/lib/adminApi'
-import { getAdminEnvFromPathname } from '@/lib/adminNamespace'
+import { getAdminEnv } from '@/lib/adminNamespace'
 
 export const API_ENV_STORAGE_KEY = 'ballo-ads-api-env'
 
@@ -38,7 +38,10 @@ export function useApiEnv(): ApiEnvContextValue {
 
 function getInitialEnv(): ApiEnv {
   if (typeof window === 'undefined') return 'prod'
-  return getAdminEnvFromPathname(window.location.pathname)
+  return getAdminEnv({
+    pathname: window.location.pathname,
+    host: window.location.hostname,
+  })
 }
 
 export function ApiEnvProvider({ children }: { children: ReactNode }) {
@@ -56,7 +59,12 @@ export function ApiEnvProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!pathname) return
-    setEnvState(getAdminEnvFromPathname(pathname))
+    setEnvState(
+      getAdminEnv({
+        pathname,
+        host: window.location.hostname,
+      }),
+    )
   }, [pathname])
 
   const setEnv = () => {

@@ -1,4 +1,4 @@
-import { getAdminEnvFromPathname } from "@/lib/adminNamespace";
+import { getAdminEnv } from "@/lib/adminNamespace";
 
 /** Dev = local or dev server; Prod = production API. Backoffice uses Backoffice/* on both. */
 export const DEV_API_BASE =
@@ -19,7 +19,13 @@ const BACKOFFICE = "Backoffice";
 function inferEnvFromPathname(
   pathname: string | null | undefined,
 ): "dev" | "staging" | "prod" {
-  return getAdminEnvFromPathname(pathname);
+  if (typeof window !== "undefined") {
+    return getAdminEnv({
+      pathname,
+      host: window.location.hostname,
+    });
+  }
+  return getAdminEnv({ pathname });
 }
 
 function inferBaseUrlFromLocationPathname(pathname: string | null | undefined): string {
@@ -76,6 +82,8 @@ export type BackofficeUserResponse = {
 
 export type MtnReviewerAccountResponse = {
   id: number;
+  firstName: string;
+  lastName: string;
   email: string;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
@@ -603,6 +611,10 @@ export type CompanyMnoSubmissionHistoryItem = {
   submittedEmailBodyHtml?: string;
   submittedLetterHtml?: string;
   submittedByUserId?: number;
+  reviewMessage?: string;
+  reviewAttachments: string[];
+  reviewedByReviewerId?: number;
+  reviewedAt?: string;
 };
 
 export type CompanyMemberRole = "Member" | "Admin" | "SuperAdmin";
@@ -753,6 +765,7 @@ export type SmsProviderRouteResponse = {
   predicateValue?: string | null;
   priority: number;
   isActive: boolean;
+  messageCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -966,6 +979,12 @@ function mapCompanyMnoSubmissionHistoryItem(
     submittedEmailBodyHtml: (r.SubmittedEmailBodyHtml ?? r.submittedEmailBodyHtml) as string | undefined,
     submittedLetterHtml: (r.SubmittedLetterHtml ?? r.submittedLetterHtml) as string | undefined,
     submittedByUserId: (r.SubmittedByUserId ?? r.submittedByUserId) as number | undefined,
+    reviewMessage: (r.ReviewMessage ?? r.reviewMessage) as string | undefined,
+    reviewAttachments: Array.isArray(r.ReviewAttachments ?? r.reviewAttachments)
+      ? ((r.ReviewAttachments ?? r.reviewAttachments) as unknown[]).map((x) => String(x))
+      : [],
+    reviewedByReviewerId: (r.ReviewedByReviewerId ?? r.reviewedByReviewerId) as number | undefined,
+    reviewedAt: (r.ReviewedAt ?? r.reviewedAt) as string | undefined,
   };
 }
 
@@ -1017,6 +1036,7 @@ function mapSmsProviderRouteResponse(
     predicateValue: (r.PredicateValue ?? r.predicateValue) as string | null | undefined,
     priority: Number(r.Priority ?? r.priority ?? 0),
     isActive: Boolean(r.IsActive ?? r.isActive ?? true),
+    messageCount: Number(r.MessageCount ?? r.messageCount ?? 0),
     createdAt: (r.CreatedAt ?? r.createdAt) as string,
     updatedAt: (r.UpdatedAt ?? r.updatedAt) as string,
   };

@@ -14,3 +14,34 @@ export function getAdminEnvFromPathname(pathname: string | null | undefined): Ad
   if (basePath === "/dev-admin") return "dev";
   return "prod";
 }
+
+function normalizeHost(rawHost: string | null | undefined): string | null {
+  if (!rawHost) return null;
+  const firstHost = rawHost.split(",")[0]?.trim().toLowerCase();
+  if (!firstHost) return null;
+  return firstHost.replace(/:\d+$/, "");
+}
+
+function getAdminEnvFromHost(host: string | null | undefined): AdminEnv | null {
+  const normalizedHost = normalizeHost(host);
+  if (!normalizedHost) return null;
+
+  if (normalizedHost === "dev.balloads.com") return "dev";
+  if (normalizedHost === "staging.balloads.com") return "staging";
+  if (
+    normalizedHost === "balloads.com" ||
+    normalizedHost === "www.balloads.com" ||
+    normalizedHost.endsWith(".balloads.com")
+  ) {
+    return "prod";
+  }
+
+  return null;
+}
+
+export function getAdminEnv(input: {
+  pathname: string | null | undefined;
+  host?: string | null | undefined;
+}): AdminEnv {
+  return getAdminEnvFromHost(input.host) ?? getAdminEnvFromPathname(input.pathname);
+}

@@ -432,6 +432,18 @@ export default function CompanyDetailsPage() {
   const submitToMnosEmailEditorRef = useRef<HTMLDivElement | null>(null)
   const { confirm, confirmDialog } = useConfirmDialog()
 
+  const latestReviewerFeedback = useMemo(
+    () =>
+      mnoSubmissionHistory.find(
+        (item) =>
+          item.submissionType === 'review-dashboard' &&
+          (Boolean(item.reviewMessage) ||
+            item.reviewAttachments.length > 0 ||
+            Boolean(item.reviewedAt)),
+      ),
+    [mnoSubmissionHistory],
+  )
+
   const numericId = id != null ? Number(id) : NaN
   const invalidId = typeof id !== 'string' || id === '' || Number.isNaN(numericId)
 
@@ -2285,22 +2297,90 @@ export default function CompanyDetailsPage() {
               <span className="text-xs text-slate-500">Loading…</span>
             ) : null}
           </div>
+          {latestReviewerFeedback ? (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="font-semibold">Latest MTN reviewer feedback</p>
+              <p className="mt-1">
+                {latestReviewerFeedback.reviewedAt
+                  ? `Updated ${new Date(latestReviewerFeedback.reviewedAt).toLocaleString()}`
+                  : 'Updated recently'}
+              </p>
+              {latestReviewerFeedback.reviewMessage ? (
+                <p className="mt-2 whitespace-pre-wrap">{latestReviewerFeedback.reviewMessage}</p>
+              ) : (
+                <p className="mt-2 text-amber-800">No message was provided by the reviewer.</p>
+              )}
+              {latestReviewerFeedback.reviewAttachments.length > 0 ? (
+                <div className="mt-2 space-y-1">
+                  {latestReviewerFeedback.reviewAttachments.map((url) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block truncate text-[11px] underline"
+                    >
+                      {url}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {mnoSubmissionHistory.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-600">No generated-letter submissions yet.</p>
+            <p className="mt-2 text-sm text-slate-600">No MNO submissions yet.</p>
           ) : (
             <div className="mt-3 space-y-2">
               {mnoSubmissionHistory.map((item) => (
                 <details key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                   <summary className="cursor-pointer text-sm font-medium text-slate-800">
-                    {new Date(item.submittedAt).toLocaleString()} · {item.submittedRecipientEmail ?? 'No recipient'} ·{' '}
-                    {item.status}
+                    {new Date(item.submittedAt).toLocaleString()} · {item.status} ·{' '}
+                    {item.submissionType === 'review-dashboard'
+                      ? 'Reviewed in MTN portal'
+                      : item.submittedRecipientEmail ?? 'No recipient'}
+                    {item.reviewMessage ? (
+                      <span className="mt-1 block text-xs font-semibold text-amber-700">
+                        Feedback: {item.reviewMessage}
+                      </span>
+                    ) : null}
                   </summary>
                   <div className="mt-3 space-y-2 text-xs text-slate-700">
                     <p>Networks: {(item.networks || []).join(', ') || 'N/A'}</p>
-                    <p>Subject: {item.submittedEmailSubject || 'N/A'}</p>
-                    <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded border border-slate-200 bg-white p-2">
-                      {item.submittedEmailBodyHtml || item.submittedLetterHtml || '(No stored content)'}
-                    </pre>
+                    {item.submissionType === 'generated-letter' ? (
+                      <>
+                        <p>Subject: {item.submittedEmailSubject || 'N/A'}</p>
+                        <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded border border-slate-200 bg-white p-2">
+                          {item.submittedEmailBodyHtml || item.submittedLetterHtml || '(No stored content)'}
+                        </pre>
+                      </>
+                    ) : null}
+                    {item.reviewedAt ? (
+                      <p className="text-slate-600">
+                        Reviewer action time: {new Date(item.reviewedAt).toLocaleString()}
+                      </p>
+                    ) : null}
+                    {item.reviewMessage ? (
+                      <div className="rounded border border-amber-200 bg-amber-50 p-2">
+                        <p className="font-semibold text-amber-900">Reviewer feedback</p>
+                        <p className="mt-1 whitespace-pre-wrap text-amber-900">{item.reviewMessage}</p>
+                      </div>
+                    ) : null}
+                    {item.reviewAttachments.length > 0 ? (
+                      <div className="space-y-1 rounded border border-slate-200 bg-white p-2">
+                        <p className="font-semibold text-slate-800">Reviewer attachments</p>
+                        {item.reviewAttachments.map((url) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate text-[11px] text-blue-700 underline"
+                          >
+                            {url}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </details>
               ))}

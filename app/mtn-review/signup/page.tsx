@@ -7,6 +7,8 @@ import { Eye, EyeOff } from 'lucide-react'
 
 export default function MtnReviewSignupPage() {
   const router = useRouter()
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -34,7 +36,7 @@ export default function MtnReviewSignupPage() {
       const res = await fetch('/api/mtn-review/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ firstName, lastName, email, password }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -66,6 +68,34 @@ export default function MtnReviewSignupPage() {
         </p>
 
         <form onSubmit={(e) => void submit(e)} className="mt-6 space-y-4">
+          <div>
+            <label htmlFor="signup-first-name" className="mb-1.5 block text-sm font-medium text-slate-700">
+              First name
+            </label>
+            <input
+              id="signup-first-name"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-sky-500/30 focus:border-sky-500 focus:ring-2"
+              autoComplete="given-name"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="signup-last-name" className="mb-1.5 block text-sm font-medium text-slate-700">
+              Last name
+            </label>
+            <input
+              id="signup-last-name"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none ring-sky-500/30 focus:border-sky-500 focus:ring-2"
+              autoComplete="family-name"
+              required
+            />
+          </div>
           <div>
             <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-slate-700">
               Email

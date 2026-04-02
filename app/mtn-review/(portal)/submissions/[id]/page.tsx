@@ -29,6 +29,10 @@ type Submission = {
   letterGenerationError?: string
   /** Server-rendered letter HTML when persisted with the submission */
   letterHtml?: string | null
+  reviewMessage?: string
+  reviewAttachments?: string[]
+  reviewedByReviewerId?: number
+  reviewedAt?: string
 }
 
 function docKindFromUrl(url: string): 'pdf' | 'image' {
@@ -87,6 +91,9 @@ export default function MtnReviewSubmissionDetailPage() {
   const [error, setError] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
   const [activeSlideIndex, setActiveSlideIndex] = useState(0)
+  const [reviewMessageDraft, setReviewMessageDraft] = useState('')
+  const [reviewUploadFiles, setReviewUploadFiles] = useState<File[]>([])
+  const [showRequestChangesModal, setShowRequestChangesModal] = useState(false)
 
   const load = useCallback(() => {
     if (!id) return
@@ -109,18 +116,31 @@ export default function MtnReviewSubmissionDetailPage() {
     load()
   }, [load])
 
-  const patchStatus = async (status: 'accepted' | 'withdrawn') => {
+  const patchStatus = async (
+    status: 'accepted' | 'withdrawn' | 'pending' | 'request_changes',
+    options?: { message?: string; files?: string[] },
+  ) => {
     if (!id) return
     setActionLoading(true)
+    setError('')
     try {
       const res = await fetch(`/api/mtn-review/submissions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({
+          status,
+          message: options?.message,
+          files: options?.files,
+        }),
       })
       if (!res.ok) throw new Error('patch')
       const data = await res.json()
       if (data.submission) setRow(data.submission)
+      if (status === 'request_changes') {
+        setReviewMessageDraft('')
+        setReviewUploadFiles([])
+        setShowRequestChangesModal(false)
+      }
       router.refresh()
     } catch {
       setError('Action failed.')
@@ -130,6 +150,7 @@ export default function MtnReviewSubmissionDetailPage() {
   }
 
   const pending = row?.status === 'pending'
+  const canMoveToPending = row?.status === 'accepted' || row?.status === 'withdrawn' || row?.status === 'request_changes'
   const documents = useMemo(
     () =>
       row
@@ -202,6 +223,26 @@ export default function MtnReviewSubmissionDetailPage() {
 
   const letterGenerationError = row.letterGenerationError
   const showStoredLetterHtml = Boolean(row.letterHtml)
+  const reviewAttachments = row.reviewAttachments ?? []
+
+  const uploadReviewFiles = async (files: File[]): Promise<string[]> => {
+    if (files.length === 0) return []
+    const formData = new FormData()
+    files.forEach((file) => formData.append('files', file))
+
+    const res = await fetch('/api/mtn-review/attachments', {
+      method: 'POST',
+      body: formData,
+    })
+    const data = (await res.json().catch(() => null)) as
+      | { error?: string; files?: Array<{ url?: string }> }
+      | null
+    if (!res.ok) {
+      throw new Error(data?.error || 'Failed to upload attachments.')
+    }
+
+    return (data?.files ?? []).map((x) => x.url).filter((x): x is string => Boolean(x))
+  }
 
   return (
     <div className="space-y-8">
@@ -239,15 +280,74 @@ export default function MtnReviewSubmissionDetailPage() {
               <button
                 type="button"
                 disabled={actionLoading}
+                onClick={() => setShowRequestChangesModal(true)}
+                className="rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 disabled:opacity-50"
+              >
+                Request changes
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
                 onClick={() => void patchStatus('withdrawn')}
                 className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
               >
                 Withdraw
               </button>
             </div>
+          ) : canMoveToPending ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => void patchStatus('pending')}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Move back to pending
+              </button>
+            </div>
           ) : null}
         </div>
       </div>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Review notes
+        </h2>
+
+        {row.reviewedAt ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2 text-sm text-slate-700">
+            <p>
+              Last reviewed:{' '}
+              <span className="font-medium">{new Date(row.reviewedAt).toLocaleString()}</span>
+            </p>
+            {row.reviewMessage ? (
+              <p className="whitespace-pre-wrap text-slate-800">{row.reviewMessage}</p>
+            ) : null}
+            {reviewAttachments.length > 0 ? (
+              <div className="space-y-1">
+                <p className="font-medium text-slate-800">Attachments</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {reviewAttachments.map((item) => (
+                    <li key={item}>
+                      <a
+                        href={item}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sky-700 hover:underline break-all"
+                      >
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No reviewer note yet.</p>
+        )}
+
+      </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -402,6 +502,79 @@ export default function MtnReviewSubmissionDetailPage() {
           ) : null}
         </div>
       </section>
+
+      {showRequestChangesModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-amber-200 bg-white p-5 shadow-xl space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-amber-900">Request changes from submitter</h3>
+              <button
+                type="button"
+                onClick={() => setShowRequestChangesModal(false)}
+                disabled={actionLoading}
+                className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Close
+              </button>
+            </div>
+            <textarea
+              value={reviewMessageDraft}
+              onChange={(e) => setReviewMessageDraft(e.target.value)}
+              rows={5}
+              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900"
+              placeholder="Enter review comments for requested changes"
+            />
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Upload files (optional)
+              </label>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => setReviewUploadFiles(Array.from(e.target.files ?? []))}
+                className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-lg file:border file:border-amber-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-amber-100"
+              />
+              {reviewUploadFiles.length > 0 ? (
+                <ul className="list-disc pl-5 text-xs text-slate-700 space-y-1">
+                  {reviewUploadFiles.map((file) => (
+                    <li key={`${file.name}-${file.size}`}>{file.name}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowRequestChangesModal(false)}
+                disabled={actionLoading}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      const uploadedUrls = await uploadReviewFiles(reviewUploadFiles)
+                      await patchStatus('request_changes', {
+                        message: reviewMessageDraft,
+                        files: uploadedUrls,
+                      })
+                    } catch (uploadError) {
+                      setError(uploadError instanceof Error ? uploadError.message : 'File upload failed.')
+                    }
+                  })()
+                }}
+                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                Request changes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

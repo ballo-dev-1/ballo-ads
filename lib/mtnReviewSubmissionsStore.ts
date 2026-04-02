@@ -1,4 +1,8 @@
-export type MtnSubmissionStatus = "pending" | "accepted" | "withdrawn";
+export type MtnSubmissionStatus =
+  | "pending"
+  | "accepted"
+  | "withdrawn"
+  | "request_changes";
 
 export type MtnSubmissionRecord = {
   id: string;
@@ -16,6 +20,10 @@ export type MtnSubmissionRecord = {
   industry?: string;
   description?: string;
   websiteUrl?: string;
+  reviewMessage?: string;
+  reviewAttachments?: string[];
+  reviewedByReviewerId?: number;
+  reviewedAt?: string;
 };
 
 type Stored = MtnSubmissionRecord & { status: MtnSubmissionStatus };
@@ -71,12 +79,28 @@ export function mtnAppendSubmission(
 
 export function mtnUpdateSubmissionStatus(
   id: string,
-  status: Exclude<MtnSubmissionStatus, "pending">,
+  status: MtnSubmissionStatus,
+  options?: {
+    message?: string;
+    files?: string[];
+    reviewerId?: number;
+  },
 ): Stored | null {
   seedIfEmpty();
   const row = store.get(id);
   if (!row) return null;
-  const next: Stored = { ...row, status };
+  const normalizedFiles =
+    options?.files?.filter((x) => x && x.trim().length > 0).map((x) => x.trim()) ??
+    [];
+  const next: Stored = {
+    ...row,
+    status,
+    reviewMessage:
+      status === "request_changes" ? options?.message?.trim() || undefined : undefined,
+    reviewAttachments: status === "request_changes" ? normalizedFiles : [],
+    reviewedByReviewerId: options?.reviewerId,
+    reviewedAt: new Date().toISOString(),
+  };
   store.set(id, next);
   return next;
 }

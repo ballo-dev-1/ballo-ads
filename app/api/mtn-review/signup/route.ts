@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { mtnReviewBackendRequest } from "@/lib/mtnReviewBackendServer";
 
 export async function POST(request: NextRequest) {
-  let body: { email?: unknown; password?: unknown };
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  let body: { firstName?: unknown; lastName?: unknown; email?: unknown; password?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -10,19 +11,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
+    const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const password = typeof body.password === "string" ? body.password : "";
-    if (!email || !password) {
+    if (!firstName || !lastName || !email || !password) {
         return NextResponse.json(
-          { error: "Email and password are required" },
+          { error: "First name, last name, email and password are required" },
           { status: 400 },
         );
     }
 
     const backend = await mtnReviewBackendRequest("/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+      body: JSON.stringify({ firstName, lastName, email, password }),
+    }, { host });
     const data = await backend.json().catch(() => ({}));
     if (!backend.ok) {
       const error = typeof (data as { error?: unknown }).error === "string"

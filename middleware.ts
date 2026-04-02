@@ -6,7 +6,7 @@ import {
   ADMIN_TOKEN_COOKIE,
   isAdminTokenActive,
 } from "@/lib/adminAuth";
-import { getAdminBasePath, getAdminEnvFromPathname } from "@/lib/adminNamespace";
+import { getAdminBasePath, getAdminEnv } from "@/lib/adminNamespace";
 import {
   MTN_REVIEW_SESSION_COOKIE,
   MTN_REVIEW_SESSION_VALUE,
@@ -21,7 +21,10 @@ export function middleware(request: NextRequest) {
   const isDevAdmin = pathname.startsWith("/dev-admin");
   const isStagingAdmin = pathname.startsWith("/staging-admin");
   const basePath = getAdminBasePath(pathname);
-  const expectedEnv = getAdminEnvFromPathname(pathname);
+  const expectedEnv = getAdminEnv({
+    pathname,
+    host: request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+  });
   const hasMatchingEnv = !tokenEnv || tokenEnv === expectedEnv;
   const isAuthenticatedForNamespace = hasActiveToken && hasMatchingEnv;
   const loginPath = `${basePath}/login`;

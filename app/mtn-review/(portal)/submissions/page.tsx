@@ -17,6 +17,9 @@ function statusStyles(status: string) {
   if (status === 'accepted') {
     return 'bg-emerald-100 text-emerald-800 border-emerald-200'
   }
+  if (status === 'request_changes') {
+    return 'bg-rose-100 text-rose-800 border-rose-200'
+  }
   if (status === 'withdrawn') {
     return 'bg-slate-200 text-slate-700 border-slate-300'
   }
@@ -25,6 +28,7 @@ function statusStyles(status: string) {
 
 function submissionAccent(status: string) {
   if (status === 'accepted') return 'bg-gradient-to-r from-sky-400 via-cyan-500 to-teal-600'
+  if (status === 'request_changes') return 'bg-gradient-to-r from-rose-400 via-pink-500 to-orange-500'
   if (status === 'withdrawn') return 'bg-gradient-to-r from-fuchsia-400 via-pink-500 to-rose-600'
   return 'bg-gradient-to-r from-amber-400 via-orange-400 to-rose-500'
 }
@@ -33,7 +37,9 @@ export default function MtnReviewSubmissionsPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'withdrawn'>(
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'pending' | 'accepted' | 'withdrawn' | 'request_changes'
+  >(
     'all',
   )
 
@@ -60,6 +66,7 @@ export default function MtnReviewSubmissionsPage() {
       total: rows.length,
       pending: rows.filter((r) => r.status === 'pending').length,
       accepted: rows.filter((r) => r.status === 'accepted').length,
+      requestChanges: rows.filter((r) => r.status === 'request_changes').length,
       withdrawn: rows.filter((r) => r.status === 'withdrawn').length,
     }
   }, [rows])
@@ -94,6 +101,7 @@ export default function MtnReviewSubmissionsPage() {
             { key: 'all', label: 'All', count: counts.total },
             { key: 'pending', label: 'Pending', count: counts.pending },
             { key: 'accepted', label: 'Accepted', count: counts.accepted },
+            { key: 'request_changes', label: 'Request changes', count: counts.requestChanges },
             { key: 'withdrawn', label: 'Withdrawn', count: counts.withdrawn },
           ].map((opt) => {
             const active = statusFilter === opt.key
@@ -102,7 +110,9 @@ export default function MtnReviewSubmissionsPage() {
                 key={opt.key}
                 type="button"
                 onClick={() =>
-                  setStatusFilter(opt.key as 'all' | 'pending' | 'accepted' | 'withdrawn')
+                  setStatusFilter(
+                    opt.key as 'all' | 'pending' | 'accepted' | 'withdrawn' | 'request_changes',
+                  )
                 }
                 className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
                   active

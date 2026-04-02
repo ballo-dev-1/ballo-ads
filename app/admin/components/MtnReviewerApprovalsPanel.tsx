@@ -94,6 +94,7 @@ export default function MtnReviewerApprovalsPanel() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3 text-left font-semibold text-slate-700">Name</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-700">Created</th>
@@ -103,6 +104,9 @@ export default function MtnReviewerApprovalsPanel() {
             <tbody className="divide-y divide-slate-100">
               {rows.map((row) => (
                 <tr key={row.id}>
+                  <td className="px-4 py-3 text-slate-900">
+                    {[row.firstName, row.lastName].filter(Boolean).join(' ') || '—'}
+                  </td>
                   <td className="px-4 py-3 text-slate-900">{row.email}</td>
                   <td className="px-4 py-3 capitalize text-slate-700">{row.status}</td>
                   <td className="px-4 py-3 text-slate-600">

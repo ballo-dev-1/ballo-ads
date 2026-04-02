@@ -1019,20 +1019,25 @@ export default function ApmPage() {
                     </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <a
-                        href="/admin"
+                        href="https://balloads.com/admin"
                         className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
                       >
                         Production backoffice
-                        <p className="mt-1 text-xs text-slate-500">Open /admin</p>
+                        <p className="mt-1 text-xs text-slate-500">Open balloads.com/admin</p>
                       </a>
                       <a
-                        href="https://dev-ballo-ads.web.app/"
-                        target="_blank"
-                        rel="noreferrer"
+                        href="https://staging.balloads.com/admin"
                         className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
                       >
-                        Staging frontend
-                        <p className="mt-1 text-xs text-slate-500">Open dev-ballo-ads.web.app</p>
+                        Staging backoffice
+                        <p className="mt-1 text-xs text-slate-500">Open staging.balloads.com/admin</p>
+                      </a>
+                      <a
+                        href="https://dev.balloads.com/admin/apm"
+                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
+                      >
+                        Development backoffice
+                        <p className="mt-1 text-xs text-slate-500">Open dev.balloads.com/admin/apm</p>
                       </a>
                       <a
                         href={`${basePath}/apm`}
@@ -1040,15 +1045,6 @@ export default function ApmPage() {
                       >
                         Current APM route
                         <p className="mt-1 text-xs text-slate-500">Open {basePath}/apm</p>
-                      </a>
-                      <a
-                        href={basePath === '/admin' ? '/staging-admin/apm' : '/admin/apm'}
-                        className="rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-800 transition-colors hover:bg-slate-50"
-                      >
-                        Alternate APM route
-                        <p className="mt-1 text-xs text-slate-500">
-                          Open {basePath === '/admin' ? '/staging-admin/apm' : '/admin/apm'}
-                        </p>
                       </a>
                     </div>
                   </>
