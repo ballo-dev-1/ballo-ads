@@ -7,6 +7,7 @@ import {
 import {
   mtnGetSubmission,
   mtnUpdateSubmissionStatus,
+  type MtnSubmissionStatus,
 } from "@/lib/mtnReviewSubmissionsStore";
 
 export async function GET(
@@ -108,7 +109,7 @@ export async function PATCH(
     }
   }
 
-  const row = mtnUpdateSubmissionStatus(id, body.status, {
+  const row = mtnUpdateSubmissionStatus(id, body.status as MtnSubmissionStatus, {
     message: typeof body.message === "string" ? body.message : undefined,
     files: Array.isArray(body.files) ? body.files : undefined,
     reviewerId:
