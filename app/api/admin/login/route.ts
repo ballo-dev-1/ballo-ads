@@ -19,14 +19,49 @@ const ALLOWED_BASES = [
   "http://127.0.0.1:5238",
 ];
 
-function getDefaultApiBaseUrl(request: NextRequest): string {
-  const resolvedEnv = getAdminEnv({
+function getRequestHost(request: NextRequest): string | null {
+  return request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+}
+
+function getSessionEnv(request: NextRequest) {
+  return getAdminEnv({
     pathname: request.nextUrl.pathname,
-    host: request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    host: getRequestHost(request),
   });
+}
+
+function getDefaultApiBaseUrl(request: NextRequest): string {
+  const resolvedEnv = getSessionEnv(request);
   if (resolvedEnv === "dev") return DEV_API_BASE;
   if (resolvedEnv === "staging") return STAGING_API_BASE;
   return PROD_API_BASE;
+}
+
+/** Only use client-provided apiBase if it matches this admin UI session (avoids prod token + staging cookie mismatch). */
+function resolveLoginApiBase(request: NextRequest, apiBaseFromBody: unknown): string {
+  const sessionEnv = getSessionEnv(request);
+  const defaultBase = getDefaultApiBaseUrl(request).replace(/\/+$/, "");
+  const devBase = DEV_API_BASE.replace(/\/+$/, "");
+  const stagingBase = STAGING_API_BASE.replace(/\/+$/, "");
+  const prodBase = PROD_API_BASE.replace(/\/+$/, "");
+
+  const trimmed =
+    typeof apiBaseFromBody === "string" && apiBaseFromBody.trim().length > 0
+      ? apiBaseFromBody.trim().replace(/\/+$/, "")
+      : null;
+
+  if (!trimmed || !ALLOWED_BASES.includes(trimmed)) {
+    return defaultBase;
+  }
+
+  const isLocalBackend =
+    trimmed === "http://localhost:5238" || trimmed === "http://127.0.0.1:5238";
+
+  if (sessionEnv === "prod" && trimmed === prodBase) return trimmed;
+  if (sessionEnv === "staging" && trimmed === stagingBase) return trimmed;
+  if (sessionEnv === "dev" && (trimmed === devBase || isLocalBackend)) return trimmed;
+
+  return defaultBase;
 }
 
 export async function POST(request: NextRequest) {
@@ -41,22 +76,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseFromBody =
-      typeof apiBaseFromBody === "string" &&
-      apiBaseFromBody.trim().length > 0
-        ? apiBaseFromBody.trim().replace(/\/+$/, "")
-        : null;
+    const baseUrl = resolveLoginApiBase(request, apiBaseFromBody);
+    const sessionEnv = getSessionEnv(request);
 
-    const baseUrl =
-      baseFromBody && ALLOWED_BASES.includes(baseFromBody)
-        ? baseFromBody
-        : getDefaultApiBaseUrl(request).replace(/\/+$/, "");
-    const selectedEnv =
-      baseUrl === PROD_API_BASE.replace(/\/+$/, "")
-        ? "prod"
-        : baseUrl === STAGING_API_BASE.replace(/\/+$/, "")
-          ? "staging"
-          : "dev";
     const res = await fetch(`${baseUrl}/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,7 +138,7 @@ export async function POST(request: NextRequest) {
         path: "/",
       });
     }
-    cookieStore.set(ADMIN_ENV_COOKIE, selectedEnv, {
+    cookieStore.set(ADMIN_ENV_COOKIE, sessionEnv, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

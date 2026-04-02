@@ -44,7 +44,8 @@ export default function AdminLogin() {
       const data = await response.json()
 
       if (response.ok) {
-        router.push(`${basePath}/dashboard`)
+        // Full navigation so session cookies from the POST response are applied before middleware runs.
+        window.location.assign(`${basePath}/dashboard`)
       } else {
         setError(data.error || 'Invalid email or password')
       }
