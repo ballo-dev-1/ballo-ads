@@ -107,12 +107,14 @@ export default function CampaignsPage() {
     }
   }, [env])
 
-  const approvedCount = useMemo(() => campaigns.filter((campaign) => campaign.isApproved).length, [campaigns])
-
-  const activeCount = useMemo(
-    () => campaigns.filter((campaign) => campaign.status.toLowerCase().includes('active')).length,
-    [campaigns],
-  )
+  const reviewCounts = useMemo(() => {
+    const pending = campaigns.filter((campaign) => !campaign.isApproved).length
+    const approved = campaigns.filter((campaign) => campaign.isApproved).length
+    const rejected = campaigns.filter(
+      (campaign) => !campaign.isApproved && campaign.status.toLowerCase().includes('cancel'),
+    ).length
+    return { pending, approved, rejected }
+  }, [campaigns])
 
   const companyOptions = useMemo(
     () => Array.from(new Set(campaigns.map((campaign) => campaign.companyName))).sort((a, b) => a.localeCompare(b)),
@@ -174,19 +176,6 @@ export default function CampaignsPage() {
           title="Campaigns"
           description="Global campaign management across all companies."
           variant="teal"
-          meta={
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
-                Total: {campaigns.length}
-              </span>
-              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
-                Approved: {approvedCount}
-              </span>
-              <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5">
-                Active: {activeCount}
-              </span>
-            </div>
-          }
         />
 
         <div className="admin-tab-bar" role="tablist">
@@ -195,27 +184,60 @@ export default function CampaignsPage() {
             role="tab"
             aria-selected={reviewTab === 'pending'}
             onClick={() => setReviewTab('pending')}
-            className={`admin-tab-bar__tab ${reviewTab === 'pending' ? 'admin-tab-bar__tab--active' : ''}`}
+            className={`admin-tab-bar__tab inline-flex items-center gap-2 ${
+              reviewTab === 'pending' ? 'admin-tab-bar__tab--active' : ''
+            }`}
           >
             Pending
+            <span
+              className={`inline-flex min-w-[1.7rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                reviewTab === 'pending'
+                  ? 'bg-[#3bb9e4]/20 text-[var(--admin-ui-accent)]'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {reviewCounts.pending}
+            </span>
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={reviewTab === 'approved'}
             onClick={() => setReviewTab('approved')}
-            className={`admin-tab-bar__tab ${reviewTab === 'approved' ? 'admin-tab-bar__tab--active' : ''}`}
+            className={`admin-tab-bar__tab inline-flex items-center gap-2 ${
+              reviewTab === 'approved' ? 'admin-tab-bar__tab--active' : ''
+            }`}
           >
             Approved
+            <span
+              className={`inline-flex min-w-[1.7rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                reviewTab === 'approved'
+                  ? 'bg-[#3bb9e4]/20 text-[var(--admin-ui-accent)]'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {reviewCounts.approved}
+            </span>
           </button>
           <button
             type="button"
             role="tab"
             aria-selected={reviewTab === 'rejected'}
             onClick={() => setReviewTab('rejected')}
-            className={`admin-tab-bar__tab ${reviewTab === 'rejected' ? 'admin-tab-bar__tab--active' : ''}`}
+            className={`admin-tab-bar__tab inline-flex items-center gap-2 ${
+              reviewTab === 'rejected' ? 'admin-tab-bar__tab--active' : ''
+            }`}
           >
             Rejected
+            <span
+              className={`inline-flex min-w-[1.7rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                reviewTab === 'rejected'
+                  ? 'bg-[#3bb9e4]/20 text-[var(--admin-ui-accent)]'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {reviewCounts.rejected}
+            </span>
           </button>
         </div>
 

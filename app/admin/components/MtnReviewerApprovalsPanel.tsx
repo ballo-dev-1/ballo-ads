@@ -13,10 +13,10 @@ export default function MtnReviewerApprovalsPanel() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('pending')
   const [loading, setLoading] = useState(false)
 
-  const load = async (filter: FilterStatus) => {
+  const load = async () => {
     setLoading(true)
     try {
-      const data = await adminApi.getMtnReviewers(filter === 'all' ? undefined : filter)
+      const data = await adminApi.getMtnReviewers()
       setRows(data)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to load MTN reviewers')
@@ -26,19 +26,27 @@ export default function MtnReviewerApprovalsPanel() {
   }
 
   useEffect(() => {
-    void load(statusFilter)
-  }, [statusFilter, env])
+    void load()
+  }, [env])
 
-  const pendingCount = useMemo(
-    () => rows.filter((x) => x.status === 'pending').length,
-    [rows],
-  )
+  const counts = useMemo(() => {
+    const pending = rows.filter((x) => x.status === 'pending').length
+    const approved = rows.filter((x) => x.status === 'approved').length
+    const rejected = rows.filter((x) => x.status === 'rejected').length
+    const all = rows.length
+    return { pending, approved, rejected, all }
+  }, [rows])
+
+  const filteredRows = useMemo(() => {
+    if (statusFilter === 'all') return rows
+    return rows.filter((x) => x.status === statusFilter)
+  }, [rows, statusFilter])
 
   const updateStatus = async (id: number, status: 'approved' | 'rejected') => {
     try {
       await adminApi.updateMtnReviewerStatus(id, status)
       toast.success(status === 'approved' ? 'Reviewer approved' : 'Reviewer rejected')
-      await load(statusFilter)
+      await load()
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to update reviewer status')
     }
@@ -48,18 +56,12 @@ export default function MtnReviewerApprovalsPanel() {
     { value: 'pending', label: 'Pending' },
     { value: 'approved', label: 'Approved' },
     { value: 'rejected', label: 'Rejected' },
-    { value: 'all', label: 'All' },
   ]
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-slate-700">Status</span>
-        <div
-          className="inline-flex rounded-lg border border-slate-300 bg-white p-1"
-          role="tablist"
-          aria-label="Reviewer status filter"
-        >
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="admin-tab-bar" role="tablist" aria-label="Reviewer status filter">
           {filterTabs.map((tab) => {
             const isActive = statusFilter === tab.value
             return (
@@ -69,20 +71,28 @@ export default function MtnReviewerApprovalsPanel() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setStatusFilter(tab.value)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                  isActive
-                    ? 'bg-[var(--admin-ui-accent)] text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
+                className={`admin-tab-bar__tab inline-flex items-center gap-2 ${
+                  isActive ? 'admin-tab-bar__tab--active' : ''
                 }`}
               >
                 {tab.label}
+                {tab.value !== 'all' ? (
+                  <span
+                    className={`inline-flex min-w-[1.7rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      isActive ? 'bg-[#3bb9e4]/20 text-[var(--admin-ui-accent)]' : 'bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {tab.value === 'pending'
+                      ? counts.pending
+                      : tab.value === 'approved'
+                        ? counts.approved
+                        : counts.rejected}
+                  </span>
+                ) : null}
               </button>
             )
           })}
         </div>
-        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
-          Pending: {pendingCount}
-        </span>
       </div>
 
       {loading ? (
@@ -102,7 +112,7 @@ export default function MtnReviewerApprovalsPanel() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {rows.map((row) => (
+              {filteredRows.map((row) => (
                 <tr key={row.id}>
                   <td className="px-4 py-3 text-slate-900">
                     {[row.firstName, row.lastName].filter(Boolean).join(' ') || '—'}
@@ -138,7 +148,7 @@ export default function MtnReviewerApprovalsPanel() {
               ))}
             </tbody>
           </table>
-          {rows.length === 0 ? (
+          {filteredRows.length === 0 ? (
             <p className="px-4 py-10 text-center text-sm text-slate-500">No reviewer accounts found.</p>
           ) : null}
         </div>
