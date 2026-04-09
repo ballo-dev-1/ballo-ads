@@ -69,6 +69,17 @@ function devSiteApiBaseFromBase(base: string): string | null {
   }
 }
 
+function devApiBaseFromDevSiteBase(base: string): string | null {
+  try {
+    const u = new URL(base);
+    if (u.hostname !== "dev.balloads.com") return null;
+    if (!u.pathname.startsWith("/api")) return null;
+    return "https://dev-api.balloads.com";
+  } catch {
+    return null;
+  }
+}
+
 /** Aligned with lib/adminApi.ts DEV_API_BASE (deployed dev API). */
 function defaultDevBackendBase(): string {
   return normalizeBase(process.env.NEXT_PUBLIC_DEV_API_URL || "https://dev-api.balloads.com");
@@ -207,14 +218,20 @@ export async function mtnReviewBackendRequest(
     base.startsWith("http://localhost:5238") ||
     base.startsWith("https://localhost:5238")
   ) {
-    const devSiteApiBase = inferredEnv === "dev" ? devSiteApiBaseFromBase(base) : null;
-    if (!devSiteApiBase) return primary;
-    try {
-      const devSiteUrl = `${devSiteApiBase}/internal/mtn-review${path.startsWith("/") ? path : `/${path}`}`;
-      return await fetch(devSiteUrl, { ...init, headers });
-    } catch {
-      return primary;
+    if (inferredEnv !== "dev") return primary;
+
+    const fallbackBases = [devSiteApiBaseFromBase(base), devApiBaseFromDevSiteBase(base)]
+      .filter((candidate): candidate is string => Boolean(candidate));
+
+    for (const fallbackBase of fallbackBases) {
+      try {
+        const fallbackUrl = `${fallbackBase}/internal/mtn-review${path.startsWith("/") ? path : `/${path}`}`;
+        return await fetch(fallbackUrl, { ...init, headers });
+      } catch {
+        // try next candidate
+      }
     }
+    return primary;
   }
 
   try {
