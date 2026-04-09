@@ -41,7 +41,7 @@ const variantStyles: Record<ButtonVariant, string> = {
 
 // --- Component ---
 
-export const Button: React.FC<ButtonProps> = ({
+const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
   size = 'medium',
@@ -76,7 +76,7 @@ export const Button: React.FC<ButtonProps> = ({
 };
 // --- Component Definition ---
 
-export const HeroSection: React.FC = () => {
+const HeroSection: React.FC = () => {
   // State to capture the user's business needs
   const [formData, setFormData] = useState({
     businessType: '',

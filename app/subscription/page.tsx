@@ -1,7 +1,9 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // Sample subscription channels data
 const subscriptionChannels = [
@@ -45,7 +47,6 @@ const subscriptionChannels = [
 
 export default function SubscriptionPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [subscribedChannels, setSubscribedChannels] = useState<Set<number>>(new Set());
   const [hasSubmittedForm, setHasSubmittedForm] = useState(false);
 
@@ -55,15 +56,16 @@ export default function SubscriptionPage() {
     setHasSubmittedForm(submitted === "true");
 
     // Check for success message from form submission
-    const subscribed = searchParams.get("subscribed");
-    const channelId = searchParams.get("channelId");
+    const params = new URLSearchParams(window.location.search);
+    const subscribed = params.get("subscribed");
+    const channelId = params.get("channelId");
     if (subscribed === "true" && channelId) {
       // Add the channel to subscribed list
       setSubscribedChannels((prev) => new Set(prev).add(Number(channelId)));
       // Clean up URL
       router.replace("/subscription", { scroll: false });
     }
-  }, [router, searchParams]);
+  }, [router]);
 
   const handleSubscribe = (channelId: number, channelName: string) => {
     // Check if already subscribed
