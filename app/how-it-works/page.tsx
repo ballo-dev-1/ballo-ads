@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import ring from "@/public/Assets/8.png";
 import phoneAnalytics from "@/public/Assets/37.png";
-import statsBoard from "@/public/elements small/stats-chart.png";
+import statsBoard from "@/public/elements small/stats-chart.PNG";
 import marketAnalysis from "@/public/Assets/38.png";
 
 const steps = [
