@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, BookOpen, Briefcase, Code } from 'lucide-react';
-import logo from "@/public/Assets/1.png"
+import logo_1 from "@/public/BalloAds Logo New/BalloAds-logo.png"
+import logo_2 from "@/public/BalloAds Logo New/BalloAds-logo-full.png"
 
 type NavLink = {
   label: string;
@@ -82,101 +82,108 @@ const Header = () => {
 
   return (
     <header className="header header--sticky">
-      <nav className="header__nav fixed w-[95vw] min-w-[380px] max-w-[1440px] shadow h-16 md:flex  
-      p-4 mx-0 mt-2 top-0 left-1/2 -translate-x-1/2 rounded-full ring-white/50  ring-2 backdrop-blur-md 
-      shadow-[0_10px_20px_-10px_black] bg-[var(--brand-color-1)]             
-              data-text-bright:**:text-white">
+      <nav className="header__nav fixed w-[95vw] min-w-[380px] max-w-[1440px] h-16 md:flex ring ring-[#afc2f234] backdrop-blur-md  
+       mx-0 mt-2 top-4 left-1/2 -translate-x-1/2 data-text-bright:**:text-white shadow rounded-full p-4">
         {/* Logo */}
         <Link href="/" className="header__logo">
           <div className="header__logo-container">
-            <div className="header__logo-icon ">
-            <Image
-                    src={logo}
-                    alt="BalloAds App"
-                    width={300}
-                    height={600}
-                    className="w-full h-auto"
-                  />
+            <div className="header__logo-icon flex">
+              <Image
+                src={logo_1}
+                alt="BalloAds App"
+                width={300}
+                height={80}
+                className="header__logo-image w-auto h-[3rem]"
+                priority
+              />
+              <Image
+                src={logo_2}
+                alt="BalloAds App"
+                width={300}
+                height={80}
+                className="header__logo-image w-full h-auto ml-[-1.5rem]"
+                priority
+              />
             </div>
-            <span className="header__logo-label">ballo innovations</span>
           </div>
-          <span className="header__logo-tagline">REBRANDING THE FUTURE</span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="header__nav-desktop">
-        {/*Inside your Header component, within the desktop navigation map:*/}
+          {/*Inside your Header component, within the desktop navigation map:*/}
 
-        {navItems.map((item) => {
-          const hasDropdown = item.links && item.links.length > 0;
-          const isDropdownOpen = activeDropdown === item.label;
+          {navItems.map((item) => {
+            const hasDropdown = item.links && item.links.length > 0;
+            const isDropdownOpen = activeDropdown === item.label;
 
-          if (!hasDropdown) {
+            if (!hasDropdown) {
+              return (
+                <Link key={item.label} href={item.href ?? "#"} className="header__nav-link">
+                  {item.label}
+                </Link>
+              );
+            }
+
             return (
-              <Link key={item.label} href={item.href ?? "#"} className="header__nav-link">
-                {item.label}
-              </Link>
-            );
-          }
-
-          return (
-            <div
-              key={item.label}
-              className="header__nav-dropdown group"
-              onMouseEnter={() => setActiveDropdown(item.label)}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <Link
-                href={item.href ?? "#"}
-                className={`header__nav-link header__nav-link--with-dropdown ${
-                  isDropdownOpen ? "header__nav-link--active" : ""
-                }`}
+              <div
+                key={item.label}
+                className="header__nav-dropdown group"
+                onMouseEnter={() => setActiveDropdown(item.label)}
+                onMouseLeave={() => setActiveDropdown(null)}
               >
-                {item.label}
-                {/* Your existing SVG arrow */}
-              </Link>
+                <Link
+                  href={item.href ?? "#"}
+                  className={`header__nav-link header__nav-link--with-dropdown ${
+                    isDropdownOpen ? "header__nav-link--active" : ""
+                  }`}
+                >
+                  {item.label}
+                  {/* Your existing SVG arrow */}
+                </Link>
 
-              {isDropdownOpen && (
-                <div style={{width: 'auto'}} className={`header__dropdown-menu ${item.label === "Resources" ? "header__dropdown-menu--mega" : ""}`}>
-                  <div className={`${item.label === "Resources" ? "flex w-[500px]" : "header__dropdown-list"}`}>
-                    
-                    {/* Left Column: Primary Links */}
-                    <div className={`${item.label === "Resources" ? "w-1/2 p-4 border-r border-[var(--dark-blue)]" : ""}`}>
-                      {item.links?.map((link) => {
-                        // Check if this specific link (like "Developers") has its own sub-links
-                        const hasSubLinks = link.label === "Developers";
+                {isDropdownOpen && (
+                  <div style={{width: 'auto'}} className={`header__dropdown-menu ${item.label === "Resources" ? "header__dropdown-menu--mega" : ""}`}>
+                    <div className={`${item.label === "Resources" ? "flex w-[500px]" : "header__dropdown-list"}`}>
+                      
+                      {/* Left Column: Primary Links */}
+                      <div className={`${item.label === "Resources" ? "w-1/2 p-4 border-r border-[var(--dark-blue)]" : ""}`}>
+                        {item.links?.map((link) => {
+                          // Check if this specific link (like "Developers") has its own sub-links
+                          const hasSubLinks = link.label === "Developers";
 
-                        return (
-                          <div key={link.href} className="group/sub relative">
-                            <Link
-                              href={link.href}
-                              className="flex items-center justify-between p-3 text-[var(--dark-blue)] hover:bg-white/10 rounded-xl transition"
-                            >
-                              <span className="font-bold">{link.label}</span>
-                            </Link>
+                          return (
+                            <div key={link.href} className="group/sub relative">
+                              <Link
+                                href={link.href}
+                                className="flex items-center justify-between p-3 text-[var(--dark-blue)] hover:bg-white/10 rounded-xl transition"
+                              >
+                                <span className="font-bold">{link.label}</span>
+                              </Link>
 
-                            {/* Right Column: API Sub-links (Only for Developers on hover) */}
-                            {hasSubLinks && (
-                              <div className="absolute left-full top-[-16px] h-[calc(100%+32px)] w-full pl-6 hidden group-hover/sub:flex flex-col justify-center gap-4 bg-transparent">
-                                <Link href="/developers/sms-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">SMS API</Link>
-                                <Link href="/developers/email-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">Email API</Link>
-                                <Link href="/developers/whatsapp-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">WhatsApp API</Link>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              {/* Right Column: API Sub-links (Only for Developers on hover) */}
+                              {hasSubLinks && (
+                                <div className="absolute left-full top-[-16px] h-[calc(100%+32px)] w-full pl-6 hidden group-hover/sub:flex flex-col justify-center gap-4 bg-transparent">
+                                  <Link href="/developers/sms-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">SMS API</Link>
+                                  <Link href="/developers/email-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">Email API</Link>
+                                  <Link href="/developers/whatsapp-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">WhatsApp API</Link>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Empty Right Column Placeholder for non-hover state */}
+                      {item.label === "Resources" && <div className="w-1/2" />}
                     </div>
-
-                    {/* Empty Right Column Placeholder for non-hover state */}
-                    {item.label === "Resources" && <div className="w-1/2" />}
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })}
+        </div>
 
+        <div className="flex items-center gap-5">
           <svg
             className="header__search-icon"
             fill="none"
@@ -190,22 +197,22 @@ const Header = () => {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-        </div>
 
-        {/* Sign In and Sign Up Buttons */}
-        <div className="header__actions">
-          <Link
-            href="#signin"
-            className="header__action-link header__action-link--signin"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="#signup"
-            className="header__action-link header__action-link--signup"
-          >
-            Sign Up
-          </Link>
+          {/* Sign In and Sign Up Buttons */}
+          <div className="header__actions">
+            <Link
+              href="#signin"
+              className="header__action-link header__action-link--signin"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="#signup"
+              className="header__action-link header__action-link--signup"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Menu Button */}

@@ -20,6 +20,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: linear-gradient(90deg, transparent 0%, rgb(0 196 204 / 75%) 100%);background: linear-gradient(90deg, transparent 0%, rgb(17, 81, 136, 0.9) 100%);
 }
 
 @media (min-width: 768px) {
@@ -31,24 +32,26 @@
 /* Header Logo */
 .header__logo {
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  align-items: center;
 }
 
 .header__logo-container {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0;
 }
 
 .header__logo-icon {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 9999px;
+  width: 11.5rem;
+  height: auto;
   background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.header__logo-image {
+  filter: brightness(0) invert(1);
 }
 
 .header__logo-text {
@@ -71,6 +74,12 @@
   letter-spacing: 0.2em;
   margin-left: 2.75rem;
   margin-top: 0.1rem;
+}
+
+@media (max-width: 1024px) {
+  .header__logo-icon {
+    width: 9rem;
+  }
 }
 
 /* Desktop Navigation */
@@ -161,8 +170,8 @@
 }
 
 .header__search-icon {
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 2rem;
+  height: 2rem;
   color: white;
   opacity: 0.95;
 }
