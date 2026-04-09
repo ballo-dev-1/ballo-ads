@@ -59,6 +59,16 @@ function inferMtnReviewEnvFromHost(
   return null;
 }
 
+function devSiteApiBaseFromBase(base: string): string | null {
+  try {
+    const u = new URL(base);
+    if (u.hostname !== "dev-api.balloads.com") return null;
+    return "https://dev.balloads.com/api";
+  } catch {
+    return null;
+  }
+}
+
 /** Aligned with lib/adminApi.ts DEV_API_BASE (deployed dev API). */
 function defaultDevBackendBase(): string {
   return normalizeBase(process.env.NEXT_PUBLIC_DEV_API_URL || "https://dev-api.balloads.com");
@@ -182,6 +192,7 @@ export async function mtnReviewBackendRequest(
 ): Promise<Response> {
   const forwardedHost = opts?.host ?? null;
   const { base, secret, usedImplicitDevDefaults } = internalBase(forwardedHost);
+  const inferredEnv = inferMtnReviewEnvFromHost(forwardedHost);
   const url = `${base}/internal/mtn-review${path.startsWith("/") ? path : `/${path}`}`;
   const headers = new Headers(init?.headers);
   headers.set(SECRET_HEADER, secret);
@@ -196,7 +207,14 @@ export async function mtnReviewBackendRequest(
     base.startsWith("http://localhost:5238") ||
     base.startsWith("https://localhost:5238")
   ) {
-    return primary;
+    const devSiteApiBase = inferredEnv === "dev" ? devSiteApiBaseFromBase(base) : null;
+    if (!devSiteApiBase) return primary;
+    try {
+      const devSiteUrl = `${devSiteApiBase}/internal/mtn-review${path.startsWith("/") ? path : `/${path}`}`;
+      return await fetch(devSiteUrl, { ...init, headers });
+    } catch {
+      return primary;
+    }
   }
 
   try {
