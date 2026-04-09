@@ -211,15 +211,11 @@ export async function mtnReviewBackendRequest(
     headers.set("Content-Type", "application/json");
   }
   const primary = await fetch(url, { ...init, headers });
-  if (
-    primary.status !== 404 ||
-    !usedImplicitDevDefaults ||
-    process.env.NODE_ENV !== "development" ||
-    base.startsWith("http://localhost:5238") ||
-    base.startsWith("https://localhost:5238")
-  ) {
-    if (inferredEnv !== "dev") return primary;
-
+  const shouldTryDevBaseFallback =
+    inferredEnv === "dev" &&
+    primary.status === 404 &&
+    process.env.NODE_ENV === "production";
+  if (shouldTryDevBaseFallback) {
     const fallbackBases = [devSiteApiBaseFromBase(base), devApiBaseFromDevSiteBase(base)]
       .filter((candidate): candidate is string => Boolean(candidate));
 
@@ -231,6 +227,15 @@ export async function mtnReviewBackendRequest(
         // try next candidate
       }
     }
+  }
+
+  if (
+    primary.status !== 404 ||
+    !usedImplicitDevDefaults ||
+    process.env.NODE_ENV !== "development" ||
+    base.startsWith("http://localhost:5238") ||
+    base.startsWith("https://localhost:5238")
+  ) {
     return primary;
   }
 

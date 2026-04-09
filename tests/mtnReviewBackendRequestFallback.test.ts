@@ -112,3 +112,42 @@ test("dev host retries signup against dev-api when base points at dev site /api"
     globalThis.fetch = originalFetch;
   }
 });
+
+test("dev host does not fallback when primary response is non-404", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls: string[] = [];
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    calls.push(url);
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }) as typeof fetch;
+
+  try {
+    const response = await withEnv(
+      {
+        NODE_ENV: "production",
+        NEXT_PUBLIC_DEV_API_URL: "https://dev-api.balloads.com",
+        MTN_REVIEW_BACKEND_SECRET_DEV: "dev-secret",
+        MTN_REVIEW_BACKEND_SECRET: undefined,
+        MTN_REVIEW_BACKEND_SECRET_STAGING: undefined,
+        MTN_REVIEW_BACKEND_SECRET_PROD: undefined,
+      },
+      () =>
+        mtnReviewBackendRequest(
+          "/auth/signup",
+          { method: "POST", body: JSON.stringify({}) },
+          { host: "dev.balloads.com" },
+        ),
+    );
+
+    assert.equal(response.status, 401);
+    assert.equal(calls.length, 1);
+    assert.equal(
+      calls[0],
+      "https://dev-api.balloads.com/internal/mtn-review/auth/signup",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
