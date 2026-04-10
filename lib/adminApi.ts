@@ -61,6 +61,101 @@ export function setApiBaseUrl(url: string): void {
   currentBaseUrl = url.replace(/\/+$/, "");
 }
 
+export type RoadmapPhaseStatus = "Pending" | "InProgress" | "Completed";
+export type RoadmapFeaturePriority = "Low" | "Medium" | "High";
+export type RoadmapFeatureStatus =
+  | "Pending"
+  | "InProgress"
+  | "PartiallyDone"
+  | "Done"
+  | "Cancelled";
+export type RoadmapMilestoneStatus = "Pending" | "Reached" | "Missed";
+
+export type RoadmapFeatureResponse = {
+  id: number;
+  phaseId: number;
+  parentFeatureId?: number;
+  name: string;
+  userStory: string;
+  description?: string;
+  priority: RoadmapFeaturePriority;
+  status: RoadmapFeatureStatus;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualCompletionDate?: string;
+  displayOrder: number;
+  statusNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  subFeatures: RoadmapFeatureResponse[];
+};
+
+export type RoadmapMilestoneResponse = {
+  id: number;
+  phaseId?: number;
+  title: string;
+  userStory: string;
+  description?: string;
+  targetDate: string;
+  completedDate?: string;
+  status: RoadmapMilestoneStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RoadmapPhaseResponse = {
+  id: number;
+  name: string;
+  description?: string;
+  displayOrder: number;
+  targetCompletionDate?: string;
+  status: RoadmapPhaseStatus;
+  createdAt: string;
+  updatedAt: string;
+  features: RoadmapFeatureResponse[];
+  milestones: RoadmapMilestoneResponse[];
+};
+
+export type RoadmapOverviewResponse = {
+  phases: RoadmapPhaseResponse[];
+  totalFeatures: number;
+  doneFeatures: number;
+  inProgressFeatures: number;
+  pendingFeatures: number;
+};
+
+export type RoadmapPhaseRequest = {
+  name: string;
+  description?: string;
+  displayOrder?: number;
+  targetCompletionDate?: string;
+  status?: RoadmapPhaseStatus;
+};
+
+export type RoadmapFeatureRequest = {
+  parentFeatureId?: number;
+  name: string;
+  userStory: string;
+  description?: string;
+  priority?: RoadmapFeaturePriority;
+  status?: RoadmapFeatureStatus;
+  plannedStartDate?: string;
+  plannedEndDate?: string;
+  actualCompletionDate?: string;
+  displayOrder?: number;
+  statusNotes?: string;
+};
+
+export type RoadmapMilestoneRequest = {
+  phaseId?: number;
+  title: string;
+  userStory: string;
+  description?: string;
+  targetDate: string;
+  completedDate?: string;
+  status?: RoadmapMilestoneStatus;
+};
+
 export type AuthResponse = {
   token: string;
   refreshToken: string;
@@ -571,6 +666,8 @@ export type CompanyLeanResponse = {
   isApprovedSenderIdZedmobile?: boolean;
   reviewStatus?: CompanyReviewStatus;
   reviewReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
   isActive: boolean;
   deactivatedAt?: string;
   /** `null`/`undefined` = inherit platform default */
@@ -819,6 +916,8 @@ function mapCompanyLeanResponse(
       r.isApprovedSenderIdZedmobile) as boolean | undefined,
     reviewStatus: (r.ReviewStatus ?? r.reviewStatus) as CompanyReviewStatus | undefined,
     reviewReason: (r.ReviewReason ?? r.reviewReason) as string | undefined,
+    createdAt: (r.CreatedAt ?? r.createdAt) as string | undefined,
+    updatedAt: (r.UpdatedAt ?? r.updatedAt) as string | undefined,
     isActive: Boolean(r.IsActive ?? r.isActive ?? true),
     deactivatedAt: (r.DeactivatedAt ?? r.deactivatedAt) as string | undefined,
     requireCampaignApprovalOverride: (r.RequireCampaignApprovalOverride ??
@@ -3017,4 +3116,122 @@ export const adminApi = {
       mapDashboardAnalyticsDrilldownResponse,
     );
   },
+
+  getRoadmap: (authToken?: string) =>
+    request<RoadmapOverviewResponse>(`${BACKOFFICE}/roadmap`, { authToken }),
+
+  getRoadmapPhase: (phaseId: number, authToken?: string) =>
+    request<RoadmapPhaseResponse>(`${BACKOFFICE}/roadmap/phases/${phaseId}`, {
+      authToken,
+    }),
+
+  createRoadmapPhase: (payload: RoadmapPhaseRequest, authToken?: string) =>
+    request<RoadmapPhaseResponse>(`${BACKOFFICE}/roadmap/phases`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  updateRoadmapPhase: (
+    id: number,
+    payload: RoadmapPhaseRequest,
+    authToken?: string,
+  ) =>
+    request<RoadmapPhaseResponse>(`${BACKOFFICE}/roadmap/phases/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  deleteRoadmapPhase: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/roadmap/phases/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  createRoadmapFeature: (
+    phaseId: number,
+    payload: RoadmapFeatureRequest,
+    authToken?: string,
+  ) =>
+    request<RoadmapFeatureResponse>(
+      `${BACKOFFICE}/roadmap/phases/${phaseId}/features`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+        authToken,
+      },
+    ),
+
+  updateRoadmapFeature: (
+    id: number,
+    payload: Partial<RoadmapFeatureRequest>,
+    authToken?: string,
+  ) =>
+    request<RoadmapFeatureResponse>(`${BACKOFFICE}/roadmap/features/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  updateRoadmapFeatureStatus: (
+    id: number,
+    status: RoadmapFeatureStatus,
+    statusNotes?: string,
+    authToken?: string,
+  ) =>
+    request<RoadmapFeatureResponse>(`${BACKOFFICE}/roadmap/features/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, statusNotes }),
+      authToken,
+    }),
+
+  deleteRoadmapFeature: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/roadmap/features/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  reorderRoadmapFeatures: (
+    items: { id: number; displayOrder: number }[],
+    authToken?: string,
+  ) =>
+    request<RoadmapFeatureResponse[]>(`${BACKOFFICE}/roadmap/features/reorder`, {
+      method: "PATCH",
+      body: JSON.stringify({ items }),
+      authToken,
+    }),
+
+  createRoadmapMilestone: (
+    payload: RoadmapMilestoneRequest,
+    authToken?: string,
+  ) =>
+    request<RoadmapMilestoneResponse>(`${BACKOFFICE}/roadmap/milestones`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  updateRoadmapMilestone: (
+    id: number,
+    payload: RoadmapMilestoneRequest,
+    authToken?: string,
+  ) =>
+    request<RoadmapMilestoneResponse>(`${BACKOFFICE}/roadmap/milestones/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  deleteRoadmapMilestone: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/roadmap/milestones/${id}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
+  seedRoadmap: (authToken?: string) =>
+    request<RoadmapOverviewResponse>(`${BACKOFFICE}/roadmap/seed`, {
+      method: "POST",
+      authToken,
+    }),
 };

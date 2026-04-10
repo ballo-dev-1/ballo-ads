@@ -16,6 +16,7 @@ import {
   Activity,
   Settings,
   FileText,
+  Map,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -71,6 +72,7 @@ export default function Sidebar() {
     { label: 'API Management', suffix: '/api-management', icon: PlugZap, isActive: activeStartsWith('/api-management') },
     { label: 'APM & Reliability', suffix: '/apm', icon: Activity, isActive: activeStartsWith('/apm') },
     { label: 'Docs', suffix: '/docs', icon: FileText, isActive: activeStartsWith('/docs') },
+    { label: 'Product Roadmap', suffix: '/roadmap', icon: Map, isActive: activeStartsWith('/roadmap') },
     { label: 'Settings', suffix: '/settings/mno-sender-id-email', icon: Settings, isActive: activeStartsWith('/settings') },
   ]
 
