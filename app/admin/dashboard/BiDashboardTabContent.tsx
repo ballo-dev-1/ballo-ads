@@ -55,10 +55,10 @@ const CHART_GRID_STROKE = '#e8e8ee'
 const CHART_GRID_DASH = '6 6'
 
 const KPI_GRADIENTS = [
-  'bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-4)_45%,var(--brand-color-3)_100%)]',
-  'bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_48%,var(--brand-color-2)_100%)]',
-  'bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-3)_52%,var(--brand-color-1)_100%)]',
-  'bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_50%,var(--brand-color-2)_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-2)_0%,var(--brand-color-1)_100%)]',
+  'bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-3)_65%,var(--brand-color-1)_35%)_0%,var(--brand-color-1)_100%)]',
+  'bg-[linear-gradient(160deg,var(--brand-color-3)_0%,var(--brand-color-1)_100%)]',
+  'bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_45%,var(--brand-color-1)_55%)_100%)]',
   'bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_52%,var(--brand-color-1)_100%)]',
 ] as const
 
@@ -227,7 +227,7 @@ export default function BiDashboardTabContent() {
             return (
               <div
                 key={card.key}
-                className={`rounded-2xl p-4 text-white shadow-md shadow-black/10 ${g}`}
+                className={`admin-dashboard-metric-card rounded-2xl p-4 text-white shadow-md shadow-black/10 ${g}`}
               >
                 <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-white/90">{card.label}</p>
                 <p className="mt-2 text-2xl font-bold tabular-nums">{valueText}</p>

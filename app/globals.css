@@ -126,6 +126,11 @@ a[aria-disabled="true"] {
   flex-shrink: 0;
 }
 
+/* Dashboard metric tiles: stacking context for decorative children if needed */
+.admin-dashboard-metric-card {
+  position: relative;
+}
+
 /*
  * Header nav: circular triggers — white surface, hairline border, soft lift
  * (aligned with reference search pill / icon row).

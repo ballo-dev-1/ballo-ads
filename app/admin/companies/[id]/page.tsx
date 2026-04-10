@@ -23,6 +23,7 @@ import {
   List,
   Mail,
   MapPin,
+  MoreVertical,
   Phone,
   ShieldX,
   Signature,
@@ -311,6 +312,97 @@ function ReviewStatusPill({ status }: { status: CompanyReviewStatus }) {
   )
 }
 
+function SubmissionReviewOverflowMenu({
+  disabled,
+  loading,
+  onApprove,
+  onReject,
+  onRequestChanges,
+}: {
+  disabled: boolean
+  loading: boolean
+  onApprove: () => void
+  onReject: () => void
+  onRequestChanges: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+    }
+  }, [open])
+
+  const run = (fn: () => void) => {
+    setOpen(false)
+    fn()
+  }
+
+  const itemClass =
+    'block w-full px-3 py-2 text-left text-sm text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50'
+
+  return (
+    <div className="relative inline-flex" ref={wrapRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled || loading}
+        className={classNames(
+          'inline-flex h-8 w-8 shrink-0 items-center justify-center text-slate-600 rounded-2xl disabled:cursor-not-allowed disabled:opacity-50',
+          open && 'border-slate-300 bg-slate-50',
+        )}
+        aria-label="Submission review actions"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <MoreVertical className="h-4 w-4" strokeWidth={2} aria-hidden />
+      </button>
+      {open ? (
+        <div
+          className="absolute right-0 top-full z-50 mt-1 min-w-[12rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+          role="menu"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className={classNames(itemClass, 'text-emerald-800')}
+            disabled={disabled || loading}
+            onClick={() => run(onApprove)}
+          >
+            {loading ? 'Updating...' : 'Approve'}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={classNames(itemClass, 'text-red-800')}
+            disabled={disabled || loading}
+            onClick={() => run(onReject)}
+          >
+            {loading ? 'Updating...' : 'Reject'}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className={classNames(itemClass, 'text-amber-800')}
+            disabled={disabled || loading}
+            onClick={() => run(onRequestChanges)}
+          >
+            {loading ? 'Updating...' : 'Request changes'}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function campaignApprovalOverrideLabel(override: boolean | null | undefined): string {
   if (override === true) return 'Always require approval'
   if (override === false) return 'Skip approval (trusted)'
@@ -404,6 +496,8 @@ export default function CompanyDetailsPage() {
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
   const [lifecycleLoading, setLifecycleLoading] = useState(false)
+  const [purgeConfirmModalOpen, setPurgeConfirmModalOpen] = useState(false)
+  const [purgeConfirmText, setPurgeConfirmText] = useState('')
   const [campaignApprovalOverrideLoading, setCampaignApprovalOverrideLoading] = useState(false)
   const [submitToMnosLoading, setSubmitToMnosLoading] = useState(false)
   const [submitToMnosModalOpen, setSubmitToMnosModalOpen] = useState(false)
@@ -1375,9 +1469,14 @@ export default function CompanyDetailsPage() {
       tone: 'danger',
     })
     if (!confirmed) return
-    const typed = window.prompt('Type PURGE to confirm permanent deletion')
-    if (typed !== 'PURGE') {
-      toast.error('Purge cancelled: confirmation text did not match')
+    setPurgeConfirmText('')
+    setPurgeConfirmModalOpen(true)
+  }
+
+  const confirmPurgeCompany = async () => {
+    if (!company) return
+    if (purgeConfirmText !== 'PURGE') {
+      toast.error('Type PURGE to confirm permanent deletion')
       return
     }
     setLifecycleLoading(true)
@@ -1390,7 +1489,10 @@ export default function CompanyDetailsPage() {
         status: "purged",
       })
       toast.success('Company purged')
-      router.push(`${basePath}/companies`)
+      setPurgeConfirmModalOpen(false)
+      setPurgeConfirmText('')
+      router.replace(`${basePath}/companies`)
+      router.refresh()
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to purge company')
     } finally {
@@ -1798,65 +1900,79 @@ export default function CompanyDetailsPage() {
                         <h3 className="text-base font-semibold text-slate-900">Submission review</h3>
                       </div>
                       <div className="space-y-3 px-4 py-4">
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="font-medium text-slate-700">Status:</span>
-                          <ReviewStatusPill status={reviewStatus} />
+                        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 text-sm">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            <span className="font-medium text-slate-700">Status:</span>
+                            <ReviewStatusPill status={reviewStatus} />
+                          </div>
+                          {reviewStatus === 'Approved' || reviewStatus === 'Rejected' ? (
+                            <div className="ml-auto shrink-0">
+                              <SubmissionReviewOverflowMenu
+                                disabled={!company.isActive}
+                                loading={reviewLoading}
+                                onApprove={() => void handleSetReviewStatus('Approved')}
+                                onReject={() => void handleSetReviewStatus('Rejected')}
+                                onRequestChanges={() => void handleSetReviewStatus('Pending')}
+                              />
+                            </div>
+                          ) : null}
                         </div>
                         <SubmissionReviewChecklist company={company} />
 
-                        <p className="text-sm text-slate-600">
-                          Review company details before granting access.
-                        </p>
-                        <div className="flex flex-col gap-2">
-                          <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
-                            <button
-                              type="button"
-                              onClick={() => handleSetReviewStatus('Approved')}
-                              disabled={reviewLoading || !company.isActive}
-                              className={classNames(
-                                buttonBase,
-                                'min-w-0 w-full justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
-                              )}
-                            >
-                              {reviewLoading ? 'Updating...' : 'Approve'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSetReviewStatus('Rejected')}
-                              disabled={reviewLoading || !company.isActive}
-                              className={classNames(
-                                buttonBase,
-                                'min-w-0 w-full justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
-                              )}
-                            >
-                              {reviewLoading ? 'Updating...' : 'Reject'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSetReviewStatus('Pending')}
-                              disabled={reviewLoading || !company.isActive}
-                              className={classNames(
-                                buttonBase,
-                                'min-w-0 w-full justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
-                              )}
-                            >
-                              {reviewLoading ? 'Updating...' : 'Request changes'}
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => openSubmitToMnosModal()}
-                            disabled={
-                              reviewLoading || submitToMnosLoading || !company.isActive
-                            }
-                            className={classNames(
-                              buttonBase,
-                              'w-full mt-5 justify-center border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] text-white shadow-sm hover:bg-[var(--brand-color-1)]',
-                            )}
-                          >
-                            {submitToMnosLoading ? 'Submitting…' : 'Submit to MNOs'}
-                          </button>
-                        </div>
+                        {reviewStatus !== 'Approved' && reviewStatus !== 'Rejected' ? (
+                          <>
+                            <p className="text-sm text-slate-600">
+                              Review company details before granting access.
+                            </p>
+                            <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                              <button
+                                type="button"
+                                onClick={() => handleSetReviewStatus('Approved')}
+                                disabled={reviewLoading || !company.isActive}
+                                className={classNames(
+                                  buttonBase,
+                                  'min-w-0 w-full justify-center border border-emerald-300 bg-emerald-100 text-emerald-800 shadow-sm hover:bg-emerald-200',
+                                )}
+                              >
+                                {reviewLoading ? 'Updating...' : 'Approve'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSetReviewStatus('Rejected')}
+                                disabled={reviewLoading || !company.isActive}
+                                className={classNames(
+                                  buttonBase,
+                                  'min-w-0 w-full justify-center border border-red-300 bg-red-100 text-red-800 shadow-sm hover:bg-red-200',
+                                )}
+                              >
+                                {reviewLoading ? 'Updating...' : 'Reject'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSetReviewStatus('Pending')}
+                                disabled={reviewLoading || !company.isActive}
+                                className={classNames(
+                                  buttonBase,
+                                  'min-w-0 w-full justify-center border border-amber-300 bg-amber-100 text-amber-800 shadow-sm hover:bg-amber-200',
+                                )}
+                              >
+                                {reviewLoading ? 'Updating...' : 'Request changes'}
+                              </button>
+                            </div>
+                          </>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => openSubmitToMnosModal()}
+                          disabled={reviewLoading || submitToMnosLoading || !company.isActive}
+                          className={classNames(
+                            buttonBase,
+                            'w-full justify-center border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] !text-[0.9rem] text-white shadow-sm hover:bg-[var(--brand-color-1)]',
+                            reviewStatus !== 'Approved' && reviewStatus !== 'Rejected' ? 'mt-5' : 'mt-1',
+                          )}
+                        >
+                          {submitToMnosLoading ? 'Submitting…' : 'Submit to MNOs'}
+                        </button>
                         {reviewStatus === 'Rejected' && company.reviewReason ? (
                           <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                             Rejection reason: {company.reviewReason}
@@ -2836,6 +2952,64 @@ export default function CompanyDetailsPage() {
                     : reviewFeedbackMode === 'reject'
                       ? 'Reject submission'
                       : 'Send feedback'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {purgeConfirmModalOpen ? (
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[1px]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="purge-company-modal-title"
+            onClick={() => {
+              if (lifecycleLoading) return
+              setPurgeConfirmModalOpen(false)
+            }}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="border-b border-slate-100 px-5 py-4">
+                <h3 id="purge-company-modal-title" className="text-base font-semibold text-slate-900">
+                  Confirm permanent deletion
+                </h3>
+              </div>
+              <div className="space-y-3 px-5 py-4">
+                <p className="text-sm text-slate-700">
+                  Type <span className="font-semibold">PURGE</span> to permanently delete this company.
+                </p>
+                <input
+                  type="text"
+                  value={purgeConfirmText}
+                  onChange={(event) => setPurgeConfirmText(event.target.value)}
+                  placeholder="PURGE"
+                  disabled={lifecycleLoading}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] disabled:cursor-not-allowed disabled:bg-slate-100"
+                />
+              </div>
+              <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPurgeConfirmModalOpen(false)
+                    setPurgeConfirmText('')
+                  }}
+                  disabled={lifecycleLoading}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmPurgeCompany()}
+                  disabled={lifecycleLoading || purgeConfirmText !== 'PURGE'}
+                  className="rounded-lg border border-red-700 bg-red-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {lifecycleLoading ? 'Purging...' : 'Delete permanently'}
                 </button>
               </div>
             </div>

@@ -2246,6 +2246,12 @@ export const adminApi = {
       },
     ),
 
+  deleteMtnReviewer: (reviewerId: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/mtn-reviewers/${reviewerId}`, {
+      method: "DELETE",
+      authToken,
+    }),
+
   getClients: (
     companyId: number,
     params?: Record<string, string | number | undefined>,

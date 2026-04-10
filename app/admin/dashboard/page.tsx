@@ -303,12 +303,12 @@ function Dashboard() {
             {activeTab === 'operations' ? (
               <>
             <section className="admin-liquid-card relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
-              <div className="pointer-events-none absolute -right-8 -top-24 h-56 w-56 rounded-full bg-[var(--brand-color-3)]/18 blur-3xl admin-dark:bg-[var(--brand-color-4)]/12" />
+              <div className="pointer-events-none absolute -right-8 -top-24 h-56 w-56 rounded-full bg-[var(--brand-color-3)]/16 blur-3xl admin-dark:bg-[var(--brand-color-2)]/14" />
               <div className="relative">
                 <h1 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white sm:text-xl">Operations overview</h1>
                 <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Order flow, queue activity, and reliability at a glance.</p>
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-4)_40%,var(--brand-color-3)_100%)] p-4 text-white shadow-lg shadow-black/15">
+                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_40%,var(--brand-color-1)_60%)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Queue volume</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(waitlistStats.total)}</p>
                     <p className="mt-1 text-sm text-white/80">Waitlist entries</p>
@@ -316,7 +316,7 @@ function Dashboard() {
                       <path d="M0 24 L20 8 L40 20 L60 4 L80 18 L100 10 L120 14" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
+                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Order intake</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(totalOrders)}</p>
                     <p className="mt-1 text-sm text-white/80">Recent purchase orders</p>
@@ -324,7 +324,7 @@ function Dashboard() {
                       <path d="M0 20 L24 12 L48 22 L72 6 L96 16 L120 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-4)_48%,var(--brand-color-3)_100%)] p-4 text-white shadow-lg shadow-[color-mix(in_srgb,var(--brand-color-3)_35%,transparent)]">
+                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(155deg,color-mix(in_srgb,var(--brand-color-2)_90%,var(--brand-color-3)_10%)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/25">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Activation</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(activeCount)}</p>
                     <p className="mt-1 text-sm text-white/85">{orderActivationRate}% of recent orders</p>
@@ -332,7 +332,7 @@ function Dashboard() {
                       <path d="M0 28 L30 14 L55 22 L80 8 L105 18 L120 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_42%,var(--brand-color-2)_100%)] p-4 text-white shadow-lg shadow-[color-mix(in_srgb,var(--brand-color-2)_40%,transparent)]">
+                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-3)_65%,var(--brand-color-1)_35%)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/25">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Pending review</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(pendingCount)}</p>
                     <p className="mt-1 text-sm text-white/85">{pendingRate}% awaiting action</p>
@@ -340,7 +340,7 @@ function Dashboard() {
                       <path d="M0 10 L25 22 L50 8 L75 20 L100 6 L120 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <div className="relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_40%,var(--brand-color-2)_100%)] p-4 text-white shadow-lg shadow-black/20 sm:col-span-2 lg:col-span-1">
+                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(135deg,var(--brand-color-2)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20 sm:col-span-2 lg:col-span-1">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Reliability</p>
                     <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(reliabilitySummary.activeAlertsCount)}</p>
                     <p className="mt-1 text-sm text-white/80">Open alerts</p>
@@ -401,19 +401,19 @@ function Dashboard() {
                         : Math.abs(card.delta).toString()
 
                   const gradients = [
-                    'bg-[linear-gradient(145deg,var(--brand-color-4)_0%,var(--brand-color-3)_100%)]',
-                    'bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_100%)]',
-                    'bg-[linear-gradient(145deg,var(--brand-color-5)_0%,var(--brand-color-3)_70%,var(--brand-color-2)_100%)]',
                     'bg-[linear-gradient(145deg,var(--brand-color-2)_0%,var(--brand-color-1)_100%)]',
-                    'bg-[linear-gradient(145deg,#6ee7b7_0%,#059669_100%)]',
-                    'bg-[linear-gradient(145deg,#fde68a_0%,#d97706_100%)]',
+                    'bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-1)_100%)]',
+                    'bg-[linear-gradient(160deg,color-mix(in_srgb,var(--brand-color-3)_50%,var(--brand-color-1)_50%)_0%,var(--brand-color-1)_100%)]',
+                    'bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_35%,var(--brand-color-1)_65%)_100%)]',
+                    'bg-[linear-gradient(145deg,#047857_0%,#064e3b_100%)]',
+                    'bg-[linear-gradient(145deg,#b45309_0%,#7c2d12_100%)]',
                   ] as const
                   const g = gradients[i % gradients.length]
 
                   return (
                     <div
                       key={card.key}
-                      className={`rounded-[20px] p-4 text-white shadow-lg ${g} shadow-black/10`}
+                      className={`admin-dashboard-metric-card rounded-[20px] p-4 text-white shadow-lg ${g} shadow-black/10`}
                     >
                       <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">{card.label}</p>
                       <p className="mt-2 text-2xl font-bold tabular-nums">{valueText}</p>

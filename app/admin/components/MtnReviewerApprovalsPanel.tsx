@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
+import { Trash2 } from 'lucide-react'
 import { adminApi, type MtnReviewerAccountResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 
 type FilterStatus = 'pending' | 'approved' | 'rejected' | 'all'
 
@@ -12,6 +14,8 @@ export default function MtnReviewerApprovalsPanel() {
   const [rows, setRows] = useState<MtnReviewerAccountResponse[]>([])
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('pending')
   const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const { confirm, confirmDialog } = useConfirmDialog()
 
   const load = async () => {
     setLoading(true)
@@ -43,12 +47,36 @@ export default function MtnReviewerApprovalsPanel() {
   }, [rows, statusFilter])
 
   const updateStatus = async (id: number, status: 'approved' | 'rejected') => {
+    setSubmitting(true)
     try {
       await adminApi.updateMtnReviewerStatus(id, status)
       toast.success(status === 'approved' ? 'Reviewer approved' : 'Reviewer rejected')
       await load()
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to update reviewer status')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (reviewer: MtnReviewerAccountResponse) => {
+    const approved = await confirm({
+      title: 'Delete reviewer account',
+      description: `Delete reviewer ${reviewer.email}? This action cannot be undone.`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    })
+    if (!approved) return
+
+    setSubmitting(true)
+    try {
+      await adminApi.deleteMtnReviewer(reviewer.id)
+      setRows((prev) => prev.filter((item) => item.id !== reviewer.id))
+      toast.success('Reviewer deleted')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete reviewer')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -128,6 +156,7 @@ export default function MtnReviewerApprovalsPanel() {
                         <button
                           type="button"
                           onClick={() => void updateStatus(row.id, 'approved')}
+                          disabled={submitting}
                           className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
                         >
                           Approve
@@ -135,13 +164,36 @@ export default function MtnReviewerApprovalsPanel() {
                         <button
                           type="button"
                           onClick={() => void updateStatus(row.id, 'rejected')}
+                          disabled={submitting}
                           className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                         >
                           Reject
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(row)}
+                          disabled={submitting}
+                          className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          aria-label="Delete reviewer"
+                          title="Delete reviewer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-500">Reviewed</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500">Reviewed</span>
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(row)}
+                          disabled={submitting}
+                          className="rounded-lg p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          aria-label="Delete reviewer"
+                          title="Delete reviewer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -153,6 +205,7 @@ export default function MtnReviewerApprovalsPanel() {
           ) : null}
         </div>
       )}
+      {confirmDialog}
     </div>
   )
 }
