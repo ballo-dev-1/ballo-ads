@@ -661,7 +661,7 @@ a[aria-disabled="true"] {
 .admin-shell tbody td {
   border-top: 1px solid var(--admin-card-border) !important;
   border-bottom: 1px solid var(--admin-card-border) !important;
-  padding: 0.875rem 1.1rem !important;
+  /* padding: 0.875rem 1.1rem !important; */
   font-size: 0.8125rem;
   vertical-align: middle;
 }

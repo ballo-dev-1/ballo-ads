@@ -5,8 +5,9 @@ import { useAdminTheme } from '@/app/admin/contexts/AdminThemeContext'
 
 type AdminHeroProps = {
   topSlot?: ReactNode
+  leading?: ReactNode
   eyebrow?: string
-  title: string
+  title: ReactNode
   description?: string
   meta?: ReactNode
   actions?: ReactNode
@@ -18,6 +19,7 @@ type AdminHeroProps = {
 /** Minimal page title row (no hero card)—aligned with clean dashboard chrome. */
 export default function AdminHero({
   topSlot,
+  leading,
   eyebrow = 'Backoffice',
   title,
   description,
@@ -35,10 +37,15 @@ export default function AdminHero({
     >
       <div className="min-w-0">
         {topSlot ? <div className="mb-1">{topSlot}</div> : null}
-        <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${muted}`}>{eyebrow}</p>
-        <h1 className={`mt-1 text-lg font-semibold leading-snug tracking-tight sm:text-xl ${heading}`}>{title}</h1>
-        {description ? <p className={`mt-1.5 max-w-2xl text-sm leading-relaxed ${muted}`}>{description}</p> : null}
-        {meta ? <div className="mt-2">{meta}</div> : null}
+        <div className="flex min-w-0 items-start gap-3">
+          {leading ? <div className="shrink-0">{leading}</div> : null}
+          <div className="min-w-0">
+            <p className={`text-[11px] font-semibold uppercase tracking-[0.12em] ${muted}`}>{eyebrow}</p>
+            <h1 className={`mt-1 text-lg font-semibold leading-snug tracking-tight sm:text-xl ${heading}`}>{title}</h1>
+            {description ? <p className={`mt-1.5 max-w-2xl text-sm leading-relaxed ${muted}`}>{description}</p> : null}
+            {meta ? <div className="mt-2">{meta}</div> : null}
+          </div>
+        </div>
       </div>
       {actions ? (
         <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-end">{actions}</div>

@@ -12,11 +12,11 @@ type Props = {
 }
 
 const statusClass: Record<RoadmapFeatureStatus, string> = {
-  Pending: 'bg-gray-100 text-gray-700',
+  Pending: 'bg-slate-100 text-slate-700',
   InProgress: 'bg-blue-100 text-blue-700',
   PartiallyDone: 'bg-amber-100 text-amber-700',
-  Done: 'bg-green-100 text-green-700',
-  Cancelled: 'bg-red-100 text-red-700',
+  Done: 'bg-emerald-100 text-emerald-700',
+  Cancelled: 'bg-rose-100 text-rose-700',
 }
 
 export default function FeatureRow({
@@ -29,7 +29,7 @@ export default function FeatureRow({
 }: Props) {
   return (
     <>
-      <tr className="border-b border-gray-100">
+      <tr className="border-b border-slate-100 transition hover:bg-slate-50/70">
         <td className="px-3 py-2">
           <div style={{ marginLeft: `${depth * 20}px` }} className="font-medium text-gray-900">
             {feature.name}
@@ -50,7 +50,7 @@ export default function FeatureRow({
         <td className="px-3 py-2 text-xs">{feature.priority}</td>
         <td className="px-3 py-2">
           <select
-            className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass[feature.status]}`}
+            className={`rounded-full border border-transparent px-3 py-1 text-xs font-medium transition focus:border-slate-300 focus:outline-none ${statusClass[feature.status]}`}
             value={feature.status}
             onChange={(e) => onStatusChange(feature, e.target.value as RoadmapFeatureStatus)}
           >
@@ -66,9 +66,24 @@ export default function FeatureRow({
           {feature.plannedEndDate ? new Date(feature.plannedEndDate).toLocaleDateString() : '-'}
         </td>
         <td className="px-3 py-2 text-right">
-          <button className="mr-2 text-xs text-blue-600" onClick={() => onAddSubFeature(feature)}>Add Sub</button>
-          <button className="mr-2 text-xs text-indigo-600" onClick={() => onEdit(feature)}>Edit</button>
-          <button className="text-xs text-red-600" onClick={() => onDelete(feature)}>Delete</button>
+          <button
+            className="mr-2 rounded-md px-1.5 py-1 text-xs font-medium text-blue-600 transition hover:bg-blue-50"
+            onClick={() => onAddSubFeature(feature)}
+          >
+            Add Sub
+          </button>
+          <button
+            className="mr-2 rounded-md px-1.5 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50"
+            onClick={() => onEdit(feature)}
+          >
+            Edit
+          </button>
+          <button
+            className="rounded-md px-1.5 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+            onClick={() => onDelete(feature)}
+          >
+            Delete
+          </button>
         </td>
       </tr>
       {feature.subFeatures.map((child) => (

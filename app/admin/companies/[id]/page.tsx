@@ -1658,11 +1658,21 @@ export default function CompanyDetailsPage() {
     )
   }
 
+  const companyLogoUrl = company.profileImageUrl?.trim()
+
   return (
     <div className="min-h-0 min-w-0 flex-1 p-4 sm:p-6">
       <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-6">
         <AdminHero
           topSlot={breadcrumb}
+          leading={companyLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- remote tenant image URLs
+            <img
+              src={companyLogoUrl}
+              alt=""
+              className="mt-0.5 h-16 w-16 shrink-0 rounded-full border border-slate-200 bg-white object-cover"
+            />
+          ) : null}
           eyebrow="Organization management"
           title={company.name ?? 'Company'}
           description={company.industry || 'Industry not specified'}

@@ -9,9 +9,9 @@ import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { ChevronDown, ChevronUp, ChevronsUpDown, Filter, MoreHorizontal, Search, Rows3, Grid2X2 } from 'lucide-react'
 
-type SortKey = 'name' | 'email' | 'industry' | 'verified' | 'lifecycle' | 'senderId'
+type SortKey = 'createdAt' | 'updatedAt' | 'name' | 'email' | 'industry' | 'verified' | 'lifecycle' | 'senderId'
 type SortDir = 'asc' | 'desc'
-type ReviewTab = 'pending' | 'approved' | 'rejected'
+type ReviewTab = 'all' | 'pending' | 'approved' | 'rejected'
 type ViewMode = 'list' | 'grid'
 
 function getCompanyReviewStatus(company: CompanyLeanResponse): 'Pending' | 'Approved' | 'Rejected' {
@@ -19,6 +19,65 @@ function getCompanyReviewStatus(company: CompanyLeanResponse): 'Pending' | 'Appr
   return company.isCompanyVerified ? 'Approved' : 'Pending'
 }
 
+function toComparableTimestamp(value?: string): number {
+  if (!value) return Number.NEGATIVE_INFINITY
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed
+}
+
+function CompanyTableLogoCell({ company }: { company: Pick<CompanyLeanResponse, 'profileImageUrl'> }) {
+  const url = company.profileImageUrl?.trim()
+  return (
+    <div className="flex w-9 items-center justify-center">
+      {url ? (
+        // Remote tenant URLs; avoid next/image domain allowlist churn.
+        // eslint-disable-next-line @next/next/no-img-element -- see above
+        <img
+          src={url}
+          alt=""
+          className="h-9 w-9 rounded-full object-cover"
+        />
+      ) : (
+        <span className="block h-9 w-9 shrink-0" aria-hidden />
+      )}
+    </div>
+  )
+}
+
+function CompanyListIdentity({
+  company,
+  variant,
+}: {
+  company: Pick<CompanyLeanResponse, 'name' | 'email' | 'profileImageUrl'>
+  variant: 'table' | 'grid'
+}) {
+  const url = company.profileImageUrl?.trim()
+  const imgClass = 'h-11 w-11 shrink-0 rounded-lg border border-gray-200 bg-gray-50 object-cover'
+
+  if (variant === 'table') {
+    return (
+      <div className="min-w-0">
+        <div className="font-medium text-gray-900 transition-colors group-hover:text-[var(--admin-ui-accent)]">
+          {company.name}
+        </div>
+        <div className="text-xs font-normal text-gray-500">{company.email || '—'}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- see above
+        <img src={url} alt="" className={imgClass} />
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <h3 className="text-base font-semibold text-gray-900">{company.name}</h3>
+        <p className="mt-0.5 text-sm text-gray-500">{company.email || '—'}</p>
+      </div>
+    </div>
+  )
+}
 
 function CompaniesPageContent() {
   const router = useRouter()
@@ -29,8 +88,8 @@ function CompaniesPageContent() {
   const [companies, setCompanies] = useState<CompanyLeanResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [sortBy, setSortBy] = useState<SortKey>('name')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [sortBy, setSortBy] = useState<SortKey>('createdAt')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [query, setQuery] = useState('')
   const [industryFilter, setIndustryFilter] = useState('')
   const [filterVerified, setFilterVerified] = useState(true)
@@ -134,6 +193,9 @@ function CompaniesPageContent() {
     const search = query.trim().toLowerCase()
     let list = companies.filter((company) => {
       const reviewStatus = getCompanyReviewStatus(company)
+      if (reviewTab === 'all') {
+        // Include every review status.
+      } else
       if (reviewTab === 'pending' && reviewStatus !== 'Pending') return false
       if (reviewTab === 'approved' && reviewStatus !== 'Approved') return false
       if (reviewTab === 'rejected' && reviewStatus !== 'Rejected') return false
@@ -178,6 +240,14 @@ function CompaniesPageContent() {
     list = [...list].sort((a, b) => {
       let cmp = 0
       switch (sortBy) {
+        case 'createdAt':
+          cmp = toComparableTimestamp(a.createdAt) - toComparableTimestamp(b.createdAt)
+          if (cmp === 0) cmp = a.id - b.id
+          break
+        case 'updatedAt':
+          cmp = toComparableTimestamp(a.updatedAt) - toComparableTimestamp(b.updatedAt)
+          if (cmp === 0) cmp = a.id - b.id
+          break
         case 'name':
           cmp = (a.name || '').localeCompare(b.name || '')
           break
@@ -222,6 +292,10 @@ function CompaniesPageContent() {
     }
   }
 
+  const handleToggleSortDirection = () => {
+    setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+  }
+
   const SortIcon = ({ column }: { column: SortKey }) => {
     if (sortBy !== column) return <ChevronsUpDown className="w-4 h-4 inline-block ml-1 opacity-50" aria-hidden />
     return sortDir === 'asc' ? (
@@ -232,10 +306,11 @@ function CompaniesPageContent() {
   }
 
   const reviewCounts = useMemo(() => {
+    const all = companies.length
     const pending = companies.filter((c) => getCompanyReviewStatus(c) === 'Pending').length
     const approved = companies.filter((c) => getCompanyReviewStatus(c) === 'Approved').length
     const rejected = companies.filter((c) => getCompanyReviewStatus(c) === 'Rejected').length
-    return { pending, approved, rejected }
+    return { all, pending, approved, rejected }
   }, [companies])
 
   const handleSetCompanyReviewStatus = async (company: CompanyLeanResponse, status: CompanyReviewStatus) => {
@@ -295,6 +370,24 @@ function CompaniesPageContent() {
         />
 
         <div className="admin-tab-bar" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={reviewTab === 'all'}
+            onClick={() => setReviewTab('all')}
+            className={`admin-tab-bar__tab inline-flex items-center gap-1.5 ${reviewTab === 'all' ? 'admin-tab-bar__tab--active' : ''}`}
+          >
+            All{' '}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                reviewTab === 'all'
+                  ? 'bg-[color-mix(in_srgb,var(--brand-color-3)_22%,transparent)]'
+                  : 'bg-[var(--admin-heading)]/[0.08] admin-dark:bg-white/15'
+              }`}
+            >
+              {reviewCounts.all}
+            </span>
+          </button>
           <button
             type="button"
             role="tab"
@@ -617,6 +710,7 @@ function CompaniesPageContent() {
                 onChange={(e) => setReviewTab(e.target.value as ReviewTab)}
                 className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
               >
+                <option value="all">Status: All</option>
                 <option value="pending">Status: Pending</option>
                 <option value="approved">Status: Approved</option>
                 <option value="rejected">Status: Rejected</option>
@@ -626,6 +720,8 @@ function CompaniesPageContent() {
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
                 className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
               >
+                <option value="createdAt">Created date</option>
+                <option value="updatedAt">Modified date</option>
                 <option value="name">Name (A-Z)</option>
                 <option value="email">Email</option>
                 <option value="industry">Industry</option>
@@ -679,10 +775,11 @@ function CompaniesPageContent() {
                       }
                     />
                   </th>
+                  <th scope="col" className="w-11 py-3.5 pl-3 pr-2 text-left" />
                   <th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     <button
                       type="button"
-                      onClick={() => handleSort('name')}
+                      onClick={handleToggleSortDirection}
                       className="inline-flex items-center hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[var(--admin-ui-accent)] rounded"
                     >
                       Company
@@ -726,7 +823,7 @@ function CompaniesPageContent() {
               <tbody>
                 {filteredAndSortedCompanies.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-16">
+                    <td colSpan={8} className="text-center py-16">
                       <p className="text-gray-500 font-medium">
                         {companies.length === 0 ? 'No companies found' : 'No companies match the current filters'}
                       </p>
@@ -750,7 +847,7 @@ function CompaniesPageContent() {
                       }}
                       className="border-b border-gray-100 hover:bg-[var(--admin-ui-accent)]/5 transition-colors cursor-pointer group"
                     >
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 align-middle">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(company.id)}
@@ -762,9 +859,11 @@ function CompaniesPageContent() {
                           }
                         />
                       </td>
-                      <td className="py-3.5 px-5 text-sm font-medium text-gray-900 group-hover:text-[var(--admin-ui-accent)] transition-colors">
-                        <div>{company.name}</div>
-                        <div className="text-xs font-normal text-gray-500">{company.email || '—'}</div>
+                      <td className="py-3.5 align-middle">
+                        <CompanyTableLogoCell company={company} />
+                      </td>
+                      <td className="py-3.5 align-middle text-sm text-gray-900 transition-colors">
+                        <CompanyListIdentity company={company} variant="table" />
                       </td>
                       <td className="py-3.5 px-5 text-sm">
                         {company.phoneNumber ? (
@@ -890,8 +989,7 @@ function CompaniesPageContent() {
                         <MoreHorizontal className="h-4 w-4" />
                       </button>
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900">{company.name}</h3>
-                    <p className="mt-0.5 text-sm text-gray-500">{company.email || '—'}</p>
+                    <CompanyListIdentity company={company} variant="grid" />
                     <div className="mt-3 space-y-2 text-sm">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-gray-500">Phone</span>
