@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 import type { LetterPreviewRequestBody } from '@/lib/letterPreviewTypes'
 import LetterHtmlDocument from '@/app/components/letter-of-consent/LetterHtmlDocument'
 
@@ -59,8 +60,8 @@ export default function LetterOfConsentBackendPreview({
 
   if (loading) {
     return (
-      <div className={`rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm text-slate-600 ${compact ? '' : ''}`}>
-        Generating letter preview on the server…
+      <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-6">
+        <LoadingCentered minHeight={compact ? 120 : 160} label="Generating letter preview on the server" />
       </div>
     )
   }

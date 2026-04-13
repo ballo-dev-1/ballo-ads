@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronRight, Clock3, Fingerprint, Network } from 'lucide-react'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 
 type Row = {
   id: string
@@ -130,8 +131,10 @@ export default function MtnReviewSubmissionsPage() {
 
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {loading ? (
-            <li className="rounded-2xl border border-slate-200/80 bg-white px-4 py-10 text-center text-sm text-slate-500 shadow-sm">
-              Loading submissions…
+            <li className="col-span-full list-none">
+              <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                <LoadingCentered minHeight={200} label="Loading submissions" />
+              </div>
             </li>
           ) : null}
           {filteredRows.map((r) => (

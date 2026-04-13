@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 
 export default function MtnReviewLoginLayout({
   children,
@@ -6,11 +7,7 @@ export default function MtnReviewLoginLayout({
   children: React.ReactNode
 }) {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[50vh] items-center justify-center text-slate-600">Loading…</div>
-      }
-    >
+    <Suspense fallback={<LoadingCentered minHeight="50vh" label="Loading page" />}>
       {children}
     </Suspense>
   )

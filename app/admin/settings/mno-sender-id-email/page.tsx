@@ -12,6 +12,7 @@ import {
 } from '@/lib/adminApi'
 import { notifyBackofficeEvent } from '@/lib/notifications/client'
 import toast from 'react-hot-toast'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 
 function formatDateTime(value?: string) {
   if (!value) return '—'
@@ -242,7 +243,7 @@ export default function MnoSenderIdEmailSettingsPage() {
           <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">Emergency dispatch controls</h2>
             {loading ? (
-              <p className="text-sm text-gray-500">Loading...</p>
+              <LoadingCentered minHeight={120} size="md" label="Loading emergency dispatch controls" />
             ) : dispatchControlsError ? (
               <p className="text-sm text-red-600">{dispatchControlsError}</p>
             ) : emergencyMatrix ? (
@@ -310,7 +311,7 @@ export default function MnoSenderIdEmailSettingsPage() {
           <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">Campaign & sender ID approvals</h2>
             {loading ? (
-              <p className="text-sm text-gray-500">Loading...</p>
+              <LoadingCentered minHeight={120} size="md" label="Loading approval settings" />
             ) : platformSettingsError ? (
               <p className="text-sm text-red-600">{platformSettingsError}</p>
             ) : platformSettings ? (
@@ -360,14 +361,14 @@ export default function MnoSenderIdEmailSettingsPage() {
                 {updatingPlatformSettings ? <p className="text-xs text-gray-500">Saving...</p> : null}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">Loading...</p>
+              <LoadingCentered minHeight={100} size="md" label="Loading platform settings" />
             )}
           </section>
         </div>
       ) : (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading settings...</p>
+            <LoadingCentered minHeight={160} size="md" label="Loading MNO sender ID email settings" />
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-slate-600">

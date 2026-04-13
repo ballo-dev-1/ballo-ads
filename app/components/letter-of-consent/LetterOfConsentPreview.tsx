@@ -1,6 +1,7 @@
 'use client'
 
 import { Download } from 'lucide-react'
+import { LoadingSpinner } from '@/app/components/LoadingSpinner'
 import type { LetterOfConsentModel } from '@/lib/mtnLetterOfConsent'
 import { downloadLetterOfConsentPdf } from '@/lib/mtnLetterOfConsent'
 
@@ -92,7 +93,10 @@ export default function LetterOfConsentPreview({
           <p className="mt-[9mm] max-w-[118mm] text-[11pt] leading-[1.5]">{model.bodyParagraph}</p>
 
           {samplesLoading ? (
-            <p className="mt-4 text-[10pt] text-slate-600">Generating sample SMS messages…</p>
+            <p className="mt-4 flex items-center gap-2 text-[10pt] text-slate-600">
+              <LoadingSpinner size="sm" className="shrink-0" label="Generating sample SMS messages" />
+              <span aria-hidden>Generating sample SMS messages…</span>
+            </p>
           ) : null}
 
           <div className="mt-[7mm] w-full text-[10pt]">

@@ -22,6 +22,7 @@ import {
   type DashboardAnalyticsRetentionResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 import { biStatsWarningMessage } from '../bi-dashboard/biFetchStatus'
 import {
   buildBiKpiCards,
@@ -139,14 +140,11 @@ export default function BiDashboardTabContent() {
         setAnomalies(anomaliesRes.status === 'fulfilled' ? anomaliesRes.value : null)
         setDrilldown(drilldownRes.status === 'fulfilled' ? drilldownRes.value : null)
 
+        // Overview cards are the critical BI baseline; optional sections can degrade independently.
         setWarning(
           biStatsWarningMessage([
             overviewCurrentRes,
             overviewPreviousRes,
-            retentionRes,
-            forecastRes,
-            anomaliesRes,
-            drilldownRes,
           ]),
         )
       } finally {
@@ -243,7 +241,9 @@ export default function BiDashboardTabContent() {
       </section>
 
       {loading ? (
-        <div className="admin-liquid-card p-12 text-center text-[var(--admin-muted)]">Loading BI analytics...</div>
+        <div className="admin-liquid-card p-12">
+          <LoadingCentered minHeight="40vh" label="Loading BI analytics" />
+        </div>
       ) : (
         <>
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">

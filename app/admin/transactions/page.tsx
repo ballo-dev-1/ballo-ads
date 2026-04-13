@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { adminApi, type TransactionResponse } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
+import { LoadingSpinner } from '@/app/components/LoadingSpinner'
 
 export default function TransactionsPage() {
   const { env } = useApiEnv()
@@ -81,7 +82,9 @@ export default function TransactionsPage() {
                   Lipila wallet balance
                 </div>
                 {walletBalanceLoading ? (
-                  <div className="mt-0.5 text-sm font-semibold">Loading...</div>
+                  <div className="mt-1 flex items-center gap-2" role="status" aria-label="Loading wallet balance">
+                    <LoadingSpinner size="sm" />
+                  </div>
                 ) : walletBalanceError ? (
                   <div className="mt-0.5 text-sm font-semibold text-red-300">Unavailable</div>
                 ) : (

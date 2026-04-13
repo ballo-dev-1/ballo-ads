@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 
 type ReviewerProfile = {
   id: number
@@ -81,7 +82,7 @@ export default function MtnReviewProfilePage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-600">Loading profile…</p>
+    return <LoadingCentered minHeight={200} label="Loading profile" />
   }
 
   return (

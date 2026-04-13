@@ -36,6 +36,7 @@ import {
   X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { LoadingSpinner } from '@/app/components/LoadingSpinner'
 import {
   adminApi,
   type AdsCampaignResponse,
@@ -1626,7 +1627,6 @@ export default function CompanyDetailsPage() {
         <div className="mx-auto w-full max-w-6xl space-y-5">
           <AdminHero
             title="Company details"
-            description="Loading company information and campaign overview."
             eyebrow="Organization management"
             variant="blue"
             topSlot={breadcrumb}
@@ -2420,7 +2420,9 @@ export default function CompanyDetailsPage() {
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-slate-900">Submitted MNO history</h3>
             {mnoSubmissionHistoryLoading ? (
-              <span className="text-xs text-slate-500">Loading…</span>
+              <span className="flex items-center" role="status" aria-label="Loading submission history">
+                <LoadingSpinner size="sm" />
+              </span>
             ) : null}
           </div>
           {latestReviewerFeedback ? (

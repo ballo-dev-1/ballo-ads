@@ -13,6 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { LoadingSpinner } from '@/app/components/LoadingSpinner'
 import {
   adminApi,
   type AdsCampaignResponse,
@@ -499,7 +500,12 @@ export default function CampaignDetailsPage() {
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">Actions</p>
-              {actionLoading ? <span className="text-xs font-medium text-slate-500">Updating campaign...</span> : null}
+              {actionLoading ? (
+                <span className="flex items-center gap-2 text-xs font-medium text-slate-500" role="status">
+                  <LoadingSpinner size="sm" />
+                  <span>Updating campaign…</span>
+                </span>
+              ) : null}
             </div>
             {canRetarget ? (
               <div className="mb-3">

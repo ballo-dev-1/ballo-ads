@@ -14,6 +14,7 @@ import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { notifyBackofficeEvent } from '@/lib/notifications/client'
+import { LoadingSpinner } from '@/app/components/LoadingSpinner'
 
 const CHANNEL_OPTIONS = ['Sms', 'Email', 'WhatsApp', 'WhatsAppUtility'] as const
 
@@ -693,9 +694,15 @@ export default function ApiManagementPage() {
                 type="button"
                 onClick={handleUsageRefresh}
                 disabled={!companyId || loadingUsage}
-                className="text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
+                className="inline-flex items-center gap-2 text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
               >
-                {loadingUsage ? 'Loading...' : 'Refresh'}
+                {loadingUsage ? (
+                  <>
+                    <LoadingSpinner size="sm" className="border-t-[var(--admin-ui-accent)]" />
+                    <span className="sr-only">Loading usage</span>
+                  </>
+                ) : null}
+                <span>{loadingUsage ? 'Refreshing…' : 'Refresh'}</span>
               </button>
             </div>
           </div>

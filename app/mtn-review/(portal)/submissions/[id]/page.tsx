@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import LetterHtmlDocument from '@/app/components/letter-of-consent/LetterHtmlDocument'
 import LetterOfConsentBackendPreview from '@/app/components/letter-of-consent/LetterOfConsentBackendPreview'
+import { LoadingCentered } from '@/app/components/LoadingSpinner'
 
 type Submission = {
   id: string
@@ -218,7 +219,7 @@ export default function MtnReviewSubmissionDetailPage() {
   }
 
   if (!row) {
-    return <p className="text-sm text-slate-600">Loading…</p>
+    return <LoadingCentered minHeight={240} label="Loading submission" />
   }
 
   const letterGenerationError = row.letterGenerationError

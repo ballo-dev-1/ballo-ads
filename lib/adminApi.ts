@@ -424,11 +424,6 @@ export type DashboardAnalyticsOverviewResponse = {
   apiOps: DashboardAnalyticsApiOpsResponse;
 };
 
-export type DashboardAnalyticsOverviewComparisonResponse = {
-  current: DashboardAnalyticsOverviewResponse;
-  previous: DashboardAnalyticsOverviewResponse;
-};
-
 export type DashboardAnalyticsTrendPoint = {
   bucketStart: string;
   campaigns: number;
@@ -824,9 +819,11 @@ export type PlatformSettingsUpdateRequest = {
   mnoSenderIdRequestReplyToEmailSecondary?: string;
 };
 
+export type PricingPlatform = "Sms" | "Email" | "WhatsApp" | "WhatsAppUtility";
+
 export type PricingModelResponse = {
   id: number;
-  platform: string;
+  platform: PricingPlatform;
   thresholdStart: number;
   thresholdEnd: number;
   amountPerMessage: number;
@@ -835,20 +832,42 @@ export type PricingModelResponse = {
   createdAt: string;
 };
 
-export type PricingModelRequest = {
-  platform: string;
-  thresholdStart: number;
-  thresholdEnd: number;
+export type PricingLadderRateResponse = {
+  id: number;
+  bandId: number;
+  platform: PricingPlatform;
   amountPerMessage: number;
-  duration: number;
+  isEnabled: boolean;
 };
 
-export type EditPricingModelRequest = Partial<{
+export type PricingLadderBandResponse = {
+  id: number;
+  duration: number;
   thresholdStart: number;
   thresholdEnd: number;
+  displayOrder: number;
+  isEnabled: boolean;
+  rates: PricingLadderRateResponse[];
+};
+
+export type PricingLadderRateRequest = {
+  platform: PricingPlatform;
   amountPerMessage: number;
+  isEnabled?: boolean;
+};
+
+export type PricingLadderBandRequest = {
+  thresholdStart: number;
+  thresholdEnd: number;
+  displayOrder: number;
+  isEnabled?: boolean;
+  rates: PricingLadderRateRequest[];
+};
+
+export type PricingLadderUpsertRequest = {
   duration: number;
-}>;
+  bands: PricingLadderBandRequest[];
+};
 
 export type MtnWhitelistedSenderIdResponse = {
   id: number;
@@ -1092,30 +1111,28 @@ function mapCompanyMnoSubmissionHistoryItem(
   };
 }
 
-/** PATCH Backoffice/pricing/{id} expects camelCase EditPricingModelRequest fields. */
-function editPricingRequestToBody(
-  p: EditPricingModelRequest,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  if (p.thresholdStart !== undefined) out.thresholdStart = p.thresholdStart;
-  if (p.thresholdEnd !== undefined) out.thresholdEnd = p.thresholdEnd;
-  if (p.amountPerMessage !== undefined)
-    out.amountPerMessage = p.amountPerMessage;
-  if (p.duration !== undefined) out.duration = p.duration;
-  return out;
+function mapPricingLadderRateResponse(r: Record<string, unknown>): PricingLadderRateResponse {
+  return {
+    id: Number(r.Id ?? r.id ?? 0),
+    bandId: Number(r.BandId ?? r.bandId ?? 0),
+    platform: (r.Platform ?? r.platform) as PricingPlatform,
+    amountPerMessage: Number(r.AmountPerMessage ?? r.amountPerMessage ?? 0),
+    isEnabled: Boolean(r.IsEnabled ?? r.isEnabled ?? true),
+  };
 }
 
-/** Normalize pricing response from backend (PascalCase) to camelCase for the app */
-function mapPricingResponse(r: Record<string, unknown>): PricingModelResponse {
+function mapPricingLadderBandResponse(r: Record<string, unknown>): PricingLadderBandResponse {
+  const ratesRaw = (r.Rates ?? r.rates) as unknown;
   return {
-    id: (r.Id ?? r.id) as number,
-    platform: (r.Platform ?? r.platform) as string,
-    thresholdStart: (r.ThresholdStart ?? r.thresholdStart) as number,
-    thresholdEnd: (r.ThresholdEnd ?? r.thresholdEnd) as number,
-    amountPerMessage: (r.AmountPerMessage ?? r.amountPerMessage) as number,
-    duration: (r.Duration ?? r.duration) as number,
-    isEnabled: (r.IsEnabled ?? r.isEnabled) as boolean,
-    createdAt: (r.CreatedAt ?? r.createdAt) as string,
+    id: Number(r.Id ?? r.id ?? 0),
+    duration: Number(r.Duration ?? r.duration ?? 0),
+    thresholdStart: Number(r.ThresholdStart ?? r.thresholdStart ?? 0),
+    thresholdEnd: Number(r.ThresholdEnd ?? r.thresholdEnd ?? 0),
+    displayOrder: Number(r.DisplayOrder ?? r.displayOrder ?? 0),
+    isEnabled: Boolean(r.IsEnabled ?? r.isEnabled ?? true),
+    rates: Array.isArray(ratesRaw)
+      ? ratesRaw.map((x) => mapPricingLadderRateResponse(x as Record<string, unknown>))
+      : [],
   };
 }
 
@@ -1502,19 +1519,6 @@ export function mapDashboardAnalyticsOverviewResponse(
     creditsFinance: mapDashboardAnalyticsCreditsFinanceResponse(creditsFinanceRaw),
     audience: mapDashboardAnalyticsAudienceResponse(audienceRaw),
     apiOps: mapDashboardAnalyticsApiOpsResponse(apiOpsRaw),
-  };
-}
-
-export function mapDashboardAnalyticsOverviewComparisonResponse(
-  r: Record<string, unknown>,
-): DashboardAnalyticsOverviewComparisonResponse {
-  const currentRaw =
-    ((r.Current ?? r.current) as Record<string, unknown> | undefined) ?? {};
-  const previousRaw =
-    ((r.Previous ?? r.previous) as Record<string, unknown> | undefined) ?? {};
-  return {
-    current: mapDashboardAnalyticsOverviewResponse(currentRaw),
-    previous: mapDashboardAnalyticsOverviewResponse(previousRaw),
   };
 }
 
@@ -2430,58 +2434,21 @@ export const adminApi = {
       },
     ),
 
-  getPricingModels: (authToken?: string) =>
-    request<Record<string, unknown>[]>(`${BACKOFFICE}/pricing`, {
-      authToken,
-    }).then((list) => list.map(mapPricingResponse)),
+  getPricingLadder: (duration: number, authToken?: string) =>
+    request<Record<string, unknown>[]>(
+      `${BACKOFFICE}/pricing/ladder?duration=${encodeURIComponent(String(duration))}`,
+      { authToken },
+    ).then((list) => list.map(mapPricingLadderBandResponse)),
 
-  createPricingModel: (payload: PricingModelRequest, authToken?: string) =>
-    request<Record<string, unknown>>(`${BACKOFFICE}/pricing`, {
-      method: "POST",
-      body: JSON.stringify({
-        platform: payload.platform,
-        thresholdStart: payload.thresholdStart,
-        thresholdEnd: payload.thresholdEnd,
-        amountPerMessage: payload.amountPerMessage,
-        duration: payload.duration,
-      }),
-      authToken,
-    }).then(mapPricingResponse),
-
-  enablePricingModel: (id: number, authToken?: string) =>
-    request<Record<string, unknown>>(
-      `${BACKOFFICE}/pricing/${id}/enable`,
-      {
-        method: "PATCH",
-        authToken,
-      },
-    ).then(mapPricingResponse),
-
-  disablePricingModel: (id: number, authToken?: string) =>
-    request<Record<string, unknown>>(
-      `${BACKOFFICE}/pricing/${id}/disable`,
-      {
-        method: "PATCH",
-        authToken,
-      },
-    ).then(mapPricingResponse),
-
-  updatePricingModel: (
-    id: number,
-    payload: EditPricingModelRequest,
+  replacePricingLadder: (
+    payload: PricingLadderUpsertRequest,
     authToken?: string,
   ) =>
-    request<Record<string, unknown>>(`${BACKOFFICE}/pricing/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(editPricingRequestToBody(payload)),
+    request<Record<string, unknown>[]>(`${BACKOFFICE}/pricing/ladder`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
       authToken,
-    }).then(mapPricingResponse),
-
-  deletePricingModel: (id: number, authToken?: string) =>
-    request<void>(`${BACKOFFICE}/pricing/${id}`, {
-      method: "DELETE",
-      authToken,
-    }),
+    }).then((list) => list.map(mapPricingLadderBandResponse)),
 
   getAllPurchaseOrders: (
     params?: { pageNumber?: number; pageSize?: number },
@@ -2967,33 +2934,6 @@ export const adminApi = {
       : `${BACKOFFICE}/analytics/overview`;
     return request<Record<string, unknown>>(path, { authToken }).then(
       mapDashboardAnalyticsOverviewResponse,
-    );
-  },
-
-  getDashboardAnalyticsOverviewComparison: (
-    params: {
-      from?: string;
-      to?: string;
-      previousFrom?: string;
-      previousTo?: string;
-      companyId?: number;
-      channel?: string;
-    } = {},
-    authToken?: string,
-  ) => {
-    const search = new URLSearchParams();
-    if (params.from) search.set("from", params.from);
-    if (params.to) search.set("to", params.to);
-    if (params.previousFrom) search.set("previousFrom", params.previousFrom);
-    if (params.previousTo) search.set("previousTo", params.previousTo);
-    if (params.companyId != null) search.set("companyId", String(params.companyId));
-    if (params.channel) search.set("channel", params.channel);
-    const qs = search.toString();
-    const path = qs
-      ? `${BACKOFFICE}/analytics/overview-comparison?${qs}`
-      : `${BACKOFFICE}/analytics/overview-comparison`;
-    return request<Record<string, unknown>>(path, { authToken }).then(
-      mapDashboardAnalyticsOverviewComparisonResponse,
     );
   },
 

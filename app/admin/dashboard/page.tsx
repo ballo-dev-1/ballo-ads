@@ -533,7 +533,10 @@ function Dashboard() {
             {!analyticsReady ? (
               <div className="admin-liquid-card p-6">
                 <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Trend snapshot</h2>
-                <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Loading period aggregates…</p>
+                <span className="sr-only">Loading period aggregates</span>
+                <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">
+                  Aggregated totals for selected period.
+                </p>
                 <div className="mt-4">
                   <DashboardTrendsBlockSkeleton />
                 </div>
