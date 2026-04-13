@@ -57,6 +57,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const fetchInFlightRef = useRef(false)
 
   const syncReliabilityAlerts = useCallback(async () => {
     try {
@@ -74,6 +75,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const fetchList = useCallback(async () => {
+    if (fetchInFlightRef.current) return
+    fetchInFlightRef.current = true
     try {
       await syncReliabilityAlerts()
       const res = await fetch('/api/admin/notifications?limit=20', { credentials: 'include' })
@@ -92,6 +95,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     } catch {
       setError('Failed to load notifications')
     } finally {
+      fetchInFlightRef.current = false
       setLoading(false)
     }
   }, [syncReliabilityAlerts])

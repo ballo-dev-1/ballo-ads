@@ -6,6 +6,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   adminApi,
   type ApmAlertsResponse,
+  type AdsCampaignResponse,
+  type CompanyLeanResponse,
   type DashboardAnalyticsFunnelResponse,
   type DashboardAnalyticsModerationResponse,
   type DashboardAnalyticsOverviewResponse,
@@ -13,6 +15,7 @@ import {
   type DispatchControlResponse,
   type PurchaseOrderResponse,
 } from '@/lib/adminApi'
+import { CircleHelp } from 'lucide-react'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import Link from 'next/link'
 import {
@@ -66,13 +69,18 @@ function toIsoDaysAgo(days: number): string {
 
 type RangePreset = '7d' | '40d' | '90d' | 'lifetime'
 
+function getCompanyReviewStatus(company: CompanyLeanResponse): 'Pending' | 'Approved' | 'Rejected' {
+  if (company.reviewStatus) return company.reviewStatus
+  return company.isCompanyVerified ? 'Approved' : 'Pending'
+}
+
 function DashboardOpsMetricsSkeleton() {
   return (
     <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="h-[148px] rounded-[20px] animate-pulse bg-[color-mix(in_srgb,var(--admin-heading)_12%,transparent)] admin-dark:bg-white/10"
+          className="h-[148px] rounded-[20px] animate-pulse bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-2)_20%,#ffffff)_0%,color-mix(in_srgb,var(--brand-color-3)_18%,#ffffff)_100%)]"
         />
       ))}
     </div>
@@ -83,7 +91,10 @@ function DashboardAnalyticsKpiSkeleton() {
   return (
     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-[100px] rounded-[20px] animate-pulse bg-gray-200/80 admin-dark:bg-white/10" />
+        <div
+          key={i}
+          className="h-[100px] rounded-[20px] animate-pulse bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-2)_22%,#ffffff)_0%,color-mix(in_srgb,var(--brand-color-1)_16%,#ffffff)_100%)]"
+        />
       ))}
     </div>
   )
@@ -92,18 +103,55 @@ function DashboardAnalyticsKpiSkeleton() {
 function DashboardTrendsBlockSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      <div className="xl:col-span-2 h-80 animate-pulse rounded-xl bg-gray-200/60 admin-dark:bg-white/10" />
+      <div className="xl:col-span-2 h-80 animate-pulse rounded-xl bg-[linear-gradient(150deg,color-mix(in_srgb,var(--brand-color-3)_18%,#ffffff)_0%,color-mix(in_srgb,var(--brand-color-1)_14%,#ffffff)_100%)]" />
       <div className="space-y-4">
-        <div className="h-36 animate-pulse rounded-xl bg-gray-200/60 admin-dark:bg-white/10" />
-        <div className="h-36 animate-pulse rounded-xl bg-gray-200/60 admin-dark:bg-white/10" />
+        <div className="h-36 animate-pulse rounded-xl bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-2)_18%,#ffffff)_0%,color-mix(in_srgb,var(--brand-color-3)_14%,#ffffff)_100%)]" />
+        <div className="h-36 animate-pulse rounded-xl bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-3)_18%,#ffffff)_0%,color-mix(in_srgb,var(--brand-color-1)_14%,#ffffff)_100%)]" />
       </div>
     </div>
   )
 }
 
+function InfoTooltip({ text, align = 'center' }: { text: string; align?: 'center' | 'right' }) {
+  return (
+    <span
+      className="group relative inline-flex h-4 w-4 items-center justify-center text-white/75 transition-colors hover:text-white"
+      aria-label={text}
+    >
+      <CircleHelp className="h-3.5 w-3.5" />
+      <span
+        className={`pointer-events-none absolute top-full z-20 mt-1 hidden w-44 rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium normal-case tracking-normal text-white shadow-lg group-hover:block group-focus-visible:block ${
+          align === 'right' ? 'right-0' : 'left-1/2 -translate-x-1/2'
+        }`}
+      >
+        {text}
+      </span>
+    </span>
+  )
+}
+
+function LabelWithInfo({
+  label,
+  tooltip,
+  tooltipAlign = 'center',
+}: {
+  label: string
+  tooltip: string
+  tooltipAlign?: 'center' | 'right'
+}) {
+  return (
+    <span className="relative inline-block w-full pr-5">
+      <span className="inline-block">{label}</span>
+      <span className="absolute right-0 top-0">
+        <InfoTooltip text={tooltip} align={tooltipAlign} />
+      </span>
+    </span>
+  )
+}
+
 function Dashboard() {
   const { env } = useApiEnv()
-  const [rangePreset, setRangePreset] = useState<RangePreset>('lifetime')
+  const [rangePreset, setRangePreset] = useState<RangePreset>('7d')
   const [channelFilter, setChannelFilter] = useState<'All' | 'Sms' | 'Email' | 'WhatsApp' | 'WhatsAppUtility'>('All')
   const [waitlistStats, setWaitlistStats] = useState<WaitlistStats>({
     total: 0,
@@ -113,7 +161,10 @@ function Dashboard() {
   })
   const [recentOrders, setRecentOrders] = useState<PurchaseOrderResponse[]>([])
   const [pendingCount, setPendingCount] = useState(0)
-  const [activeCount, setActiveCount] = useState(0)
+  const [pendingCompaniesCount, setPendingCompaniesCount] = useState(0)
+  const [pendingCampaignsCount, setPendingCampaignsCount] = useState(0)
+  const [pendingPhoneNumbersCount, setPendingPhoneNumbersCount] = useState(0)
+  const [pendingMtnReviewersCount, setPendingMtnReviewersCount] = useState(0)
   const [alerts, setAlerts] = useState<ApmAlertsResponse | null>(null)
   const [dispatchControls, setDispatchControls] = useState<DispatchControlResponse | null>(null)
   const [overviewCurrent, setOverviewCurrent] = useState<DashboardAnalyticsOverviewResponse | null>(null)
@@ -165,6 +216,13 @@ function Dashboard() {
       setDashboardWarning('')
       setDashboardFailureDetails([])
       try {
+        const failureFor = (key: string, reason: unknown): { key: string; status?: number; message: string } => {
+          const r = reason as { message?: unknown; status?: unknown } | null | undefined
+          const status = typeof r?.status === 'number' ? r.status : undefined
+          const message = typeof r?.message === 'string' ? r.message : 'Request failed'
+          return { key, status, message }
+        }
+
         const isLifetime = rangePreset === 'lifetime'
         const rangeDays = rangePreset === '7d' ? 7 : rangePreset === '40d' ? 40 : 90
         const currentTo = new Date().toISOString()
@@ -184,11 +242,13 @@ function Dashboard() {
               channel: channelFilter === 'All' ? undefined : channelFilter,
             }
 
-        const [waitlistRes, ordersRes, alertsRes, dispatchRes] = await Promise.allSettled([
+        const [waitlistRes, ordersRes, alertsRes, dispatchRes, companiesRes, mtnPendingRes] = await Promise.allSettled([
           fetch('/api/waitlist?page=1&limit=1').then((r) => r.json()),
           adminApi.getAllPurchaseOrders({ pageNumber: 1, pageSize: 10 }),
           adminApi.getApmAlerts(),
           adminApi.getDispatchControls(),
+          adminApi.getCompanies({ includeDeactivated: true }),
+          adminApi.getMtnReviewers('pending'),
         ])
         if (cancelled) return
 
@@ -200,7 +260,6 @@ function Dashboard() {
           const orders = Array.isArray(ordersRes.value) ? ordersRes.value : []
           setRecentOrders(orders)
           setPendingCount(orders.filter((o) => o.purchaseOrderStatus === 'Pending').length)
-          setActiveCount(orders.filter((o) => o.purchaseOrderStatus === 'Active').length)
         }
 
         if (alertsRes.status === 'fulfilled') {
@@ -213,6 +272,45 @@ function Dashboard() {
           setDispatchControls(dispatchRes.value)
         } else {
           setDispatchControls(null)
+        }
+
+        let campaignsPendingFailure: { key: string; status?: number; message: string } | null = null
+        if (companiesRes.status === 'fulfilled') {
+          const companies = companiesRes.value
+          setPendingCompaniesCount(
+            companies.filter((company) => getCompanyReviewStatus(company) === 'Pending').length,
+          )
+          setPendingPhoneNumbersCount(
+            companies.filter((company) => Boolean(company.senderId) && !company.isApprovedSenderId).length,
+          )
+
+          const campaignsPerCompany = await Promise.allSettled(
+            companies.map((company) => adminApi.getCompanyCampaignsAll(company.id)),
+          )
+          if (cancelled) return
+
+          const pendingCampaigns = campaignsPerCompany
+            .filter((result): result is PromiseFulfilledResult<AdsCampaignResponse[]> => result.status === 'fulfilled')
+            .flatMap((result) => result.value)
+            .filter((campaign) => !campaign.isApproved).length
+          setPendingCampaignsCount(pendingCampaigns)
+
+          if (campaignsPerCompany.some((result) => result.status === 'rejected')) {
+            campaignsPendingFailure = {
+              key: 'campaigns pending review',
+              message: 'Some company campaigns could not be loaded',
+            }
+          }
+        } else {
+          setPendingCompaniesCount(0)
+          setPendingPhoneNumbersCount(0)
+          setPendingCampaignsCount(0)
+        }
+
+        if (mtnPendingRes.status === 'fulfilled') {
+          setPendingMtnReviewersCount(mtnPendingRes.value.length)
+        } else {
+          setPendingMtnReviewersCount(0)
         }
 
         setOpsReady(true)
@@ -246,13 +344,6 @@ function Dashboard() {
         setFunnel(funnelRes.status === 'fulfilled' ? funnelRes.value : null)
         setModeration(moderationRes.status === 'fulfilled' ? moderationRes.value : null)
 
-        const failureFor = (key: string, reason: unknown): { key: string; status?: number; message: string } => {
-          const r = reason as { message?: unknown; status?: unknown } | null | undefined
-          const status = typeof r?.status === 'number' ? r.status : undefined
-          const message = typeof r?.message === 'string' ? r.message : 'Request failed'
-          return { key, status, message }
-        }
-
         const failures = [
           waitlistRes.status === 'rejected'
             ? failureFor('queue volume (waitlist)', waitlistRes.reason)
@@ -266,6 +357,13 @@ function Dashboard() {
           dispatchRes.status === 'rejected'
             ? failureFor('dispatch controls', dispatchRes.reason)
             : null,
+          companiesRes.status === 'rejected'
+            ? failureFor('companies review queue', companiesRes.reason)
+            : null,
+          mtnPendingRes.status === 'rejected'
+            ? failureFor('mtn reviewers review queue', mtnPendingRes.reason)
+            : null,
+          campaignsPendingFailure,
           comparisonRes.status === 'rejected'
             ? failureFor('analytics/overview (comparison)', comparisonRes.reason)
             : null,
@@ -285,6 +383,8 @@ function Dashboard() {
             ordersRes,
             alertsRes,
             dispatchRes,
+            companiesRes,
+            mtnPendingRes,
             comparisonRes,
             trendsRes,
             funnelRes,
@@ -316,8 +416,7 @@ function Dashboard() {
   const reliabilitySummary = buildDashboardReliabilitySummary(alerts, dispatchControls)
   const apmRoute = dashboardApmRouteForPathname(pathname ?? '/admin/dashboard')
   const totalOrders = recentOrders.length
-  const orderActivationRate = totalOrders > 0 ? Math.round((activeCount / totalOrders) * 100) : 0
-  const pendingRate = totalOrders > 0 ? Math.round((pendingCount / totalOrders) * 100) : 0
+  const pendingOrderRate = totalOrders > 0 ? Math.round((pendingCount / totalOrders) * 100) : 0
   const pausedChannels = dispatchControls?.channels.filter((channel) => channel.isPaused) ?? []
   const activeChannels = dispatchControls?.channels.filter((channel) => !channel.isPaused) ?? []
   const latestSeverityClass = SEVERITY_ACCENT[reliabilitySummary.latestIncidentSeverity] ?? 'text-gray-700'
@@ -334,6 +433,31 @@ function Dashboard() {
   const tallestIncidentBar = Math.max(...incidentBars.map((bar) => bar.value), 1)
   const kpiCards = buildDashboardKpiCards(overviewCurrent, overviewPrevious)
   const trendTotals = summarizeTrendTotals(trends?.points ?? [])
+  const opsCardHref = {
+    queueVolume: `${basePath}/waitlist`,
+    pausedChannels: apmRoute,
+    companiesPendingReview: `${basePath}/companies`,
+    campaignsPendingReview: `${basePath}/campaigns`,
+    phoneNumbersPendingReview: `${basePath}/whitelisted-sender-ids`,
+    mtnReviewersPendingReview: `${basePath}/mtn-reviewers`,
+    reliability: apmRoute,
+  }
+  const executiveCardHref: Record<string, string> = {
+    'active-campaigns': `${basePath}/campaigns`,
+    'total-companies': `${basePath}/companies`,
+    'active-clients': `${basePath}/companies`,
+    'total-messages-sent': `${basePath}/bi-dashboard`,
+    'total-revenue': `${basePath}/transactions`,
+    'payment-success-rate': `${basePath}/transactions`,
+  }
+  const executiveKpiDescriptions: Record<string, string> = {
+    'active-campaigns': 'Number of campaigns currently active in the selected period.',
+    'total-companies': 'Unique companies that generated dashboard activity in the selected period.',
+    'active-clients': 'Unique active client accounts with campaign or messaging activity.',
+    'total-messages-sent': 'Total messages dispatched across all selected channels.',
+    'total-revenue': 'Revenue generated during the selected period.',
+    'payment-success-rate': 'Percentage of payment attempts completed successfully.',
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -383,8 +507,11 @@ function Dashboard() {
               </button>
             </div>
 
-            {activeTab === 'operations' ? (
-              <>
+            <div
+              role="tabpanel"
+              aria-hidden={activeTab !== 'operations'}
+              className={activeTab === 'operations' ? 'space-y-6' : 'hidden'}
+            >
             <section className="admin-liquid-card relative overflow-hidden px-6 py-7 md:px-8 md:py-8">
               <div className="pointer-events-none absolute -right-8 -top-24 h-56 w-56 rounded-full bg-[var(--brand-color-3)]/16 blur-3xl admin-dark:bg-[var(--brand-color-2)]/14" />
               <div className="relative">
@@ -393,59 +520,103 @@ function Dashboard() {
                 {!opsReady ? (
                   <DashboardOpsMetricsSkeleton />
                 ) : (
-                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_40%,var(--brand-color-1)_60%)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Queue volume</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(waitlistStats.total)}</p>
-                    <p className="mt-1 text-sm text-white/80">Waitlist entries</p>
-                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+                  <Link href={opsCardHref.queueVolume} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_40%,var(--brand-color-1)_60%)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+                      <LabelWithInfo
+                        label="Queue volume"
+                        tooltip="Total number of users currently waiting in the backoffice waitlist queue."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(waitlistStats.total)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
                       <path d="M0 24 L20 8 L40 20 L60 4 L80 18 L100 10 L120 14" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  </div>
-                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Order intake</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(totalOrders)}</p>
-                    <p className="mt-1 text-sm text-white/80">Recent purchase orders</p>
-                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                  </Link>
+                  <Link href={opsCardHref.pausedChannels} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-3)_0%,var(--brand-color-2)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+                      <LabelWithInfo
+                        label="Paused channels"
+                        tooltip="Number of messaging channels currently paused in dispatch controls."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(pausedChannels.length)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
                       <path d="M0 20 L24 12 L48 22 L72 6 L96 16 L120 8" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  </div>
-                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(155deg,color-mix(in_srgb,var(--brand-color-2)_90%,var(--brand-color-3)_10%)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/25">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Activation</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(activeCount)}</p>
-                    <p className="mt-1 text-sm text-white/85">{orderActivationRate}% of recent orders</p>
-                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
-                      <path d="M0 28 L30 14 L55 22 L80 8 L105 18 L120 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-3)_65%,var(--brand-color-1)_35%)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/25">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">Pending review</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(pendingCount)}</p>
-                    <p className="mt-1 text-sm text-white/85">{pendingRate}% awaiting action</p>
-                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                  </Link>
+                  <Link href={opsCardHref.companiesPendingReview} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-3)_65%,var(--brand-color-1)_35%)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/25 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">
+                      <LabelWithInfo
+                        label="Companies pending review"
+                        tooltip="Company profiles that are still in Pending review status and need backoffice action."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(pendingCompaniesCount)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
                       <path d="M0 10 L25 22 L50 8 L75 20 L100 6 L120 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  </div>
-                  <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(135deg,var(--brand-color-2)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20 sm:col-span-2 lg:col-span-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Reliability</p>
-                    <p className="mt-2 text-3xl font-bold tabular-nums">{formatCompact(reliabilitySummary.activeAlertsCount)}</p>
-                    <p className="mt-1 text-sm text-white/80">Open alerts</p>
-                    <svg className="mt-3 h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                  </Link>
+                  <Link href={opsCardHref.campaignsPendingReview} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_25%,var(--brand-color-1)_75%)_100%)] p-4 text-white shadow-lg shadow-black/25 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/90">
+                      <LabelWithInfo
+                        label="Campaigns pending review"
+                        tooltip="Campaigns not yet approved by moderation and currently waiting for review."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(pendingCampaignsCount)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 26 L22 14 L44 24 L66 12 L88 20 L110 8 L120 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </Link>
+                  <Link href={opsCardHref.phoneNumbersPendingReview} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-3)_0%,color-mix(in_srgb,var(--brand-color-2)_35%,var(--brand-color-1)_65%)_100%)] p-4 text-white shadow-lg shadow-black/20 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+                      <LabelWithInfo
+                        label="Phone numbers pending review"
+                        tooltip="Companies with sender IDs configured but not yet approved for use."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(pendingPhoneNumbersCount)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 18 L24 8 L48 20 L72 10 L96 16 L120 12" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </Link>
+                  <Link href={opsCardHref.mtnReviewersPendingReview} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--brand-color-2)_70%,var(--brand-color-1)_30%)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+                      <LabelWithInfo
+                        label="MTN reviewers pending review"
+                        tooltip="MTN reviewer accounts that are pending approval before they can review submissions."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(pendingMtnReviewersCount)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
+                      <path d="M0 22 L20 12 L40 18 L60 10 L80 20 L100 14 L120 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </Link>
+                  <Link href={opsCardHref.reliability} className="admin-dashboard-metric-card relative z-0 flex min-h-[168px] w-full flex-col rounded-[20px] bg-[linear-gradient(135deg,var(--brand-color-2)_0%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20 transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl">
+                    <p className="min-h-[64px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+                      <LabelWithInfo
+                        label="Reliability"
+                        tooltip="Current number of unresolved reliability alerts in monitoring."
+                      />
+                    </p>
+                    <p className="mt-2 min-h-[44px] text-3xl font-bold leading-none tabular-nums">{formatCompact(reliabilitySummary.activeAlertsCount)}</p>
+                    <svg className="mt-auto h-8 w-full opacity-40" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden>
                       <path d="M0 16 L22 24 L44 8 L66 20 L88 6 L110 14 L120 10" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
                     </svg>
-                  </div>
+                  </Link>
                 </div>
                 )}
               </div>
             </section>
 
-            <section
-              className={`admin-liquid-card p-5 md:p-6 ${refreshing && analyticsReady ? 'opacity-80 transition-opacity' : ''}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="admin-liquid-card p-4 md:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Executive analytics</h2>
-                  <p className="text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Period deltas for campaign, growth, and revenue indicators.</p>
+                  <p className="text-sm font-semibold text-[var(--admin-heading)] admin-dark:text-white">Analytics filters</p>
+                  <p className="text-xs text-[var(--admin-muted)] admin-dark:text-slate-400">
+                    Applies to Executive analytics and all sections below.
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <select
@@ -469,6 +640,17 @@ function Dashboard() {
                     <option value="WhatsApp">WhatsApp</option>
                     <option value="WhatsAppUtility">WhatsApp Utility</option>
                   </select>
+                </div>
+              </div>
+            </div>
+
+            <section
+              className={`admin-liquid-card p-5 md:p-6 ${refreshing && analyticsReady ? 'opacity-80 transition-opacity' : ''}`}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Executive analytics</h2>
+                  <p className="text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Period deltas for campaign, growth, and revenue indicators.</p>
                 </div>
               </div>
 
@@ -503,17 +685,24 @@ function Dashboard() {
                   const g = gradients[i % gradients.length]
 
                   return (
-                    <div
+                    <Link
+                      href={executiveCardHref[card.key] ?? `${basePath}/bi-dashboard`}
                       key={card.key}
-                      className={`admin-dashboard-metric-card rounded-[20px] p-4 text-white shadow-lg ${g} shadow-black/10`}
+                      className={`admin-dashboard-metric-card relative z-0 flex min-h-[136px] flex-col rounded-[20px] p-4 text-white shadow-lg transition hover:z-20 hover:-translate-y-0.5 hover:shadow-xl ${g} shadow-black/10`}
                     >
-                      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">{card.label}</p>
-                      <p className="mt-2 text-2xl font-bold tabular-nums">{valueText}</p>
+                      <p className="min-h-[36px] text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">
+                        <LabelWithInfo
+                          label={card.label}
+                          tooltip={executiveKpiDescriptions[card.key] ?? 'Analytics KPI for selected filters.'}
+                          tooltipAlign={card.key === 'payment-success-rate' ? 'right' : 'center'}
+                        />
+                      </p>
+                      <p className="mt-2 min-h-[40px] text-2xl font-bold leading-none tabular-nums">{valueText}</p>
                       <p className={`mt-1 text-sm font-semibold ${deltaClass}`}>
                         {isPositive ? '+' : '-'}
                         {deltaText} vs prev.
                       </p>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
@@ -630,29 +819,29 @@ function Dashboard() {
                 <div className="mb-5 flex items-start justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-[var(--admin-heading)]">Order Health</h2>
-                    <p className="mt-1 text-sm text-[var(--admin-muted)]">Activation ratio in the latest order set.</p>
+                    <p className="mt-1 text-sm text-[var(--admin-muted)]">Pending ratio in the latest order set.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-5">
                   <div
                     className="grid h-32 w-32 place-items-center rounded-full"
                     style={{
-                      background: `conic-gradient(var(--admin-ui-accent) ${orderActivationRate}%, color-mix(in srgb, var(--admin-ui-accent) 14%, var(--admin-card)) ${orderActivationRate}% 100%)`,
+                      background: `conic-gradient(#f59e0b ${pendingOrderRate}%, color-mix(in srgb, #f59e0b 14%, var(--admin-card)) ${pendingOrderRate}% 100%)`,
                     }}
                   >
                     <div className="grid h-24 w-24 place-items-center rounded-full bg-white text-center shadow-inner">
-                      <p className="text-2xl font-bold text-gray-900">{orderActivationRate}%</p>
-                      <p className="text-[11px] text-gray-500">active</p>
+                      <p className="text-2xl font-bold text-gray-900">{pendingOrderRate}%</p>
+                      <p className="text-[11px] text-gray-500">pending</p>
                     </div>
                   </div>
                   <div className="space-y-3 text-sm">
                     <p className="flex items-center justify-between gap-10 rounded-xl bg-gray-50 px-3 py-2 text-gray-700">
-                      <span>Active orders</span>
-                      <strong className="text-emerald-700">{activeCount}</strong>
-                    </p>
-                    <p className="flex items-center justify-between gap-10 rounded-xl bg-gray-50 px-3 py-2 text-gray-700">
                       <span>Pending orders</span>
                       <strong className="text-amber-700">{pendingCount}</strong>
+                    </p>
+                    <p className="flex items-center justify-between gap-10 rounded-xl bg-gray-50 px-3 py-2 text-gray-700">
+                      <span>Non-pending orders</span>
+                      <strong className="text-emerald-700">{Math.max(totalOrders - pendingCount, 0)}</strong>
                     </p>
                     <p className="flex items-center justify-between gap-10 rounded-xl bg-gray-50 px-3 py-2 text-gray-700">
                       <span>Recent orders</span>
@@ -852,10 +1041,14 @@ function Dashboard() {
                 </table>
               </div>
             </div>
-              </>
-            ) : (
+            </div>
+            <div
+              role="tabpanel"
+              aria-hidden={activeTab !== 'bi'}
+              className={activeTab === 'bi' ? 'space-y-6' : 'hidden'}
+            >
               <BiDashboardTabContent />
-            )}
+            </div>
         </div>
       </div>
     </div>

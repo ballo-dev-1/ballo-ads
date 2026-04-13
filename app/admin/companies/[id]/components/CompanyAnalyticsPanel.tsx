@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
   BadgeCheck,
   CheckCircle2,
+  CircleHelp,
   Megaphone,
   ShieldCheck,
   SignalHigh,
@@ -37,11 +38,13 @@ function StatCard({
   label,
   value,
   hint,
+  info,
   icon,
 }: {
   label: string
   value: ReactNode
   hint?: string
+  info?: string
   icon: ReactNode
 }) {
   return (
@@ -49,10 +52,36 @@ function StatCard({
       <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
         {icon}
       </div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.11em] text-slate-500">
+        <LabelWithInfo label={label} tooltip={info} />
+      </p>
       <p className="mt-1 text-base font-semibold text-slate-800">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </article>
+  )
+}
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <button
+      type="button"
+      className="group relative inline-flex h-4 w-4 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
+      aria-label={text}
+    >
+      <CircleHelp className="h-3.5 w-3.5" />
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 hidden w-44 -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium normal-case tracking-normal text-white shadow-lg group-hover:block group-focus-visible:block">
+        {text}
+      </span>
+    </button>
+  )
+}
+
+function LabelWithInfo({ label, tooltip }: { label: string; tooltip?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 align-middle">
+      <span>{label}</span>
+      {tooltip ? <InfoTooltip text={tooltip} /> : null}
+    </span>
   )
 }
 
@@ -260,6 +289,14 @@ export default function CompanyAnalyticsPanel({
   const creditsFinance = overviewCurrent?.creditsFinance
   const audience = overviewCurrent?.audience
   const apiOps = overviewCurrent?.apiOps
+  const kpiDescriptions: Record<string, string> = {
+    'active-campaigns': 'Number of campaigns that are currently active in the selected period.',
+    'total-companies': 'Unique companies that had analytics activity in the selected period.',
+    'active-clients': 'Unique client accounts that were active in the selected period.',
+    'total-messages-sent': 'Total message volume delivered across channels in the selected period.',
+    'total-revenue': 'Revenue generated from campaigns and transactions in the selected period.',
+    'payment-success-rate': 'Percentage of payments that completed successfully in the selected period.',
+  }
 
   if (loading) {
     return (
@@ -286,6 +323,7 @@ export default function CompanyAnalyticsPanel({
           <StatCard
             label="Lifecycle"
             value={overviewSnapshot.isActive ? 'Active' : 'Deactivated'}
+            info="Shows whether this company is currently enabled to run operational actions."
             hint={
               overviewSnapshot.isActive ? 'Operational actions enabled' : 'Operational actions blocked'
             }
@@ -294,6 +332,7 @@ export default function CompanyAnalyticsPanel({
           <StatCard
             label="Submission review"
             value={overviewSnapshot.reviewStatus}
+            info="Current backoffice review decision for the company profile."
             hint={
               overviewSnapshot.reviewStatus === 'Rejected'
                 ? (overviewSnapshot.reviewReason ?? 'Reason required')
@@ -306,18 +345,21 @@ export default function CompanyAnalyticsPanel({
           <StatCard
             label="Sender ID"
             value={overviewSnapshot.senderStatusLabel}
+            info="Approval state of the sender identity used for outbound messaging."
             hint={overviewSnapshot.senderIdHint}
             icon={<BadgeCheck className="h-4 w-4" />}
           />
           <StatCard
             label="Campaigns"
             value={`${overviewSnapshot.campaignsTotal} total`}
+            info="Total campaigns created by this company, including active and inactive."
             hint={`${overviewSnapshot.activeCampaignsCount} currently active`}
             icon={<Megaphone className="h-4 w-4" />}
           />
           <StatCard
             label="Approval rate"
             value={overviewSnapshot.approvedRate}
+            info="Share of this company campaigns that were approved by moderation."
             hint={`${overviewSnapshot.approvedCampaignsCount} approved`}
             icon={<CheckCircle2 className="h-4 w-4" />}
           />
@@ -374,7 +416,9 @@ export default function CompanyAnalyticsPanel({
 
             return (
               <div key={card.key} className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">{card.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">
+                  <LabelWithInfo label={card.label} tooltip={kpiDescriptions[card.key]} />
+                </p>
                 <p className="mt-2 text-2xl font-semibold text-gray-900">{valueText}</p>
                 <p className={`mt-1 text-sm font-medium ${deltaClass}`}>
                   {isPositive ? '+' : '-'}
@@ -390,19 +434,19 @@ export default function CompanyAnalyticsPanel({
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900">Campaign Performance</h3>
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Campaigns</p><p className="mt-1 font-semibold text-gray-900">{campaignPerformance?.totalCampaigns ?? 0}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Completed</p><p className="mt-1 font-semibold text-gray-900">{campaignPerformance?.completedCampaigns ?? 0}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Dispatch rate</p><p className="mt-1 font-semibold text-gray-900">{(campaignPerformance?.dispatchRate ?? 0).toFixed(2)}%</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Avg completion</p><p className="mt-1 font-semibold text-gray-900">{(campaignPerformance?.averageTimeToCompleteHours ?? 0).toFixed(2)}h</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Campaigns" tooltip="Total campaigns created in the selected period." /></p><p className="mt-1 font-semibold text-gray-900">{campaignPerformance?.totalCampaigns ?? 0}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Completed" tooltip="Campaigns that reached completed status in the selected period." /></p><p className="mt-1 font-semibold text-gray-900">{campaignPerformance?.completedCampaigns ?? 0}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Dispatch rate" tooltip="Percentage of campaign sends dispatched successfully." /></p><p className="mt-1 font-semibold text-gray-900">{(campaignPerformance?.dispatchRate ?? 0).toFixed(2)}%</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Avg completion" tooltip="Average time taken for campaigns to complete after activation." /></p><p className="mt-1 font-semibold text-gray-900">{(campaignPerformance?.averageTimeToCompleteHours ?? 0).toFixed(2)}h</p></div>
           </div>
         </div>
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900">Credits & Finance</h3>
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">SMS balance</p><p className="mt-1 font-semibold text-gray-900">{creditsFinance?.balances.sms ?? 0}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Email balance</p><p className="mt-1 font-semibold text-gray-900">{creditsFinance?.balances.email ?? 0}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Revenue</p><p className="mt-1 font-semibold text-gray-900">ZMW {(creditsFinance?.totalRevenue ?? 0).toFixed(2)}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Payment success</p><p className="mt-1 font-semibold text-gray-900">{(creditsFinance?.paymentSuccessRate ?? 0).toFixed(2)}%</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="SMS balance" tooltip="Remaining SMS credits currently available to the company." /></p><p className="mt-1 font-semibold text-gray-900">{creditsFinance?.balances.sms ?? 0}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Email balance" tooltip="Remaining email credits currently available to the company." /></p><p className="mt-1 font-semibold text-gray-900">{creditsFinance?.balances.email ?? 0}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Revenue" tooltip="Total revenue generated by the company during the selected period." /></p><p className="mt-1 font-semibold text-gray-900">ZMW {(creditsFinance?.totalRevenue ?? 0).toFixed(2)}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Payment success" tooltip="Percentage of payment attempts that were processed successfully." /></p><p className="mt-1 font-semibold text-gray-900">{(creditsFinance?.paymentSuccessRate ?? 0).toFixed(2)}%</p></div>
           </div>
         </div>
       </section>
@@ -412,45 +456,45 @@ export default function CompanyAnalyticsPanel({
           <h2 className="text-xl font-semibold text-gray-900">Trend Snapshot</h2>
           <p className="mt-1 text-sm text-gray-500">Aggregated totals for selected period.</p>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Campaigns</p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.campaigns}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Approved</p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.approvedCampaigns}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Active</p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.activeCampaigns}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Orders</p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.purchaseOrders}</p></div>
-            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Transactions</p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.transactions}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Campaigns" tooltip="Total campaign records included in trend buckets for the selected period." /></p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.campaigns}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Approved" tooltip="Trend total of campaigns approved by moderation." /></p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.approvedCampaigns}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Active" tooltip="Trend total of campaigns that were active during trend buckets." /></p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.activeCampaigns}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Orders" tooltip="Total purchase orders recorded in the selected trend period." /></p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.purchaseOrders}</p></div>
+            <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Transactions" tooltip="Total payment or billing transactions linked to trend records." /></p><p className="mt-1 text-lg font-semibold text-gray-900">{trendTotals.transactions}</p></div>
           </div>
         </div>
         <div className="space-y-4">
           <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900">Campaign Funnel</h3>
             <div className="mt-3 space-y-2 text-sm text-gray-700">
-              <p className="flex items-center justify-between"><span>Created</span><strong>{funnel?.created ?? 0}</strong></p>
-              <p className="flex items-center justify-between"><span>Approved</span><strong>{funnel?.approved ?? 0}</strong></p>
-              <p className="flex items-center justify-between"><span>Activated</span><strong>{funnel?.activated ?? 0}</strong></p>
-              <p className="flex items-center justify-between"><span>Completed</span><strong>{funnel?.completed ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Created" tooltip="Campaigns initially created in the selected period." /></span><strong>{funnel?.created ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Approved" tooltip="Created campaigns that passed moderation." /></span><strong>{funnel?.approved ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Activated" tooltip="Approved campaigns that were activated for sending." /></span><strong>{funnel?.activated ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Completed" tooltip="Activated campaigns that reached completed state." /></span><strong>{funnel?.completed ?? 0}</strong></p>
             </div>
-            <p className="mt-3 text-sm font-medium text-[var(--admin-ui-accent)]">Completion rate: {(funnel?.completionRate ?? 0).toFixed(2)}%</p>
+            <p className="mt-3 text-sm font-medium text-[var(--admin-ui-accent)]"><LabelWithInfo label={`Completion rate: ${(funnel?.completionRate ?? 0).toFixed(2)}%`} tooltip="Completed campaigns divided by created campaigns in the selected period." /></p>
           </div>
           <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900">Moderation Velocity</h3>
             <div className="mt-3 space-y-2 text-sm text-gray-700">
-              <p className="flex items-center justify-between"><span>Pending approvals</span><strong>{moderation?.pendingApprovals ?? 0}</strong></p>
-              <p className="flex items-center justify-between"><span>Approved</span><strong>{moderation?.approvedCount ?? 0}</strong></p>
-              <p className="flex items-center justify-between"><span>Rejected</span><strong>{moderation?.rejectedCount ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Pending approvals" tooltip="Campaigns still waiting for moderator decision." /></span><strong>{moderation?.pendingApprovals ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Approved" tooltip="Campaigns approved by moderation in the selected period." /></span><strong>{moderation?.approvedCount ?? 0}</strong></p>
+              <p className="flex items-center justify-between"><span><LabelWithInfo label="Rejected" tooltip="Campaigns rejected by moderation in the selected period." /></span><strong>{moderation?.rejectedCount ?? 0}</strong></p>
             </div>
-            <p className="mt-3 text-sm font-medium text-emerald-700">Approval rate: {(moderation?.approvalRate ?? 0).toFixed(2)}%</p>
-            <p className="text-sm text-gray-600">Median review time: {(moderation?.medianReviewHours ?? 0).toFixed(2)}h</p>
+            <p className="mt-3 text-sm font-medium text-emerald-700"><LabelWithInfo label={`Approval rate: ${(moderation?.approvalRate ?? 0).toFixed(2)}%`} tooltip="Approved moderation decisions divided by total moderation decisions." /></p>
+            <p className="text-sm text-gray-600"><LabelWithInfo label={`Median review time: ${(moderation?.medianReviewHours ?? 0).toFixed(2)}h`} tooltip="Median time between campaign submission and moderation decision." /></p>
           </div>
           <div className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900">Audience</h3>
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Total subscribers</p><p className="mt-1 font-semibold text-gray-900">{audience?.totalSubscribers ?? 0}</p></div>
-              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">New subscribers</p><p className="mt-1 font-semibold text-gray-900">{audience?.newSubscribers ?? 0}</p></div>
-              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Opt-in SMS</p><p className="mt-1 font-semibold text-gray-900">{audience?.optInSms ?? 0}</p></div>
-              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Opt-in WhatsApp</p><p className="mt-1 font-semibold text-gray-900">{audience?.optInWhatsApp ?? 0}</p></div>
+              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Total subscribers" tooltip="All subscribers currently in this company audience." /></p><p className="mt-1 font-semibold text-gray-900">{audience?.totalSubscribers ?? 0}</p></div>
+              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="New subscribers" tooltip="Subscribers added during the selected period." /></p><p className="mt-1 font-semibold text-gray-900">{audience?.newSubscribers ?? 0}</p></div>
+              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Opt-in SMS" tooltip="Subscribers who have consented to receive SMS messages." /></p><p className="mt-1 font-semibold text-gray-900">{audience?.optInSms ?? 0}</p></div>
+              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Opt-in WhatsApp" tooltip="Subscribers who have consented to receive WhatsApp messages." /></p><p className="mt-1 font-semibold text-gray-900">{audience?.optInWhatsApp ?? 0}</p></div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">API usage</p><p className="mt-1 font-semibold text-gray-900">{apiOps?.apiUsage.total ?? 0}</p></div>
-              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500">Success rate</p><p className="mt-1 font-semibold text-gray-900">{(apiOps?.apiUsage.successRate ?? 0).toFixed(2)}%</p></div>
+              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="API usage" tooltip="Total API calls made by this company in the selected period." /></p><p className="mt-1 font-semibold text-gray-900">{apiOps?.apiUsage.total ?? 0}</p></div>
+              <div className="rounded-xl bg-gray-50 p-3"><p className="text-xs uppercase text-gray-500"><LabelWithInfo label="Success rate" tooltip="Percentage of company API calls that returned success." /></p><p className="mt-1 font-semibold text-gray-900">{(apiOps?.apiUsage.successRate ?? 0).toFixed(2)}%</p></div>
             </div>
           </div>
         </div>
