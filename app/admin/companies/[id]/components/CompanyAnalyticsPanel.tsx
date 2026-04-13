@@ -170,24 +170,36 @@ export default function CompanyAnalyticsPanel({
         }),
       ])
 
-      const overviewCurrentRes = await settle(adminApi.getDashboardAnalyticsOverview(analyticsParams))
-      const overviewPreviousRes = await settle(adminApi.getDashboardAnalyticsOverview(previousParams))
+      const comparisonRes = await settle(
+        adminApi.getDashboardAnalyticsOverviewComparison({
+          from: analyticsParams.from,
+          to: analyticsParams.to,
+          previousFrom: previousParams.from,
+          previousTo: previousParams.to,
+          companyId,
+          channel,
+        }),
+      )
       if (cancelled) return
 
-      setOverviewCurrent(overviewCurrentRes.status === 'fulfilled' ? overviewCurrentRes.value : null)
-      setOverviewPrevious(overviewPreviousRes.status === 'fulfilled' ? overviewPreviousRes.value : null)
+      if (comparisonRes.status === 'fulfilled') {
+        setOverviewCurrent(comparisonRes.value.current)
+        setOverviewPrevious(comparisonRes.value.previous)
+      } else {
+        setOverviewCurrent(null)
+        setOverviewPrevious(null)
+      }
       setTrends(trendsRes.status === 'fulfilled' ? trendsRes.value : null)
       setFunnel(funnelRes.status === 'fulfilled' ? funnelRes.value : null)
       setModeration(moderationRes.status === 'fulfilled' ? moderationRes.value : null)
 
       const failures = [
-        overviewCurrentRes,
-        overviewPreviousRes,
+        comparisonRes,
         trendsRes,
         funnelRes,
         moderationRes,
       ].filter((result) => result.status === 'rejected').length
-      if (failures === 5) {
+      if (failures === 4) {
         setError('Unable to load company analytics right now.')
       } else if (failures > 0) {
         setError('Some analytics sections are unavailable. Partial data is shown.')

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import dynamic from 'next/dynamic'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   adminApi,
@@ -21,8 +22,16 @@ import {
 import { buildDashboardKpiCards, summarizeTrendTotals } from './analyticsViewModel'
 import { dashboardStatsWarningMessage } from './fetchStatus'
 import { getAdminBasePath } from '@/lib/adminNamespace'
-import BiDashboardTabContent from './BiDashboardTabContent'
 import { normalizeDashboardTab, type DashboardTab } from './tabState'
+
+const BiDashboardTabContent = dynamic(() => import('./BiDashboardTabContent'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[40vh] items-center justify-center">
+      <div className="h-12 w-12 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-3)]" />
+    </div>
+  ),
+})
 
 interface WaitlistStats {
   total: number
@@ -57,6 +66,41 @@ function toIsoDaysAgo(days: number): string {
 
 type RangePreset = '7d' | '40d' | '90d' | 'lifetime'
 
+function DashboardOpsMetricsSkeleton() {
+  return (
+    <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-[148px] rounded-[20px] animate-pulse bg-[color-mix(in_srgb,var(--admin-heading)_12%,transparent)] admin-dark:bg-white/10"
+        />
+      ))}
+    </div>
+  )
+}
+
+function DashboardAnalyticsKpiSkeleton() {
+  return (
+    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-[100px] rounded-[20px] animate-pulse bg-gray-200/80 admin-dark:bg-white/10" />
+      ))}
+    </div>
+  )
+}
+
+function DashboardTrendsBlockSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="xl:col-span-2 h-80 animate-pulse rounded-xl bg-gray-200/60 admin-dark:bg-white/10" />
+      <div className="space-y-4">
+        <div className="h-36 animate-pulse rounded-xl bg-gray-200/60 admin-dark:bg-white/10" />
+        <div className="h-36 animate-pulse rounded-xl bg-gray-200/60 admin-dark:bg-white/10" />
+      </div>
+    </div>
+  )
+}
+
 function Dashboard() {
   const { env } = useApiEnv()
   const [rangePreset, setRangePreset] = useState<RangePreset>('lifetime')
@@ -81,7 +125,10 @@ function Dashboard() {
   const [dashboardFailureDetails, setDashboardFailureDetails] = useState<
     Array<{ key: string; status?: number; message: string }>
   >([])
-  const [loading, setLoading] = useState(true)
+  const [opsReady, setOpsReady] = useState(false)
+  const [analyticsReady, setAnalyticsReady] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const hasLoadedOnceRef = useRef(false)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -93,8 +140,28 @@ function Dashboard() {
   }, [searchParams])
 
   useEffect(() => {
+    hasLoadedOnceRef.current = false
+  }, [env])
+
+  useEffect(() => {
+    let cancelled = false
+    const settle = async <T,>(p: Promise<T>): Promise<PromiseSettledResult<T>> => {
+      try {
+        const value = await p
+        return { status: 'fulfilled', value }
+      } catch (reason) {
+        return { status: 'rejected', reason }
+      }
+    }
+
     const fetchAll = async () => {
-      setLoading(true)
+      const isRefresh = hasLoadedOnceRef.current
+      if (isRefresh) {
+        setRefreshing(true)
+      } else {
+        setOpsReady(false)
+        setAnalyticsReady(false)
+      }
       setDashboardWarning('')
       setDashboardFailureDetails([])
       try {
@@ -109,11 +176,13 @@ function Dashboard() {
           to: currentTo,
           channel: channelFilter === 'All' ? undefined : channelFilter,
         }
-        const previousParams = isLifetime ? analyticsParams : {
-          from: previousFrom,
-          to: previousTo,
-          channel: channelFilter === 'All' ? undefined : channelFilter,
-        }
+        const previousParams = isLifetime
+          ? analyticsParams
+          : {
+              from: previousFrom,
+              to: previousTo,
+              channel: channelFilter === 'All' ? undefined : channelFilter,
+            }
 
         const [waitlistRes, ordersRes, alertsRes, dispatchRes] = await Promise.allSettled([
           fetch('/api/waitlist?page=1&limit=1').then((r) => r.json()),
@@ -121,26 +190,7 @@ function Dashboard() {
           adminApi.getApmAlerts(),
           adminApi.getDispatchControls(),
         ])
-
-        const settle = async <T,>(p: Promise<T>): Promise<PromiseSettledResult<T>> => {
-          try {
-            const value = await p
-            return { status: 'fulfilled', value }
-          } catch (reason) {
-            return { status: 'rejected', reason }
-          }
-        }
-
-        // Important: fetch overview (current/previous) sequentially to avoid backend DbContext
-        // concurrency issues in some deployments.
-        const overviewCurrentRes = await settle(adminApi.getDashboardAnalyticsOverview(analyticsParams))
-        const overviewPreviousRes = await settle(adminApi.getDashboardAnalyticsOverview(previousParams))
-
-        const [trendsRes, funnelRes, moderationRes] = await Promise.allSettled([
-          adminApi.getDashboardAnalyticsTrends({ ...analyticsParams, bucket: 'day' }),
-          adminApi.getDashboardAnalyticsFunnel(analyticsParams),
-          adminApi.getDashboardAnalyticsModeration(analyticsParams),
-        ])
+        if (cancelled) return
 
         if (waitlistRes.status === 'fulfilled' && waitlistRes.value?.pagination) {
           setWaitlistStats(waitlistRes.value.pagination)
@@ -165,11 +215,37 @@ function Dashboard() {
           setDispatchControls(null)
         }
 
-        setOverviewCurrent(overviewCurrentRes.status === 'fulfilled' ? overviewCurrentRes.value : null)
-        setOverviewPrevious(overviewPreviousRes.status === 'fulfilled' ? overviewPreviousRes.value : null)
+        setOpsReady(true)
+
+        const comparisonRes = await settle(
+          adminApi.getDashboardAnalyticsOverviewComparison({
+            from: analyticsParams.from,
+            to: analyticsParams.to,
+            previousFrom: previousParams.from,
+            previousTo: previousParams.to,
+            channel: analyticsParams.channel,
+          }),
+        )
+
+        const [trendsRes, funnelRes, moderationRes] = await Promise.allSettled([
+          adminApi.getDashboardAnalyticsTrends({ ...analyticsParams, bucket: 'day' }),
+          adminApi.getDashboardAnalyticsFunnel(analyticsParams),
+          adminApi.getDashboardAnalyticsModeration(analyticsParams),
+        ])
+        if (cancelled) return
+
+        if (comparisonRes.status === 'fulfilled') {
+          setOverviewCurrent(comparisonRes.value.current)
+          setOverviewPrevious(comparisonRes.value.previous)
+        } else {
+          setOverviewCurrent(null)
+          setOverviewPrevious(null)
+        }
+
         setTrends(trendsRes.status === 'fulfilled' ? trendsRes.value : null)
         setFunnel(funnelRes.status === 'fulfilled' ? funnelRes.value : null)
         setModeration(moderationRes.status === 'fulfilled' ? moderationRes.value : null)
+
         const failureFor = (key: string, reason: unknown): { key: string; status?: number; message: string } => {
           const r = reason as { message?: unknown; status?: unknown } | null | undefined
           const status = typeof r?.status === 'number' ? r.status : undefined
@@ -190,8 +266,9 @@ function Dashboard() {
           dispatchRes.status === 'rejected'
             ? failureFor('dispatch controls', dispatchRes.reason)
             : null,
-          overviewCurrentRes.status === 'rejected' ? failureFor('analytics/overview (current)', overviewCurrentRes.reason) : null,
-          overviewPreviousRes.status === 'rejected' ? failureFor('analytics/overview (previous)', overviewPreviousRes.reason) : null,
+          comparisonRes.status === 'rejected'
+            ? failureFor('analytics/overview (comparison)', comparisonRes.reason)
+            : null,
           trendsRes.status === 'rejected' ? failureFor('analytics/trends', trendsRes.reason) : null,
           funnelRes.status === 'rejected' ? failureFor('analytics/funnel', funnelRes.reason) : null,
           moderationRes.status === 'rejected' ? failureFor('analytics/moderation', moderationRes.reason) : null,
@@ -208,8 +285,7 @@ function Dashboard() {
             ordersRes,
             alertsRes,
             dispatchRes,
-            overviewCurrentRes,
-            overviewPreviousRes,
+            comparisonRes,
             trendsRes,
             funnelRes,
             moderationRes,
@@ -223,11 +299,18 @@ function Dashboard() {
         const message = typeof r?.message === 'string' ? r.message : 'Request failed'
         setDashboardFailureDetails([{ key: 'dashboard', status, message }])
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setAnalyticsReady(true)
+          setRefreshing(false)
+          hasLoadedOnceRef.current = true
+        }
       }
     }
 
-    fetchAll()
+    void fetchAll()
+    return () => {
+      cancelled = true
+    }
   }, [env, rangePreset, channelFilter])
 
   const reliabilitySummary = buildDashboardReliabilitySummary(alerts, dispatchControls)
@@ -255,12 +338,12 @@ function Dashboard() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex-1 overflow-auto">
-        {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <div className="h-12 w-12 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--brand-color-3)]" />
-          </div>
-        ) : (
-          <div className="space-y-6">
+        <div className="space-y-6">
+            {refreshing ? (
+              <div className="rounded-lg border border-sky-200/90 bg-sky-50/90 px-4 py-2 text-sm text-sky-900 admin-dark:border-sky-500/40 admin-dark:bg-sky-950/40 admin-dark:text-sky-100">
+                Updating dashboard…
+              </div>
+            ) : null}
             {dashboardWarning ? (
               <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-yellow-800 shadow-sm">
                 {dashboardWarning}
@@ -307,6 +390,9 @@ function Dashboard() {
               <div className="relative">
                 <h1 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white sm:text-xl">Operations overview</h1>
                 <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Order flow, queue activity, and reliability at a glance.</p>
+                {!opsReady ? (
+                  <DashboardOpsMetricsSkeleton />
+                ) : (
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                   <div className="admin-dashboard-metric-card relative overflow-hidden rounded-[20px] bg-[linear-gradient(145deg,var(--brand-color-2)_0%,color-mix(in_srgb,var(--brand-color-3)_40%,var(--brand-color-1)_60%)_55%,var(--brand-color-1)_100%)] p-4 text-white shadow-lg shadow-black/20">
                     <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85">Queue volume</p>
@@ -349,10 +435,13 @@ function Dashboard() {
                     </svg>
                   </div>
                 </div>
+                )}
               </div>
             </section>
 
-            <section className="admin-liquid-card p-5 md:p-6">
+            <section
+              className={`admin-liquid-card p-5 md:p-6 ${refreshing && analyticsReady ? 'opacity-80 transition-opacity' : ''}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Executive analytics</h2>
@@ -383,6 +472,9 @@ function Dashboard() {
                 </div>
               </div>
 
+              {!analyticsReady ? (
+                <DashboardAnalyticsKpiSkeleton />
+              ) : (
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 {kpiCards.map((card, i) => {
                   const isPositive = card.delta >= 0
@@ -425,6 +517,7 @@ function Dashboard() {
                   )
                 })}
               </div>
+              )}
               <p className="mt-3 text-xs text-gray-500 admin-dark:text-slate-500">
                 Applied filters:{" "}
                 {overviewCurrent?.appliedFilters?.from
@@ -437,6 +530,15 @@ function Dashboard() {
               </p>
             </section>
 
+            {!analyticsReady ? (
+              <div className="admin-liquid-card p-6">
+                <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Trend snapshot</h2>
+                <p className="mt-1 text-sm text-[var(--admin-muted)] admin-dark:text-slate-400">Loading period aggregates…</p>
+                <div className="mt-4">
+                  <DashboardTrendsBlockSkeleton />
+                </div>
+              </div>
+            ) : (
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
               <div className="xl:col-span-2 admin-liquid-card p-6">
                 <h2 className="text-lg font-semibold text-[var(--admin-heading)] admin-dark:text-white">Trend snapshot</h2>
@@ -518,6 +620,7 @@ function Dashboard() {
                 </div>
               </div>
             </section>
+            )}
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
               <div className="admin-liquid-card p-6">
@@ -750,8 +853,7 @@ function Dashboard() {
             ) : (
               <BiDashboardTabContent />
             )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

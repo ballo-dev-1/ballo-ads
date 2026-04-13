@@ -12,11 +12,10 @@
     "waitlist:backfill": "tsx scripts/waitlist-backfill.ts"
   },
   "dependencies": {
-    "@gsap/react": "^2.1.2",
+    "@tanstack/react-virtual": "^3.13.23",
     "@types/pg": "^8.20.0",
     "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
-    "gsap": "^3.13.0",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.555.0",

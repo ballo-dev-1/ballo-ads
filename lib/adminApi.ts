@@ -424,6 +424,11 @@ export type DashboardAnalyticsOverviewResponse = {
   apiOps: DashboardAnalyticsApiOpsResponse;
 };
 
+export type DashboardAnalyticsOverviewComparisonResponse = {
+  current: DashboardAnalyticsOverviewResponse;
+  previous: DashboardAnalyticsOverviewResponse;
+};
+
 export type DashboardAnalyticsTrendPoint = {
   bucketStart: string;
   campaigns: number;
@@ -1497,6 +1502,19 @@ export function mapDashboardAnalyticsOverviewResponse(
     creditsFinance: mapDashboardAnalyticsCreditsFinanceResponse(creditsFinanceRaw),
     audience: mapDashboardAnalyticsAudienceResponse(audienceRaw),
     apiOps: mapDashboardAnalyticsApiOpsResponse(apiOpsRaw),
+  };
+}
+
+export function mapDashboardAnalyticsOverviewComparisonResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsOverviewComparisonResponse {
+  const currentRaw =
+    ((r.Current ?? r.current) as Record<string, unknown> | undefined) ?? {};
+  const previousRaw =
+    ((r.Previous ?? r.previous) as Record<string, unknown> | undefined) ?? {};
+  return {
+    current: mapDashboardAnalyticsOverviewResponse(currentRaw),
+    previous: mapDashboardAnalyticsOverviewResponse(previousRaw),
   };
 }
 
@@ -2949,6 +2967,33 @@ export const adminApi = {
       : `${BACKOFFICE}/analytics/overview`;
     return request<Record<string, unknown>>(path, { authToken }).then(
       mapDashboardAnalyticsOverviewResponse,
+    );
+  },
+
+  getDashboardAnalyticsOverviewComparison: (
+    params: {
+      from?: string;
+      to?: string;
+      previousFrom?: string;
+      previousTo?: string;
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.previousFrom) search.set("previousFrom", params.previousFrom);
+    if (params.previousTo) search.set("previousTo", params.previousTo);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/overview-comparison?${qs}`
+      : `${BACKOFFICE}/analytics/overview-comparison`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsOverviewComparisonResponse,
     );
   },
 
