@@ -424,6 +424,11 @@ export type DashboardAnalyticsOverviewResponse = {
   apiOps: DashboardAnalyticsApiOpsResponse;
 };
 
+export type DashboardAnalyticsOverviewComparisonResponse = {
+  current: DashboardAnalyticsOverviewResponse;
+  previous: DashboardAnalyticsOverviewResponse;
+};
+
 export type DashboardAnalyticsTrendPoint = {
   bucketStart: string;
   campaigns: number;
@@ -1519,6 +1524,20 @@ export function mapDashboardAnalyticsOverviewResponse(
     creditsFinance: mapDashboardAnalyticsCreditsFinanceResponse(creditsFinanceRaw),
     audience: mapDashboardAnalyticsAudienceResponse(audienceRaw),
     apiOps: mapDashboardAnalyticsApiOpsResponse(apiOpsRaw),
+  };
+}
+
+export function mapDashboardAnalyticsOverviewComparisonResponse(
+  r: Record<string, unknown>,
+): DashboardAnalyticsOverviewComparisonResponse {
+  const currentRaw =
+    ((r.Current ?? r.current) as Record<string, unknown> | undefined) ?? {};
+  const previousRaw =
+    ((r.Previous ?? r.previous) as Record<string, unknown> | undefined) ?? {};
+
+  return {
+    current: mapDashboardAnalyticsOverviewResponse(currentRaw),
+    previous: mapDashboardAnalyticsOverviewResponse(previousRaw),
   };
 }
 
@@ -2937,6 +2956,33 @@ export const adminApi = {
     );
   },
 
+  getDashboardAnalyticsOverviewComparison: (
+    params: {
+      from?: string;
+      to?: string;
+      previousFrom?: string;
+      previousTo?: string;
+      companyId?: number;
+      channel?: string;
+    } = {},
+    authToken?: string,
+  ) => {
+    const search = new URLSearchParams();
+    if (params.from) search.set("from", params.from);
+    if (params.to) search.set("to", params.to);
+    if (params.previousFrom) search.set("previousFrom", params.previousFrom);
+    if (params.previousTo) search.set("previousTo", params.previousTo);
+    if (params.companyId != null) search.set("companyId", String(params.companyId));
+    if (params.channel) search.set("channel", params.channel);
+    const qs = search.toString();
+    const path = qs
+      ? `${BACKOFFICE}/analytics/overview-comparison?${qs}`
+      : `${BACKOFFICE}/analytics/overview-comparison`;
+    return request<Record<string, unknown>>(path, { authToken }).then(
+      mapDashboardAnalyticsOverviewComparisonResponse,
+    );
+  },
+
   getDashboardAnalyticsTrends: (
     params: {
       from?: string;
@@ -3024,9 +3070,16 @@ export const adminApi = {
     const path = qs
       ? `${BACKOFFICE}/analytics/retention?${qs}`
       : `${BACKOFFICE}/analytics/retention`;
-    return request<Record<string, unknown>>(path, { authToken }).then(
-      mapDashboardAnalyticsRetentionResponse,
-    );
+    return request<Record<string, unknown>>(path, { authToken })
+      .then(mapDashboardAnalyticsRetentionResponse)
+      .catch(async (err) => {
+        if (!shouldFallbackApmToProd(err)) throw err;
+        const fallback = await request<Record<string, unknown>>(path, {
+          authToken,
+          baseUrlOverride: PROD_API_BASE,
+        });
+        return mapDashboardAnalyticsRetentionResponse(fallback);
+      });
   },
 
   getDashboardAnalyticsForecast: (
@@ -3049,9 +3102,16 @@ export const adminApi = {
     const path = qs
       ? `${BACKOFFICE}/analytics/forecast?${qs}`
       : `${BACKOFFICE}/analytics/forecast`;
-    return request<Record<string, unknown>>(path, { authToken }).then(
-      mapDashboardAnalyticsForecastResponse,
-    );
+    return request<Record<string, unknown>>(path, { authToken })
+      .then(mapDashboardAnalyticsForecastResponse)
+      .catch(async (err) => {
+        if (!shouldFallbackApmToProd(err)) throw err;
+        const fallback = await request<Record<string, unknown>>(path, {
+          authToken,
+          baseUrlOverride: PROD_API_BASE,
+        });
+        return mapDashboardAnalyticsForecastResponse(fallback);
+      });
   },
 
   getDashboardAnalyticsAnomalies: (
@@ -3072,9 +3132,16 @@ export const adminApi = {
     const path = qs
       ? `${BACKOFFICE}/analytics/anomalies?${qs}`
       : `${BACKOFFICE}/analytics/anomalies`;
-    return request<Record<string, unknown>>(path, { authToken }).then(
-      mapDashboardAnalyticsAnomaliesResponse,
-    );
+    return request<Record<string, unknown>>(path, { authToken })
+      .then(mapDashboardAnalyticsAnomaliesResponse)
+      .catch(async (err) => {
+        if (!shouldFallbackApmToProd(err)) throw err;
+        const fallback = await request<Record<string, unknown>>(path, {
+          authToken,
+          baseUrlOverride: PROD_API_BASE,
+        });
+        return mapDashboardAnalyticsAnomaliesResponse(fallback);
+      });
   },
 
   getDashboardAnalyticsDrilldown: (
@@ -3097,9 +3164,16 @@ export const adminApi = {
     const path = qs
       ? `${BACKOFFICE}/analytics/drilldown?${qs}`
       : `${BACKOFFICE}/analytics/drilldown`;
-    return request<Record<string, unknown>>(path, { authToken }).then(
-      mapDashboardAnalyticsDrilldownResponse,
-    );
+    return request<Record<string, unknown>>(path, { authToken })
+      .then(mapDashboardAnalyticsDrilldownResponse)
+      .catch(async (err) => {
+        if (!shouldFallbackApmToProd(err)) throw err;
+        const fallback = await request<Record<string, unknown>>(path, {
+          authToken,
+          baseUrlOverride: PROD_API_BASE,
+        });
+        return mapDashboardAnalyticsDrilldownResponse(fallback);
+      });
   },
 
   getRoadmap: (authToken?: string) =>
