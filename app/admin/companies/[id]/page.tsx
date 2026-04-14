@@ -940,6 +940,12 @@ export default function CompanyDetailsPage() {
       toast.error('Phone Number ID is required')
       return
     }
+    if (waUsesPlatformDefaults && !waForm.accessToken.trim()) {
+      toast.error(
+        'Enter an access token to save company-specific WhatsApp credentials. Until then, sends use the platform defaults shown in this form.',
+      )
+      return
+    }
     setWaSaving(true)
     setWaTestMessage(null)
     try {
@@ -969,6 +975,7 @@ export default function CompanyDetailsPage() {
       setWaForm((f) => ({ ...f, accessToken: '', appSecret: '', verifyToken: '' }))
       toast.success('WhatsApp credentials saved')
       const row = await adminApi.getCompanyWhatsAppCredentials(company.id, waIsTestSlot)
+      setWaUsesPlatformDefaults(row.usesPlatformDefaults)
       setWaForm({
         phoneNumberId: row.phoneNumberId ?? '',
         businessAccountId: row.businessAccountId ?? '',
@@ -1030,7 +1037,23 @@ export default function CompanyDetailsPage() {
     try {
       await adminApi.deactivateCompanyWhatsAppCredentials(company.id, waIsTestSlot)
       toast.success('WhatsApp credentials deactivated')
-      setWaForm((f) => ({ ...f, isActive: false }))
+      const row = await adminApi.getCompanyWhatsAppCredentials(company.id, waIsTestSlot)
+      setWaUsesPlatformDefaults(row.usesPlatformDefaults)
+      setWaForm({
+        phoneNumberId: row.phoneNumberId ?? '',
+        businessAccountId: row.businessAccountId ?? '',
+        graphApiBaseUrl: row.graphApiBaseUrl ?? '',
+        accessToken: '',
+        appSecret: '',
+        verifyToken: '',
+        marketingTemplateName: row.marketingTemplateName ?? '',
+        marketingTemplateLanguage: row.marketingTemplateLanguage ?? '',
+        defaultMarketingImageUrl: row.defaultMarketingImageUrl ?? '',
+        utilityTemplateName: row.utilityTemplateName ?? '',
+        utilityTemplateLanguage: row.utilityTemplateLanguage ?? '',
+        utilityButtonParameter: row.utilityButtonParameter ?? '',
+        isActive: row.isActive,
+      })
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to deactivate')
     } finally {
@@ -1114,6 +1137,7 @@ export default function CompanyDetailsPage() {
   const [waTesting, setWaTesting] = useState(false)
   const [waDeactivating, setWaDeactivating] = useState(false)
   const [waIsTestSlot, setWaIsTestSlot] = useState(false)
+  const [waUsesPlatformDefaults, setWaUsesPlatformDefaults] = useState(false)
   const [waTestMessage, setWaTestMessage] = useState<string | null>(null)
   const [waForm, setWaForm] = useState({
     phoneNumberId: '',
@@ -1147,6 +1171,7 @@ export default function CompanyDetailsPage() {
       try {
         const row = await adminApi.getCompanyWhatsAppCredentials(company.id, waIsTestSlot)
         if (cancelled) return
+        setWaUsesPlatformDefaults(row.usesPlatformDefaults)
         setWaForm({
           phoneNumberId: row.phoneNumberId ?? '',
           businessAccountId: row.businessAccountId ?? '',
@@ -1166,6 +1191,7 @@ export default function CompanyDetailsPage() {
         if (cancelled) return
         const err = e as Error & { status?: number }
         if (err.status === 404) {
+          setWaUsesPlatformDefaults(false)
           setWaForm({
             phoneNumberId: '',
             businessAccountId: '',
@@ -2559,11 +2585,22 @@ export default function CompanyDetailsPage() {
               <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
                 <h3 className="text-base font-semibold text-slate-900">WhatsApp (Meta)</h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Per-company WhatsApp Cloud API credentials. Secrets are encrypted; leave token fields empty to keep
-                  existing values.
+                  Values below match this environment&apos;s platform WhatsApp settings until you save company-specific
+                  credentials. Secrets are encrypted on save; leave token fields empty to keep stored values when
+                  editing an existing company row.
                 </p>
               </div>
               <div className="space-y-4 px-4 py-4">
+                {waUsesPlatformDefaults ? (
+                  <div
+                    className="rounded-lg border border-sky-200 bg-sky-50/80 px-3 py-2 text-xs text-sky-900"
+                    role="status"
+                  >
+                    <span className="font-medium">Using platform WhatsApp credentials.</span> Outbound WhatsApp uses the
+                    same Meta app as the API environment. Saving with your own access token creates a company override.
+                    Live and test API key slots share one platform config until you save a row for each slot.
+                  </div>
+                ) : null}
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <label className="flex items-center gap-2 text-slate-700">
                     <input
@@ -2628,7 +2665,11 @@ export default function CompanyDetailsPage() {
                       value={waForm.accessToken}
                       onChange={(e) => setWaForm((f) => ({ ...f, accessToken: e.target.value }))}
                       disabled={!company.isActive || waCredentialLoading}
-                      placeholder="Leave blank to keep current"
+                      placeholder={
+                        waUsesPlatformDefaults
+                          ? 'Required to create a company override; platform token is in use until then'
+                          : 'Leave blank to keep current'
+                      }
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
                       autoComplete="new-password"
                     />
@@ -2640,7 +2681,9 @@ export default function CompanyDetailsPage() {
                       value={waForm.appSecret}
                       onChange={(e) => setWaForm((f) => ({ ...f, appSecret: e.target.value }))}
                       disabled={!company.isActive || waCredentialLoading}
-                      placeholder="Leave blank to keep current"
+                      placeholder={
+                        waUsesPlatformDefaults ? 'Optional; platform default if unset' : 'Leave blank to keep current'
+                      }
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
                       autoComplete="new-password"
                     />
@@ -2652,7 +2695,9 @@ export default function CompanyDetailsPage() {
                       value={waForm.verifyToken}
                       onChange={(e) => setWaForm((f) => ({ ...f, verifyToken: e.target.value }))}
                       disabled={!company.isActive || waCredentialLoading}
-                      placeholder="Leave blank to keep current"
+                      placeholder={
+                        waUsesPlatformDefaults ? 'Optional; platform default if unset' : 'Leave blank to keep current'
+                      }
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
                       autoComplete="new-password"
                     />
@@ -2726,16 +2771,18 @@ export default function CompanyDetailsPage() {
                   </label>
                 </div>
 
-                <label className="flex items-center gap-2 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={waForm.isActive}
-                    onChange={(e) => setWaForm((f) => ({ ...f, isActive: e.target.checked }))}
-                    disabled={!company.isActive || waCredentialLoading}
-                    className="rounded border-slate-300"
-                  />
-                  Credential row active
-                </label>
+                {!waUsesPlatformDefaults ? (
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={waForm.isActive}
+                      onChange={(e) => setWaForm((f) => ({ ...f, isActive: e.target.checked }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="rounded border-slate-300"
+                    />
+                    Credential row active
+                  </label>
+                ) : null}
 
                 <div className="flex flex-wrap items-center gap-2">
                   <button
@@ -2763,7 +2810,9 @@ export default function CompanyDetailsPage() {
                   <button
                     type="button"
                     onClick={() => void handleDeactivateWhatsAppCredentials()}
-                    disabled={waDeactivating || !company.isActive || waCredentialLoading}
+                    disabled={
+                      waDeactivating || !company.isActive || waCredentialLoading || waUsesPlatformDefaults
+                    }
                     className={classNames(
                       buttonBase,
                       'min-w-[96px] justify-center border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800 shadow-sm hover:bg-red-100',

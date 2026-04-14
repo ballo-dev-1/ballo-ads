@@ -15,6 +15,9 @@ test("getCompanyWhatsAppCredentials targets Backoffice path and isTestKey query 
         IsActive: true,
         PhoneNumberId: "pn",
         AccessTokenConfigured: true,
+        UsesPlatformDefaults: false,
+        CreatedAt: "2026-01-01T00:00:00Z",
+        UpdatedAt: "2026-01-01T00:00:00Z",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
@@ -27,6 +30,35 @@ test("getCompanyWhatsAppCredentials targets Backoffice path and isTestKey query 
     assert.equal(row.companyId, 42);
     assert.equal(row.isTestKey, true);
     assert.equal(row.phoneNumberId, "pn");
+    assert.equal(row.usesPlatformDefaults, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("getCompanyWhatsAppCredentials maps UsesPlatformDefaults when API returns synthetic row", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async () => {
+    return new Response(
+      JSON.stringify({
+        Id: 0,
+        CompanyId: 99,
+        IsTestKey: false,
+        IsActive: true,
+        PhoneNumberId: "platform-pn",
+        UsesPlatformDefaults: true,
+        AccessTokenConfigured: true,
+        CreatedAt: "2026-01-01T00:00:00Z",
+        UpdatedAt: "2026-01-01T00:00:00Z",
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+
+  try {
+    const row = await adminApi.getCompanyWhatsAppCredentials(99, false, "tok");
+    assert.equal(row.usesPlatformDefaults, true);
+    assert.equal(row.phoneNumberId, "platform-pn");
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -47,6 +79,9 @@ test("upsertCompanyWhatsAppCredentials sends PUT with JSON body", async () => {
         IsActive: true,
         PhoneNumberId: "new-pn",
         AccessTokenConfigured: false,
+        UsesPlatformDefaults: false,
+        CreatedAt: "2026-01-01T00:00:00Z",
+        UpdatedAt: "2026-01-01T00:00:00Z",
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );

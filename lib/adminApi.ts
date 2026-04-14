@@ -664,6 +664,8 @@ export type CompanyWhatsAppCredentialMaskedResponse = {
   utilityButtonParameter?: string | null;
   createdAt: string;
   updatedAt: string;
+  /** True when the API returns environment WhatsAppSettings (no active company row). */
+  usesPlatformDefaults: boolean;
 };
 
 export type CompanyWhatsAppCredentialUpsertRequest = {
@@ -1049,6 +1051,9 @@ function mapCompanyWhatsAppCredentialMasked(
       r.utilityButtonParameter) as string | null | undefined,
     createdAt: String(r.CreatedAt ?? r.createdAt ?? ""),
     updatedAt: String(r.UpdatedAt ?? r.updatedAt ?? ""),
+    usesPlatformDefaults: Boolean(
+      r.UsesPlatformDefaults ?? r.usesPlatformDefaults,
+    ),
   };
 }
 
