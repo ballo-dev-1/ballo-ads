@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import {
   adminApi,
   type PricingLadderBandRequest,
@@ -12,6 +13,12 @@ import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 
 const platforms: PricingPlatform[] = ['Sms', 'Email', 'WhatsApp', 'WhatsAppUtility']
+const durationOptions = [
+  { value: 30, label: '30 days' },
+  { value: 60, label: '60 days' },
+  { value: 90, label: '90 days' },
+  { value: 0, label: 'No expiry' },
+] as const
 
 type EditableBand = {
   thresholdStart: number
@@ -22,7 +29,7 @@ type EditableBand = {
 }
 
 const createEmptyBand = (displayOrder: number): EditableBand => ({
-  thresholdStart: displayOrder === 1 ? 50 : 0,
+  thresholdStart: 0,
   thresholdEnd: 0,
   displayOrder,
   isEnabled: true,
@@ -58,14 +65,70 @@ function buildSavePayload(duration: number, bands: EditableBand[]): { duration: 
         thresholdStart: band.thresholdStart,
         thresholdEnd: band.thresholdEnd,
         displayOrder: index + 1,
-        isEnabled: band.isEnabled,
+        isEnabled: true,
         rates: platforms.map((platform): PricingLadderRateRequest => ({
           platform,
           amountPerMessage: band.rates[platform].amountPerMessage,
-          isEnabled: band.rates[platform].isEnabled,
+          isEnabled: true,
         })),
       })),
   }
+}
+
+function validateBands(duration: number, bands: EditableBand[]): string | null {
+  const validDurations: number[] = durationOptions.map((option) => option.value)
+  if (!validDurations.includes(duration)) {
+    return 'Duration must be 30, 60, 90, or no expiry.'
+  }
+  if (bands.length === 0) {
+    return 'At least one pricing band is required.'
+  }
+
+  const ordered = [...bands].sort((a, b) => a.thresholdStart - b.thresholdStart)
+
+  let openEndedCount = 0
+  for (let i = 0; i < ordered.length; i++) {
+    const band = ordered[i]
+    if (!Number.isFinite(band.thresholdStart) || band.thresholdStart < 0) {
+      return `Tier ${i + 1}: threshold start must be zero or greater.`
+    }
+    if (!Number.isFinite(band.thresholdEnd)) {
+      return `Tier ${i + 1}: threshold end must be a valid number.`
+    }
+    if (band.thresholdEnd > 0 && band.thresholdStart > band.thresholdEnd) {
+      return `Tier ${i + 1}: threshold start cannot be greater than threshold end.`
+    }
+    if (band.thresholdEnd <= 0) {
+      openEndedCount++
+      if (i !== ordered.length - 1) {
+        return 'Open-ended band (threshold end <= 0) must be the last band.'
+      }
+    }
+
+    for (const platform of platforms) {
+      const amount = band.rates[platform]?.amountPerMessage
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return `Tier ${i + 1}: ${platform} amount must be greater than zero.`
+      }
+    }
+  }
+
+  if (openEndedCount !== 1) {
+    return 'Exactly one open-ended band (threshold end <= 0) is required.'
+  }
+
+  for (let i = 1; i < ordered.length; i++) {
+    const prev = ordered[i - 1]
+    const current = ordered[i]
+    if (prev.thresholdEnd <= 0) {
+      return 'Open-ended band must be the final band.'
+    }
+    if (current.thresholdStart !== prev.thresholdEnd + 1) {
+      return `Gap/overlap detected between band ${i} and band ${i + 1}; bands must be contiguous.`
+    }
+  }
+
+  return null
 }
 
 export default function PricingPage() {
@@ -100,29 +163,78 @@ export default function PricingPage() {
     () => [...bands].sort((a, b) => a.thresholdStart - b.thresholdStart),
     [bands],
   )
+  const validationError = useMemo(() => validateBands(duration, bands), [duration, bands])
+  const fieldValidation = useMemo(() => {
+    const validDurations: number[] = durationOptions.map((option) => option.value)
+    const durationInvalid = !validDurations.includes(duration)
+    const startInvalid = new Set<EditableBand>()
+    const endInvalid = new Set<EditableBand>()
+    const rateInvalid = new Map<EditableBand, Set<PricingPlatform>>()
+
+    const openEndedBands = sortedBands.filter((band) => band.thresholdEnd <= 0)
+    if (openEndedBands.length === 0 && sortedBands.length > 0) {
+      endInvalid.add(sortedBands[sortedBands.length - 1])
+    } else if (openEndedBands.length > 1) {
+      for (const band of openEndedBands) endInvalid.add(band)
+    }
+
+    for (let i = 0; i < sortedBands.length; i++) {
+      const band = sortedBands[i]
+      if (!Number.isFinite(band.thresholdStart) || band.thresholdStart < 0) {
+        startInvalid.add(band)
+      }
+
+      if (!Number.isFinite(band.thresholdEnd) || (band.thresholdEnd > 0 && band.thresholdStart > band.thresholdEnd)) {
+        endInvalid.add(band)
+      }
+      if (band.thresholdEnd <= 0 && i !== sortedBands.length - 1) {
+        endInvalid.add(band)
+      }
+
+      for (const platform of platforms) {
+        const amount = band.rates[platform]?.amountPerMessage
+        if (!Number.isFinite(amount) || amount <= 0) {
+          const invalidPlatforms = rateInvalid.get(band) ?? new Set<PricingPlatform>()
+          invalidPlatforms.add(platform)
+          rateInvalid.set(band, invalidPlatforms)
+        }
+      }
+    }
+
+    for (let i = 1; i < sortedBands.length; i++) {
+      const prev = sortedBands[i - 1]
+      const current = sortedBands[i]
+      if (prev.thresholdEnd > 0 && current.thresholdStart !== prev.thresholdEnd + 1) {
+        endInvalid.add(prev)
+        startInvalid.add(current)
+      }
+    }
+
+    return { durationInvalid, startInvalid, endInvalid, rateInvalid }
+  }, [duration, sortedBands])
 
   const addBand = () => {
     setBands((prev) => [...prev, createEmptyBand(prev.length + 1)])
   }
 
-  const removeBand = (index: number) => {
-    setBands((prev) => prev.filter((_, i) => i !== index))
+  const removeBand = (bandToRemove: EditableBand) => {
+    setBands((prev) => prev.filter((band) => band !== bandToRemove))
   }
 
-  const updateBand = (index: number, patch: Partial<EditableBand>) => {
+  const updateBand = (bandToUpdate: EditableBand, patch: Partial<EditableBand>) => {
     setBands((prev) =>
-      prev.map((band, i) => (i === index ? { ...band, ...patch } : band)),
+      prev.map((band) => (band === bandToUpdate ? { ...band, ...patch } : band)),
     )
   }
 
   const updateRate = (
-    index: number,
+    bandToUpdate: EditableBand,
     platform: PricingPlatform,
     patch: Partial<{ amountPerMessage: number; isEnabled: boolean }>,
   ) => {
     setBands((prev) =>
-      prev.map((band, i) =>
-        i === index
+      prev.map((band) =>
+        band === bandToUpdate
           ? {
               ...band,
               rates: {
@@ -139,6 +251,11 @@ export default function PricingPage() {
   }
 
   const saveLadder = async () => {
+    if (validationError) {
+      setError(validationError)
+      setSuccess('')
+      return
+    }
     setSaving(true)
     setError('')
     setSuccess('')
@@ -156,150 +273,176 @@ export default function PricingPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-auto p-6 space-y-6">
+      <div className="flex-1 space-y-6 overflow-auto p-6">
         <AdminHero
           eyebrow="Monetization"
-          title="Pricing ladder"
+          title="Pricing"
           description="Manage unified pricing intervals with mandatory platform rates."
           variant="slate"
         />
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-red-700">
             {error}
           </div>
         )}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+          <div className="rounded-xl border border-green-200 bg-green-50/90 px-4 py-3 text-green-700">
             {success}
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 space-y-4">
-          <div className="flex flex-wrap gap-4 items-end">
+        <div className="space-y-4 rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-end gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
                 Duration (days)
               </label>
-              <input
-                type="number"
+              <select
                 value={duration}
                 onChange={(e) => setDuration(Number(e.target.value))}
-                className="w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                className={`w-40 rounded-lg border bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:ring-2 ${
+                  fieldValidation.durationInvalid
+                    ? 'border-red-400 ring-red-200 focus:ring-red-300'
+                    : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
+                }`}
+              >
+                {durationOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <button
               type="button"
-              onClick={load}
-              className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-200"
-            >
-              Reload
-            </button>
-            <button
-              type="button"
               onClick={addBand}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
             >
-              Add band
+              Add tier
             </button>
             <button
               type="button"
               onClick={saveLadder}
-              disabled={saving || loading}
-              className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+              disabled={saving || loading || !!validationError}
+              className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save ladder'}
+              {saving ? 'Saving...' : 'Save Pricing'}
             </button>
           </div>
+          <p className="text-xs text-gray-500">Tip: tiers are displayed in ascending threshold order.</p>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm">
           {loading ? (
             <div className="flex items-center justify-center h-48 text-gray-500">
               Loading pricing ladder...
             </div>
           ) : (
             <div className="overflow-x-auto p-4">
-              <table className="w-full min-w-[1200px]">
+              <table className="w-full min-w-[1200px] text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Band</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Start</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">End (0=open)</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Band enabled</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">SMS</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">Email</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">WhatsApp</th>
-                    <th className="text-left py-3 px-3 text-sm font-semibold text-gray-700">WhatsApp Utility</th>
-                    <th className="text-right py-3 px-3 text-sm font-semibold text-gray-700">Action</th>
+                  <tr className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Tier</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Start</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">End (∞ = open)</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">SMS</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Email</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">WhatsApp</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">WhatsApp Utility</th>
+                    <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedBands.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="text-center py-8 text-gray-500">
+                      <td colSpan={8} className="text-center py-8 text-gray-500">
                         No bands configured for this duration.
                       </td>
                     </tr>
                   ) : (
                     sortedBands.map((band, index) => (
-                      <tr key={`${band.displayOrder}-${index}`} className="border-b border-gray-100">
-                        <td className="py-3 px-3 text-sm text-gray-700">{index + 1}</td>
-                        <td className="py-3 px-3">
+                      <tr key={`${band.displayOrder}-${index}-${band.thresholdStart}-${band.thresholdEnd}`} className="border-b border-gray-100 transition-colors hover:bg-gray-50/70">
+                        <td className="px-3 py-3 text-sm font-medium text-gray-700">{index + 1}</td>
+                        <td className="px-3 py-3">
                           <input
                             type="number"
                             value={band.thresholdStart}
-                            onChange={(e) => updateBand(index, { thresholdStart: Number(e.target.value) })}
-                            className="w-28 border border-gray-300 rounded px-2 py-1 text-sm"
+                            onChange={(e) => updateBand(band, { thresholdStart: Number(e.target.value) })}
+                            className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
+                              fieldValidation.startInvalid.has(band)
+                                ? 'border-red-400 ring-red-200 focus:ring-red-300'
+                                : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
+                            }`}
                           />
                         </td>
-                        <td className="py-3 px-3">
-                          <input
-                            type="number"
-                            value={band.thresholdEnd}
-                            onChange={(e) => updateBand(index, { thresholdEnd: Number(e.target.value) })}
-                            className="w-28 border border-gray-300 rounded px-2 py-1 text-sm"
-                          />
-                        </td>
-                        <td className="py-3 px-3">
-                          <input
-                            type="checkbox"
-                            checked={band.isEnabled}
-                            onChange={(e) => updateBand(index, { isEnabled: e.target.checked })}
-                            className="h-4 w-4"
-                          />
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={band.thresholdEnd > 0 ? band.thresholdEnd : ''}
+                              onChange={(e) =>
+                                updateBand(band, {
+                                  thresholdEnd: e.target.value === '' ? 0 : Number(e.target.value),
+                                })
+                              }
+                              disabled={band.thresholdEnd <= 0}
+                              placeholder={band.thresholdEnd <= 0 ? '∞' : ''}
+                              className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 ${
+                                fieldValidation.endInvalid.has(band)
+                                  ? 'border-red-400 ring-red-200 focus:ring-red-300'
+                                  : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
+                              }`}
+                            />
+                            {index === sortedBands.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateBand(band, {
+                                    thresholdEnd: band.thresholdEnd <= 0 ? Math.max(band.thresholdStart, 1) : 0,
+                                  })
+                                }
+                                className={`inline-flex min-w-[2.2rem] items-center justify-center rounded-md border px-2 py-1 text-sm font-semibold transition ${
+                                  band.thresholdEnd <= 0
+                                    ? 'border-[var(--admin-ui-accent)]/40 bg-[var(--admin-ui-accent)]/10 text-[var(--admin-ui-accent)]'
+                                    : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                                aria-label={band.thresholdEnd <= 0 ? 'Tier end is open' : 'Set tier end to open'}
+                                title={band.thresholdEnd <= 0 ? 'Open ended (infinity)' : 'Set as open ended'}
+                              >
+                                ∞
+                              </button>
+                            )}
+                          </div>
                         </td>
                         {platforms.map((platform) => (
-                          <td key={platform} className="py-3 px-3">
-                            <div className="flex items-center gap-2">
+                          <td key={platform} className="px-3 py-3">
+                            <div className="flex items-center">
                               <input
                                 type="number"
                                 step="0.0001"
                                 value={band.rates[platform].amountPerMessage}
                                 onChange={(e) =>
-                                  updateRate(index, platform, { amountPerMessage: Number(e.target.value) })
+                                  updateRate(band, platform, { amountPerMessage: Number(e.target.value) })
                                 }
-                                className="w-28 border border-gray-300 rounded px-2 py-1 text-sm"
-                              />
-                              <input
-                                type="checkbox"
-                                checked={band.rates[platform].isEnabled}
-                                onChange={(e) =>
-                                  updateRate(index, platform, { isEnabled: e.target.checked })
-                                }
-                                className="h-4 w-4"
-                                title={`${platform} enabled`}
+                                className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
+                                  fieldValidation.rateInvalid.get(band)?.has(platform)
+                                    ? 'border-red-400 ring-red-200 focus:ring-red-300'
+                                    : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
+                                }`}
                               />
                             </div>
                           </td>
                         ))}
-                        <td className="py-3 px-3 text-right">
+                        <td className="px-3 py-3 text-right">
                           <button
                             type="button"
-                            onClick={() => removeBand(index)}
-                            className="text-sm text-red-600 hover:underline"
+                            onClick={() => removeBand(band)}
+                            aria-label="Delete tier"
+                            title="Delete tier"
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 transition hover:bg-red-50 hover:text-red-700"
                           >
-                            Remove
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>

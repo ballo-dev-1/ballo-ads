@@ -874,6 +874,19 @@ export type PricingLadderUpsertRequest = {
   bands: PricingLadderBandRequest[];
 };
 
+function mapPricingResponse(r: Record<string, unknown>): PricingModelResponse {
+  return {
+    id: Number(r.Id ?? r.id ?? 0),
+    platform: (r.Platform ?? r.platform) as PricingPlatform,
+    thresholdStart: Number(r.ThresholdStart ?? r.thresholdStart ?? 0),
+    thresholdEnd: Number(r.ThresholdEnd ?? r.thresholdEnd ?? 0),
+    amountPerMessage: Number(r.AmountPerMessage ?? r.amountPerMessage ?? 0),
+    duration: Number(r.Duration ?? r.duration ?? 0),
+    isEnabled: Boolean(r.IsEnabled ?? r.isEnabled ?? true),
+    createdAt: String(r.CreatedAt ?? r.createdAt ?? ""),
+  };
+}
+
 export type MtnWhitelistedSenderIdResponse = {
   id: number;
   senderId: string;
@@ -1139,6 +1152,69 @@ function mapPricingLadderBandResponse(r: Record<string, unknown>): PricingLadder
       ? ratesRaw.map((x) => mapPricingLadderRateResponse(x as Record<string, unknown>))
       : [],
   };
+}
+
+function legacyPricingRowsToLadder(
+  rows: PricingModelResponse[],
+  duration: number,
+): PricingLadderBandResponse[] {
+  const filtered = rows
+    .filter((x) => x.duration === duration)
+    .filter((x) => x.isEnabled);
+
+  const grouped = new Map<string, PricingLadderBandResponse>();
+  let nextBandId = 1;
+  let nextRateId = 1;
+
+  for (const row of filtered) {
+    const key = `${row.thresholdStart}:${row.thresholdEnd}`;
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, {
+        id: nextBandId++,
+        duration,
+        thresholdStart: row.thresholdStart,
+        thresholdEnd: row.thresholdEnd,
+        displayOrder: 0,
+        isEnabled: true,
+        rates: [],
+      });
+    }
+    grouped.get(key)!.rates.push({
+      id: nextRateId++,
+      bandId: grouped.get(key)!.id,
+      platform: row.platform,
+      amountPerMessage: row.amountPerMessage,
+      isEnabled: row.isEnabled,
+    });
+  }
+
+  const ordered = Array.from(grouped.values()).sort((a, b) =>
+    a.thresholdStart !== b.thresholdStart
+      ? a.thresholdStart - b.thresholdStart
+      : a.thresholdEnd - b.thresholdEnd,
+  );
+
+  return ordered.map((band, idx) => ({
+    ...band,
+    displayOrder: idx + 1,
+    rates: platformsFromType().map((platform) => {
+      const found = band.rates.find((x) => x.platform === platform);
+      return (
+        found ?? {
+          id: nextRateId++,
+          bandId: band.id,
+          platform,
+          amountPerMessage: 0,
+          isEnabled: true,
+        }
+      );
+    }),
+  }));
+}
+
+function platformsFromType(): PricingPlatform[] {
+  return ["Sms", "Email", "WhatsApp", "WhatsAppUtility"];
 }
 
 /** Normalize MTN whitelisted sender ID response (PascalCase) to camelCase */
@@ -2457,7 +2533,17 @@ export const adminApi = {
     request<Record<string, unknown>[]>(
       `${BACKOFFICE}/pricing/ladder?duration=${encodeURIComponent(String(duration))}`,
       { authToken },
-    ).then((list) => list.map(mapPricingLadderBandResponse)),
+    )
+      .then((list) => list.map(mapPricingLadderBandResponse))
+      .catch(async (err) => {
+        const status = (err as Error & { status?: number })?.status;
+        if (status !== 404 && status !== 405) throw err;
+
+        const legacy = await request<Record<string, unknown>[]>(`${BACKOFFICE}/pricing`, {
+          authToken,
+        }).then((list) => list.map(mapPricingResponse));
+        return legacyPricingRowsToLadder(legacy, duration);
+      }),
 
   replacePricingLadder: (
     payload: PricingLadderUpsertRequest,
@@ -2467,7 +2553,17 @@ export const adminApi = {
       method: "PUT",
       body: JSON.stringify(payload),
       authToken,
-    }).then((list) => list.map(mapPricingLadderBandResponse)),
+    })
+      .then((list) => list.map(mapPricingLadderBandResponse))
+      .catch((err) => {
+        const status = (err as Error & { status?: number })?.status;
+        if (status === 404 || status === 405) {
+          throw new Error(
+            "This backend does not support pricing ladder save yet. Deploy the updated backend first.",
+          );
+        }
+        throw err;
+      }),
 
   getAllPurchaseOrders: (
     params?: { pageNumber?: number; pageSize?: number },
