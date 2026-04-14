@@ -86,7 +86,6 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
 
   const ordered = [...bands].sort((a, b) => a.thresholdStart - b.thresholdStart)
 
-  let openEndedCount = 0
   for (let i = 0; i < ordered.length; i++) {
     const band = ordered[i]
     if (!Number.isFinite(band.thresholdStart) || band.thresholdStart < 0) {
@@ -99,7 +98,6 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
       return `Tier ${i + 1}: threshold start cannot be greater than threshold end.`
     }
     if (band.thresholdEnd <= 0) {
-      openEndedCount++
       if (i !== ordered.length - 1) {
         return 'Open-ended band (threshold end <= 0) must be the last band.'
       }
@@ -111,10 +109,6 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
         return `Tier ${i + 1}: ${platform} amount must be greater than zero.`
       }
     }
-  }
-
-  if (openEndedCount !== 1) {
-    return 'Exactly one open-ended band (threshold end <= 0) is required.'
   }
 
   for (let i = 1; i < ordered.length; i++) {
@@ -139,6 +133,7 @@ export default function PricingPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [focusedField, setFocusedField] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -170,33 +165,50 @@ export default function PricingPage() {
     const startInvalid = new Set<EditableBand>()
     const endInvalid = new Set<EditableBand>()
     const rateInvalid = new Map<EditableBand, Set<PricingPlatform>>()
+    const startError = new Map<EditableBand, string>()
+    const endError = new Map<EditableBand, string>()
+    const rateError = new Map<EditableBand, Map<PricingPlatform, string>>()
+
+    const addStartError = (band: EditableBand, message: string) => {
+      startInvalid.add(band)
+      if (!startError.has(band)) startError.set(band, message)
+    }
+    const addEndError = (band: EditableBand, message: string) => {
+      endInvalid.add(band)
+      if (!endError.has(band)) endError.set(band, message)
+    }
+    const addRateError = (band: EditableBand, platform: PricingPlatform, message: string) => {
+      const invalidPlatforms = rateInvalid.get(band) ?? new Set<PricingPlatform>()
+      invalidPlatforms.add(platform)
+      rateInvalid.set(band, invalidPlatforms)
+
+      const errorByPlatform = rateError.get(band) ?? new Map<PricingPlatform, string>()
+      if (!errorByPlatform.has(platform)) errorByPlatform.set(platform, message)
+      rateError.set(band, errorByPlatform)
+    }
 
     const openEndedBands = sortedBands.filter((band) => band.thresholdEnd <= 0)
-    if (openEndedBands.length === 0 && sortedBands.length > 0) {
-      endInvalid.add(sortedBands[sortedBands.length - 1])
-    } else if (openEndedBands.length > 1) {
-      for (const band of openEndedBands) endInvalid.add(band)
+    if (openEndedBands.length > 1) {
+      for (const band of openEndedBands) addEndError(band, 'Only one open-ended tier is allowed.')
     }
 
     for (let i = 0; i < sortedBands.length; i++) {
       const band = sortedBands[i]
       if (!Number.isFinite(band.thresholdStart) || band.thresholdStart < 0) {
-        startInvalid.add(band)
+        addStartError(band, `Tier ${i + 1}: threshold start must be zero or greater.`)
       }
 
       if (!Number.isFinite(band.thresholdEnd) || (band.thresholdEnd > 0 && band.thresholdStart > band.thresholdEnd)) {
-        endInvalid.add(band)
+        addEndError(band, `Tier ${i + 1}: threshold start cannot be greater than threshold end.`)
       }
       if (band.thresholdEnd <= 0 && i !== sortedBands.length - 1) {
-        endInvalid.add(band)
+        addEndError(band, 'Open-ended tier must be the last tier.')
       }
 
       for (const platform of platforms) {
         const amount = band.rates[platform]?.amountPerMessage
         if (!Number.isFinite(amount) || amount <= 0) {
-          const invalidPlatforms = rateInvalid.get(band) ?? new Set<PricingPlatform>()
-          invalidPlatforms.add(platform)
-          rateInvalid.set(band, invalidPlatforms)
+          addRateError(band, platform, `Tier ${i + 1}: ${platform} amount must be greater than zero.`)
         }
       }
     }
@@ -205,17 +217,19 @@ export default function PricingPage() {
       const prev = sortedBands[i - 1]
       const current = sortedBands[i]
       if (prev.thresholdEnd > 0 && current.thresholdStart !== prev.thresholdEnd + 1) {
-        endInvalid.add(prev)
-        startInvalid.add(current)
+        addEndError(prev, `Gap/overlap between tier ${i} and tier ${i + 1}; tiers must be contiguous.`)
+        addStartError(current, `Gap/overlap between tier ${i} and tier ${i + 1}; tiers must be contiguous.`)
       }
     }
 
-    return { durationInvalid, startInvalid, endInvalid, rateInvalid }
+    return { durationInvalid, startInvalid, endInvalid, rateInvalid, startError, endError, rateError }
   }, [duration, sortedBands])
 
   const addBand = () => {
     setBands((prev) => [...prev, createEmptyBand(prev.length + 1)])
   }
+  const hoverTooltipClass =
+    'pointer-events-none absolute top-full z-20 mt-1 hidden w-52 rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium normal-case tracking-normal text-white shadow-lg group-hover:block group-focus-within:hidden left-1/2 -translate-x-1/2'
 
   const removeBand = (bandToRemove: EditableBand) => {
     setBands((prev) => prev.filter((band) => band !== bandToRemove))
@@ -335,8 +349,8 @@ export default function PricingPage() {
 
         <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm">
           {loading ? (
-            <div className="flex items-center justify-center h-48 text-gray-500">
-              Loading pricing ladder...
+            <div className="flex h-48 items-center justify-center">
+              <div className="h-9 w-9 animate-spin rounded-full border-2 border-gray-200 border-t-[var(--admin-ui-accent)]" />
             </div>
           ) : (
             <div className="overflow-x-auto p-4">
@@ -365,35 +379,53 @@ export default function PricingPage() {
                       <tr key={`${band.displayOrder}-${index}-${band.thresholdStart}-${band.thresholdEnd}`} className="border-b border-gray-100 transition-colors hover:bg-gray-50/70">
                         <td className="px-3 py-3 text-sm font-medium text-gray-700">{index + 1}</td>
                         <td className="px-3 py-3">
-                          <input
-                            type="number"
-                            value={band.thresholdStart}
-                            onChange={(e) => updateBand(band, { thresholdStart: Number(e.target.value) })}
-                            className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
-                              fieldValidation.startInvalid.has(band)
-                                ? 'border-red-400 ring-red-200 focus:ring-red-300'
-                                : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
-                            }`}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex items-center gap-2">
+                          <div className="group relative flex items-center gap-2">
                             <input
                               type="number"
-                              value={band.thresholdEnd > 0 ? band.thresholdEnd : ''}
-                              onChange={(e) =>
-                                updateBand(band, {
-                                  thresholdEnd: e.target.value === '' ? 0 : Number(e.target.value),
-                                })
-                              }
-                              disabled={band.thresholdEnd <= 0}
-                              placeholder={band.thresholdEnd <= 0 ? '∞' : ''}
-                              className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 ${
-                                fieldValidation.endInvalid.has(band)
+                              value={band.thresholdStart}
+                              onChange={(e) => updateBand(band, { thresholdStart: Number(e.target.value) })}
+                              onFocus={() => setFocusedField(`start-${index}`)}
+                              onBlur={() => setFocusedField(null)}
+                              className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
+                                fieldValidation.startInvalid.has(band)
                                   ? 'border-red-400 ring-red-200 focus:ring-red-300'
                                   : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
                               }`}
                             />
+                            {fieldValidation.startInvalid.has(band) &&
+                            fieldValidation.startError.get(band) &&
+                            focusedField !== `start-${index}` ? (
+                              <span className={hoverTooltipClass}>{fieldValidation.startError.get(band)}</span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="group relative flex items-center gap-2">
+                              <input
+                                type="number"
+                                value={band.thresholdEnd > 0 ? band.thresholdEnd : ''}
+                                onChange={(e) =>
+                                  updateBand(band, {
+                                    thresholdEnd: e.target.value === '' ? 0 : Number(e.target.value),
+                                  })
+                                }
+                                onFocus={() => setFocusedField(`end-${index}`)}
+                                onBlur={() => setFocusedField(null)}
+                                disabled={band.thresholdEnd <= 0}
+                                placeholder={band.thresholdEnd <= 0 ? '∞' : ''}
+                                className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 ${
+                                  fieldValidation.endInvalid.has(band)
+                                    ? 'border-red-400 ring-red-200 focus:ring-red-300'
+                                    : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
+                                }`}
+                              />
+                              {fieldValidation.endInvalid.has(band) &&
+                              fieldValidation.endError.get(band) &&
+                              focusedField !== `end-${index}` ? (
+                                <span className={hoverTooltipClass}>{fieldValidation.endError.get(band)}</span>
+                              ) : null}
+                            </div>
                             {index === sortedBands.length - 1 && (
                               <button
                                 type="button"
@@ -418,19 +450,30 @@ export default function PricingPage() {
                         {platforms.map((platform) => (
                           <td key={platform} className="px-3 py-3">
                             <div className="flex items-center">
-                              <input
-                                type="number"
-                                step="0.0001"
-                                value={band.rates[platform].amountPerMessage}
-                                onChange={(e) =>
-                                  updateRate(band, platform, { amountPerMessage: Number(e.target.value) })
-                                }
-                                className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
-                                  fieldValidation.rateInvalid.get(band)?.has(platform)
-                                    ? 'border-red-400 ring-red-200 focus:ring-red-300'
-                                    : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
-                                }`}
-                              />
+                              <div className="group relative flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  step="0.0001"
+                                  value={band.rates[platform].amountPerMessage}
+                                  onChange={(e) =>
+                                    updateRate(band, platform, { amountPerMessage: Number(e.target.value) })
+                                  }
+                                  onFocus={() => setFocusedField(`rate-${index}-${platform}`)}
+                                  onBlur={() => setFocusedField(null)}
+                                  className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
+                                    fieldValidation.rateInvalid.get(band)?.has(platform)
+                                      ? 'border-red-400 ring-red-200 focus:ring-red-300'
+                                      : 'border-gray-300 ring-[var(--admin-ui-accent)]/30'
+                                  }`}
+                                />
+                                {fieldValidation.rateInvalid.get(band)?.has(platform) &&
+                                fieldValidation.rateError.get(band)?.get(platform) &&
+                                focusedField !== `rate-${index}-${platform}` ? (
+                                  <span className={hoverTooltipClass}>
+                                    {fieldValidation.rateError.get(band)?.get(platform)}
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
                           </td>
                         ))}

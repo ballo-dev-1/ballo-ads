@@ -2531,7 +2531,7 @@ export const adminApi = {
 
   getPricingLadder: (duration: number, authToken?: string) =>
     request<Record<string, unknown>[]>(
-      `${BACKOFFICE}/pricing/ladder?duration=${encodeURIComponent(String(duration))}`,
+      `${BACKOFFICE}/pricing/tier?duration=${encodeURIComponent(String(duration))}`,
       { authToken },
     )
       .then((list) => list.map(mapPricingLadderBandResponse))
@@ -2549,7 +2549,7 @@ export const adminApi = {
     payload: PricingLadderUpsertRequest,
     authToken?: string,
   ) =>
-    request<Record<string, unknown>[]>(`${BACKOFFICE}/pricing/ladder`, {
+    request<Record<string, unknown>[]>(`${BACKOFFICE}/pricing/tier`, {
       method: "PUT",
       body: JSON.stringify(payload),
       authToken,
@@ -2559,7 +2559,7 @@ export const adminApi = {
         const status = (err as Error & { status?: number })?.status;
         if (status === 404 || status === 405) {
           throw new Error(
-            "This backend does not support pricing ladder save yet. Deploy the updated backend first.",
+            "This backend does not support pricing tier save yet. Deploy the updated backend first.",
           );
         }
         throw err;
