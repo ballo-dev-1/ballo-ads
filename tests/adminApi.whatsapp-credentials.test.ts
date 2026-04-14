@@ -1,0 +1,110 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { adminApi } from "@/lib/adminApi";
+
+test("getCompanyWhatsAppCredentials targets Backoffice path and isTestKey query (server fetch)", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    requestedUrl = String(input);
+    return new Response(
+      JSON.stringify({
+        Id: 1,
+        CompanyId: 42,
+        IsTestKey: true,
+        IsActive: true,
+        PhoneNumberId: "pn",
+        AccessTokenConfigured: true,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+
+  try {
+    const row = await adminApi.getCompanyWhatsAppCredentials(42, true, "tok-1");
+    assert.match(requestedUrl, /\/Backoffice\/companies\/42\/whatsapp-credentials/);
+    assert.match(requestedUrl, /isTestKey=true/);
+    assert.equal(row.companyId, 42);
+    assert.equal(row.isTestKey, true);
+    assert.equal(row.phoneNumberId, "pn");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("upsertCompanyWhatsAppCredentials sends PUT with JSON body", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedMethod = "";
+  let requestBody = "";
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    requestedMethod = init?.method ?? "GET";
+    requestBody = String(init?.body ?? "");
+    return new Response(
+      JSON.stringify({
+        Id: 2,
+        CompanyId: 7,
+        IsTestKey: false,
+        IsActive: true,
+        PhoneNumberId: "new-pn",
+        AccessTokenConfigured: false,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+
+  try {
+    await adminApi.upsertCompanyWhatsAppCredentials(
+      7,
+      {
+        isTestKey: false,
+        isActive: true,
+        phoneNumberId: "new-pn",
+      },
+      "tok-2",
+    );
+    assert.equal(requestedMethod, "PUT");
+    assert.ok(requestBody.includes("new-pn"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("testCompanyWhatsAppCredentials POSTs test endpoint", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedMethod = "";
+  let requestedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    requestedUrl = String(input);
+    requestedMethod = init?.method ?? "GET";
+    return new Response(JSON.stringify({ Ok: true, Message: "ok" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as typeof fetch;
+
+  try {
+    const r = await adminApi.testCompanyWhatsAppCredentials(3, false, "tok-3");
+    assert.equal(requestedMethod, "POST");
+    assert.match(requestedUrl, /whatsapp-credentials\/test/);
+    assert.equal(r.ok, true);
+    assert.equal(r.message, "ok");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("deactivateCompanyWhatsAppCredentials sends DELETE", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedMethod = "";
+  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    requestedMethod = init?.method ?? "GET";
+    return new Response(null, { status: 204 });
+  }) as typeof fetch;
+
+  try {
+    await adminApi.deactivateCompanyWhatsAppCredentials(9, true, "tok-4");
+    assert.equal(requestedMethod, "DELETE");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

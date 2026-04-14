@@ -45,6 +45,7 @@ import {
   type CompanyMemberRole,
   type CompanyMnoSubmissionHistoryItem,
   type CompanyReviewStatus,
+  type CompanyWhatsAppCredentialUpsertRequest,
   type SubmitCompanyToMnosPayload,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
@@ -929,6 +930,114 @@ export default function CompanyDetailsPage() {
     }
   }
 
+  const handleSaveWhatsAppCredentials = async () => {
+    if (!company) return
+    if (!company.isActive) {
+      toast.error('Cannot update WhatsApp credentials for a deactivated company')
+      return
+    }
+    if (!waForm.phoneNumberId.trim()) {
+      toast.error('Phone Number ID is required')
+      return
+    }
+    setWaSaving(true)
+    setWaTestMessage(null)
+    try {
+      const payload: CompanyWhatsAppCredentialUpsertRequest = {
+        isTestKey: waIsTestSlot,
+        isActive: waForm.isActive,
+        phoneNumberId: waForm.phoneNumberId.trim(),
+        businessAccountId: waForm.businessAccountId.trim() || null,
+        graphApiBaseUrl: waForm.graphApiBaseUrl.trim() || null,
+        marketingTemplateName: waForm.marketingTemplateName.trim() || null,
+        marketingTemplateLanguage: waForm.marketingTemplateLanguage.trim() || null,
+        defaultMarketingImageUrl: waForm.defaultMarketingImageUrl.trim() || null,
+        utilityTemplateName: waForm.utilityTemplateName.trim() || null,
+        utilityTemplateLanguage: waForm.utilityTemplateLanguage.trim() || null,
+        utilityButtonParameter: waForm.utilityButtonParameter.trim() || null,
+      }
+      if (waForm.accessToken.trim()) {
+        payload.accessToken = waForm.accessToken.trim()
+      }
+      if (waForm.appSecret.trim()) {
+        payload.appSecret = waForm.appSecret.trim()
+      }
+      if (waForm.verifyToken.trim()) {
+        payload.verifyToken = waForm.verifyToken.trim()
+      }
+      await adminApi.upsertCompanyWhatsAppCredentials(company.id, payload)
+      setWaForm((f) => ({ ...f, accessToken: '', appSecret: '', verifyToken: '' }))
+      toast.success('WhatsApp credentials saved')
+      const row = await adminApi.getCompanyWhatsAppCredentials(company.id, waIsTestSlot)
+      setWaForm({
+        phoneNumberId: row.phoneNumberId ?? '',
+        businessAccountId: row.businessAccountId ?? '',
+        graphApiBaseUrl: row.graphApiBaseUrl ?? '',
+        accessToken: '',
+        appSecret: '',
+        verifyToken: '',
+        marketingTemplateName: row.marketingTemplateName ?? '',
+        marketingTemplateLanguage: row.marketingTemplateLanguage ?? '',
+        defaultMarketingImageUrl: row.defaultMarketingImageUrl ?? '',
+        utilityTemplateName: row.utilityTemplateName ?? '',
+        utilityTemplateLanguage: row.utilityTemplateLanguage ?? '',
+        utilityButtonParameter: row.utilityButtonParameter ?? '',
+        isActive: row.isActive,
+      })
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save WhatsApp credentials')
+    } finally {
+      setWaSaving(false)
+    }
+  }
+
+  const handleTestWhatsAppCredentials = async () => {
+    if (!company) return
+    if (!company.isActive) {
+      toast.error('Cannot test for a deactivated company')
+      return
+    }
+    setWaTesting(true)
+    setWaTestMessage(null)
+    try {
+      const r = await adminApi.testCompanyWhatsAppCredentials(company.id, waIsTestSlot)
+      setWaTestMessage(r.message)
+      if (r.ok) {
+        toast.success('Meta accepted these credentials')
+      } else {
+        toast.error(r.message || 'Meta rejected the credentials')
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Test request failed'
+      setWaTestMessage(msg)
+      toast.error(msg)
+    } finally {
+      setWaTesting(false)
+    }
+  }
+
+  const handleDeactivateWhatsAppCredentials = async () => {
+    if (!company) return
+    const ok = await confirm({
+      title: 'Deactivate WhatsApp credentials?',
+      description:
+        'Outbound WhatsApp for this company will fall back to global platform credentials if enabled, or fail until new credentials are saved.',
+      confirmLabel: 'Deactivate',
+      tone: 'danger',
+    })
+    if (!ok) return
+    setWaDeactivating(true)
+    try {
+      await adminApi.deactivateCompanyWhatsAppCredentials(company.id, waIsTestSlot)
+      toast.success('WhatsApp credentials deactivated')
+      setWaForm((f) => ({ ...f, isActive: false }))
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to deactivate')
+    } finally {
+      setWaDeactivating(false)
+    }
+  }
+
   const approvedCampaignsCount = useMemo(
     () => campaigns.filter((campaign) => campaign.isApproved).length,
     [campaigns],
@@ -1000,10 +1109,92 @@ export default function CompanyDetailsPage() {
     kind: 'image' | 'document'
   } | null>(null)
 
+  const [waCredentialLoading, setWaCredentialLoading] = useState(false)
+  const [waSaving, setWaSaving] = useState(false)
+  const [waTesting, setWaTesting] = useState(false)
+  const [waDeactivating, setWaDeactivating] = useState(false)
+  const [waIsTestSlot, setWaIsTestSlot] = useState(false)
+  const [waTestMessage, setWaTestMessage] = useState<string | null>(null)
+  const [waForm, setWaForm] = useState({
+    phoneNumberId: '',
+    businessAccountId: '',
+    graphApiBaseUrl: '',
+    accessToken: '',
+    appSecret: '',
+    verifyToken: '',
+    marketingTemplateName: '',
+    marketingTemplateLanguage: '',
+    defaultMarketingImageUrl: '',
+    utilityTemplateName: '',
+    utilityTemplateLanguage: '',
+    utilityButtonParameter: '',
+    isActive: true,
+  })
+
   const senderIdValue = company?.senderId ?? ''
   useEffect(() => {
     setSenderIdInputValue(senderIdValue)
   }, [senderIdValue])
+
+  useEffect(() => {
+    if (invalidId || !company || activeTab !== 'settings') {
+      return
+    }
+    let cancelled = false
+    const loadWa = async () => {
+      setWaCredentialLoading(true)
+      setWaTestMessage(null)
+      try {
+        const row = await adminApi.getCompanyWhatsAppCredentials(company.id, waIsTestSlot)
+        if (cancelled) return
+        setWaForm({
+          phoneNumberId: row.phoneNumberId ?? '',
+          businessAccountId: row.businessAccountId ?? '',
+          graphApiBaseUrl: row.graphApiBaseUrl ?? '',
+          accessToken: '',
+          appSecret: '',
+          verifyToken: '',
+          marketingTemplateName: row.marketingTemplateName ?? '',
+          marketingTemplateLanguage: row.marketingTemplateLanguage ?? '',
+          defaultMarketingImageUrl: row.defaultMarketingImageUrl ?? '',
+          utilityTemplateName: row.utilityTemplateName ?? '',
+          utilityTemplateLanguage: row.utilityTemplateLanguage ?? '',
+          utilityButtonParameter: row.utilityButtonParameter ?? '',
+          isActive: row.isActive,
+        })
+      } catch (e: unknown) {
+        if (cancelled) return
+        const err = e as Error & { status?: number }
+        if (err.status === 404) {
+          setWaForm({
+            phoneNumberId: '',
+            businessAccountId: '',
+            graphApiBaseUrl: '',
+            accessToken: '',
+            appSecret: '',
+            verifyToken: '',
+            marketingTemplateName: '',
+            marketingTemplateLanguage: '',
+            defaultMarketingImageUrl: '',
+            utilityTemplateName: '',
+            utilityTemplateLanguage: '',
+            utilityButtonParameter: '',
+            isActive: true,
+          })
+        } else {
+          toast.error(err.message ?? 'Failed to load WhatsApp credentials')
+        }
+      } finally {
+        if (!cancelled) {
+          setWaCredentialLoading(false)
+        }
+      }
+    }
+    void loadWa()
+    return () => {
+      cancelled = true
+    }
+  }, [company, invalidId, activeTab, waIsTestSlot, env])
 
   const networkRows = useMemo(
     () =>
@@ -2361,6 +2552,229 @@ export default function CompanyDetailsPage() {
                     {campaignApprovalOverrideLoading ? 'Updating...' : 'Skip approval'}
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-slate-200">
+              <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                <h3 className="text-base font-semibold text-slate-900">WhatsApp (Meta)</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Per-company WhatsApp Cloud API credentials. Secrets are encrypted; leave token fields empty to keep
+                  existing values.
+                </p>
+              </div>
+              <div className="space-y-4 px-4 py-4">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <label className="flex items-center gap-2 text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={waIsTestSlot}
+                      onChange={(e) => setWaIsTestSlot(e.target.checked)}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="rounded border-slate-300"
+                    />
+                    Test API key slot (matches test API clients)
+                  </label>
+                  {waCredentialLoading ? (
+                    <span className="flex items-center text-xs text-slate-500" role="status">
+                      <LoadingSpinner size="sm" />
+                      <span className="ml-2">Loading…</span>
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600">
+                    Phone number ID
+                    <input
+                      type="text"
+                      value={waForm.phoneNumberId}
+                      onChange={(e) => setWaForm((f) => ({ ...f, phoneNumberId: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    WhatsApp Business Account ID (WABA)
+                    <input
+                      type="text"
+                      value={waForm.businessAccountId}
+                      onChange={(e) => setWaForm((f) => ({ ...f, businessAccountId: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Graph API base URL (optional)
+                    <input
+                      type="text"
+                      placeholder="https://graph.facebook.com/v22.0"
+                      value={waForm.graphApiBaseUrl}
+                      onChange={(e) => setWaForm((f) => ({ ...f, graphApiBaseUrl: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      autoComplete="off"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Access token (write-only)
+                    <input
+                      type="password"
+                      value={waForm.accessToken}
+                      onChange={(e) => setWaForm((f) => ({ ...f, accessToken: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      placeholder="Leave blank to keep current"
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    App secret (optional)
+                    <input
+                      type="password"
+                      value={waForm.appSecret}
+                      onChange={(e) => setWaForm((f) => ({ ...f, appSecret: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      placeholder="Leave blank to keep current"
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Verify token (optional)
+                    <input
+                      type="password"
+                      value={waForm.verifyToken}
+                      onChange={(e) => setWaForm((f) => ({ ...f, verifyToken: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      placeholder="Leave blank to keep current"
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                      autoComplete="new-password"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600">
+                    Marketing template name
+                    <input
+                      type="text"
+                      value={waForm.marketingTemplateName}
+                      onChange={(e) => setWaForm((f) => ({ ...f, marketingTemplateName: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Marketing template language
+                    <input
+                      type="text"
+                      placeholder="en_GB"
+                      value={waForm.marketingTemplateLanguage}
+                      onChange={(e) => setWaForm((f) => ({ ...f, marketingTemplateLanguage: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Default marketing image URL
+                    <input
+                      type="url"
+                      value={waForm.defaultMarketingImageUrl}
+                      onChange={(e) => setWaForm((f) => ({ ...f, defaultMarketingImageUrl: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600">
+                    Utility template name
+                    <input
+                      type="text"
+                      value={waForm.utilityTemplateName}
+                      onChange={(e) => setWaForm((f) => ({ ...f, utilityTemplateName: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Utility template language
+                    <input
+                      type="text"
+                      value={waForm.utilityTemplateLanguage}
+                      onChange={(e) => setWaForm((f) => ({ ...f, utilityTemplateLanguage: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Utility button parameter (optional)
+                    <input
+                      type="text"
+                      value={waForm.utilityButtonParameter}
+                      onChange={(e) => setWaForm((f) => ({ ...f, utilityButtonParameter: e.target.value }))}
+                      disabled={!company.isActive || waCredentialLoading}
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                </div>
+
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={waForm.isActive}
+                    onChange={(e) => setWaForm((f) => ({ ...f, isActive: e.target.checked }))}
+                    disabled={!company.isActive || waCredentialLoading}
+                    className="rounded border-slate-300"
+                  />
+                  Credential row active
+                </label>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleSaveWhatsAppCredentials()}
+                    disabled={waSaving || !company.isActive || waCredentialLoading}
+                    className={classNames(
+                      buttonBase,
+                      'min-w-[96px] justify-center border border-[var(--admin-ui-accent)] bg-[var(--admin-ui-accent)] px-3 py-2 text-xs font-medium text-white hover:bg-[var(--brand-color-1)]',
+                    )}
+                  >
+                    {waSaving ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleTestWhatsAppCredentials()}
+                    disabled={waTesting || !company.isActive || waCredentialLoading}
+                    className={classNames(
+                      buttonBase,
+                      'min-w-[96px] justify-center border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50',
+                    )}
+                  >
+                    {waTesting ? 'Testing…' : 'Test connection'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeactivateWhatsAppCredentials()}
+                    disabled={waDeactivating || !company.isActive || waCredentialLoading}
+                    className={classNames(
+                      buttonBase,
+                      'min-w-[96px] justify-center border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800 shadow-sm hover:bg-red-100',
+                    )}
+                  >
+                    {waDeactivating ? 'Working…' : 'Deactivate'}
+                  </button>
+                </div>
+                {waTestMessage ? (
+                  <p className="text-xs text-slate-600 whitespace-pre-wrap">{waTestMessage}</p>
+                ) : null}
               </div>
             </div>
           </SectionCard>

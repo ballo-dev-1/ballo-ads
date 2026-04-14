@@ -63,7 +63,7 @@ test("buildDashboardKpiCards computes period deltas", () => {
       appliedFilters: {
         from: "2026-03-05T00:00:00Z",
         to: "2026-03-12T10:00:00Z",
-        companyId: null,
+        companyId: undefined,
         channel: "Sms",
       },
       activeCampaigns: 10,
@@ -118,7 +118,7 @@ test("buildDashboardKpiCards computes period deltas", () => {
       appliedFilters: {
         from: "2026-02-26T00:00:00Z",
         to: "2026-03-05T00:00:00Z",
-        companyId: null,
+        companyId: undefined,
         channel: "Sms",
       },
       activeCampaigns: 8,

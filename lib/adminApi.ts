@@ -645,6 +645,45 @@ export type CompanyCampaignApprovalOverrideRequest = {
   requireCampaignApprovalOverride?: boolean | null;
 };
 
+export type CompanyWhatsAppCredentialMaskedResponse = {
+  id: number;
+  companyId: number;
+  isTestKey: boolean;
+  isActive: boolean;
+  phoneNumberId: string;
+  businessAccountId?: string | null;
+  graphApiBaseUrl?: string | null;
+  accessTokenConfigured: boolean;
+  appSecretConfigured: boolean;
+  verifyTokenConfigured: boolean;
+  marketingTemplateName?: string | null;
+  marketingTemplateLanguage?: string | null;
+  defaultMarketingImageUrl?: string | null;
+  utilityTemplateName?: string | null;
+  utilityTemplateLanguage?: string | null;
+  utilityButtonParameter?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CompanyWhatsAppCredentialUpsertRequest = {
+  isTestKey: boolean;
+  isActive: boolean;
+  phoneNumberId: string;
+  businessAccountId?: string | null;
+  graphApiBaseUrl?: string | null;
+  /** Omit or leave empty to keep existing encrypted value. */
+  accessToken?: string | null;
+  appSecret?: string | null;
+  verifyToken?: string | null;
+  marketingTemplateName?: string | null;
+  marketingTemplateLanguage?: string | null;
+  defaultMarketingImageUrl?: string | null;
+  utilityTemplateName?: string | null;
+  utilityTemplateLanguage?: string | null;
+  utilityButtonParameter?: string | null;
+};
+
 export type CompanyLeanResponse = {
   id: number;
   name?: string;
@@ -967,6 +1006,49 @@ function mapCompanyLeanResponse(
     effectiveRequireCampaignApproval: Boolean(
       r.EffectiveRequireCampaignApproval ?? r.effectiveRequireCampaignApproval ?? false,
     ),
+  };
+}
+
+function mapCompanyWhatsAppCredentialMasked(
+  r: Record<string, unknown>,
+): CompanyWhatsAppCredentialMaskedResponse {
+  return {
+    id: Number(r.Id ?? r.id ?? 0),
+    companyId: Number(r.CompanyId ?? r.companyId ?? 0),
+    isTestKey: Boolean(r.IsTestKey ?? r.isTestKey),
+    isActive: Boolean(r.IsActive ?? r.isActive ?? true),
+    phoneNumberId: String(r.PhoneNumberId ?? r.phoneNumberId ?? ""),
+    businessAccountId: (r.BusinessAccountId ?? r.businessAccountId) as
+      | string
+      | null
+      | undefined,
+    graphApiBaseUrl: (r.GraphApiBaseUrl ?? r.graphApiBaseUrl) as
+      | string
+      | null
+      | undefined,
+    accessTokenConfigured: Boolean(
+      r.AccessTokenConfigured ?? r.accessTokenConfigured,
+    ),
+    appSecretConfigured: Boolean(
+      r.AppSecretConfigured ?? r.appSecretConfigured,
+    ),
+    verifyTokenConfigured: Boolean(
+      r.VerifyTokenConfigured ?? r.verifyTokenConfigured,
+    ),
+    marketingTemplateName: (r.MarketingTemplateName ??
+      r.marketingTemplateName) as string | null | undefined,
+    marketingTemplateLanguage: (r.MarketingTemplateLanguage ??
+      r.marketingTemplateLanguage) as string | null | undefined,
+    defaultMarketingImageUrl: (r.DefaultMarketingImageUrl ??
+      r.defaultMarketingImageUrl) as string | null | undefined,
+    utilityTemplateName: (r.UtilityTemplateName ??
+      r.utilityTemplateName) as string | null | undefined,
+    utilityTemplateLanguage: (r.UtilityTemplateLanguage ??
+      r.utilityTemplateLanguage) as string | null | undefined,
+    utilityButtonParameter: (r.UtilityButtonParameter ??
+      r.utilityButtonParameter) as string | null | undefined,
+    createdAt: String(r.CreatedAt ?? r.createdAt ?? ""),
+    updatedAt: String(r.UpdatedAt ?? r.updatedAt ?? ""),
   };
 }
 
@@ -2158,6 +2240,53 @@ export const adminApi = {
         authToken,
       },
     ).then(mapCompanyLeanResponse),
+
+  getCompanyWhatsAppCredentials: (
+    companyId: number,
+    isTestKey: boolean = false,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/whatsapp-credentials?isTestKey=${isTestKey}`,
+      { authToken },
+    ).then(mapCompanyWhatsAppCredentialMasked),
+
+  upsertCompanyWhatsAppCredentials: (
+    companyId: number,
+    payload: CompanyWhatsAppCredentialUpsertRequest,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/whatsapp-credentials`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+        authToken,
+      },
+    ).then(mapCompanyWhatsAppCredentialMasked),
+
+  testCompanyWhatsAppCredentials: (
+    companyId: number,
+    isTestKey: boolean = false,
+    authToken?: string,
+  ) =>
+    request<Record<string, unknown>>(
+      `${BACKOFFICE}/companies/${companyId}/whatsapp-credentials/test?isTestKey=${isTestKey}`,
+      { method: "POST", authToken },
+    ).then((r) => ({
+      ok: Boolean(r.ok ?? r.Ok),
+      message: String(r.message ?? r.Message ?? ""),
+    })),
+
+  deactivateCompanyWhatsAppCredentials: (
+    companyId: number,
+    isTestKey: boolean = false,
+    authToken?: string,
+  ) =>
+    request<void>(
+      `${BACKOFFICE}/companies/${companyId}/whatsapp-credentials?isTestKey=${isTestKey}`,
+      { method: "DELETE", authToken },
+    ),
 
   getCompanyMembers: (companyId: number, authToken?: string) =>
     request<Record<string, unknown>[]>(
