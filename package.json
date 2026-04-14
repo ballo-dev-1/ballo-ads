@@ -12,6 +12,9 @@
     "waitlist:backfill": "tsx scripts/waitlist-backfill.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-virtual": "^3.13.23",
     "@types/pg": "^8.20.0",
     "firebase": "^12.11.0",

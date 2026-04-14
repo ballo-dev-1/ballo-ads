@@ -1,7 +1,24 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Trash2, GripVertical } from 'lucide-react'
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import {
   adminApi,
   type PricingLadderBandRequest,
@@ -21,6 +38,7 @@ const durationOptions = [
 ] as const
 
 type EditableBand = {
+  rowId: string
   thresholdStart: number
   thresholdEnd: number
   displayOrder: number
@@ -28,7 +46,10 @@ type EditableBand = {
   rates: Record<PricingPlatform, { amountPerMessage: number; isEnabled: boolean }>
 }
 
-const createEmptyBand = (displayOrder: number): EditableBand => ({
+const createRowId = () => `tier-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+
+const createEmptyBand = (displayOrder: number, rowId = createRowId()): EditableBand => ({
+  rowId,
   thresholdStart: 0,
   thresholdEnd: 0,
   displayOrder,
@@ -42,7 +63,7 @@ const createEmptyBand = (displayOrder: number): EditableBand => ({
 })
 
 function mapBandToEditable(band: PricingLadderBandResponse): EditableBand {
-  const editable = createEmptyBand(band.displayOrder)
+  const editable = createEmptyBand(band.displayOrder, `tier-${band.id}-${band.displayOrder}`)
   editable.thresholdStart = band.thresholdStart
   editable.thresholdEnd = band.thresholdEnd
   editable.displayOrder = band.displayOrder
@@ -84,7 +105,7 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
     return 'At least one pricing band is required.'
   }
 
-  const ordered = [...bands].sort((a, b) => a.thresholdStart - b.thresholdStart)
+  const ordered = [...bands]
 
   for (let i = 0; i < ordered.length; i++) {
     const band = ordered[i]
@@ -125,6 +146,35 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
   return null
 }
 
+function SortableRow({
+  rowId,
+  className,
+  children,
+}: {
+  rowId: string
+  className: string
+  children: (dragHandle: { attributes: unknown; listeners: unknown }) => ReactNode
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rowId })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`${className} ${isDragging ? 'bg-slate-50' : ''}`.trim()}
+    >
+      {children({
+        attributes,
+        listeners: listeners ?? {},
+      })}
+    </tr>
+  )
+}
+
 export default function PricingPage() {
   const { env } = useApiEnv()
   const [duration, setDuration] = useState(30)
@@ -134,6 +184,10 @@ export default function PricingPage() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [focusedField, setFocusedField] = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -154,10 +208,7 @@ export default function PricingPage() {
     load()
   }, [env, load])
 
-  const sortedBands = useMemo(
-    () => [...bands].sort((a, b) => a.thresholdStart - b.thresholdStart),
-    [bands],
-  )
+  const orderedBands = useMemo(() => [...bands], [bands])
   const validationError = useMemo(() => validateBands(duration, bands), [duration, bands])
   const fieldValidation = useMemo(() => {
     const validDurations: number[] = durationOptions.map((option) => option.value)
@@ -187,13 +238,13 @@ export default function PricingPage() {
       rateError.set(band, errorByPlatform)
     }
 
-    const openEndedBands = sortedBands.filter((band) => band.thresholdEnd <= 0)
+    const openEndedBands = orderedBands.filter((band) => band.thresholdEnd <= 0)
     if (openEndedBands.length > 1) {
       for (const band of openEndedBands) addEndError(band, 'Only one open-ended tier is allowed.')
     }
 
-    for (let i = 0; i < sortedBands.length; i++) {
-      const band = sortedBands[i]
+    for (let i = 0; i < orderedBands.length; i++) {
+      const band = orderedBands[i]
       if (!Number.isFinite(band.thresholdStart) || band.thresholdStart < 0) {
         addStartError(band, `Tier ${i + 1}: threshold start must be zero or greater.`)
       }
@@ -201,7 +252,7 @@ export default function PricingPage() {
       if (!Number.isFinite(band.thresholdEnd) || (band.thresholdEnd > 0 && band.thresholdStart > band.thresholdEnd)) {
         addEndError(band, `Tier ${i + 1}: threshold start cannot be greater than threshold end.`)
       }
-      if (band.thresholdEnd <= 0 && i !== sortedBands.length - 1) {
+      if (band.thresholdEnd <= 0 && i !== orderedBands.length - 1) {
         addEndError(band, 'Open-ended tier must be the last tier.')
       }
 
@@ -213,9 +264,9 @@ export default function PricingPage() {
       }
     }
 
-    for (let i = 1; i < sortedBands.length; i++) {
-      const prev = sortedBands[i - 1]
-      const current = sortedBands[i]
+    for (let i = 1; i < orderedBands.length; i++) {
+      const prev = orderedBands[i - 1]
+      const current = orderedBands[i]
       if (prev.thresholdEnd > 0 && current.thresholdStart !== prev.thresholdEnd + 1) {
         addEndError(prev, `Gap/overlap between tier ${i} and tier ${i + 1}; tiers must be contiguous.`)
         addStartError(current, `Gap/overlap between tier ${i} and tier ${i + 1}; tiers must be contiguous.`)
@@ -223,21 +274,42 @@ export default function PricingPage() {
     }
 
     return { durationInvalid, startInvalid, endInvalid, rateInvalid, startError, endError, rateError }
-  }, [duration, sortedBands])
+  }, [duration, orderedBands])
 
   const addBand = () => {
-    setBands((prev) => [...prev, createEmptyBand(prev.length + 1)])
+    setBands((prev) => {
+      const newBand = createEmptyBand(prev.length + 1)
+      const ordered = [...prev].sort((a, b) => a.thresholdStart - b.thresholdStart)
+      const lastBand = ordered[ordered.length - 1]
+
+      if (!lastBand) {
+        return [...prev, newBand]
+      }
+
+      if (lastBand.thresholdEnd > 0) {
+        newBand.thresholdStart = lastBand.thresholdEnd + 1
+        return [...prev, newBand]
+      }
+
+      const roundedEnd = Math.ceil(lastBand.thresholdStart / 100) * 100
+      newBand.thresholdStart = roundedEnd + 1
+      newBand.thresholdEnd = 0
+
+      return prev.map((band) =>
+        band === lastBand ? { ...band, thresholdEnd: roundedEnd } : band,
+      ).concat(newBand)
+    })
   }
   const hoverTooltipClass =
     'pointer-events-none absolute top-full z-20 mt-1 hidden w-52 rounded-md bg-slate-900 px-2 py-1 text-[10px] font-medium normal-case tracking-normal text-white shadow-lg group-hover:block group-focus-within:hidden left-1/2 -translate-x-1/2'
 
   const removeBand = (bandToRemove: EditableBand) => {
-    setBands((prev) => prev.filter((band) => band !== bandToRemove))
+    setBands((prev) => prev.filter((band) => band.rowId !== bandToRemove.rowId))
   }
 
   const updateBand = (bandToUpdate: EditableBand, patch: Partial<EditableBand>) => {
     setBands((prev) =>
-      prev.map((band) => (band === bandToUpdate ? { ...band, ...patch } : band)),
+      prev.map((band) => (band.rowId === bandToUpdate.rowId ? { ...band, ...patch } : band)),
     )
   }
 
@@ -248,7 +320,7 @@ export default function PricingPage() {
   ) => {
     setBands((prev) =>
       prev.map((band) =>
-        band === bandToUpdate
+        band.rowId === bandToUpdate.rowId
           ? {
               ...band,
               rates: {
@@ -262,6 +334,26 @@ export default function PricingPage() {
           : band,
       ),
     )
+  }
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    setBands((prev) => {
+      const oldIndex = prev.findIndex((band) => band.rowId === String(active.id))
+      const newIndex = prev.findIndex((band) => band.rowId === String(over.id))
+      if (oldIndex < 0 || newIndex < 0) return prev
+
+      const reordered = arrayMove(prev, oldIndex, newIndex)
+      const lastIndex = reordered.length - 1
+      return reordered.map((band, index) => {
+        if (index < lastIndex && band.thresholdEnd <= 0) {
+          return { ...band, thresholdEnd: Math.ceil(band.thresholdStart / 100) * 100 }
+        }
+        return band
+      })
+    })
   }
 
   const saveLadder = async () => {
@@ -357,6 +449,7 @@ export default function PricingPage() {
               <table className="w-full min-w-[1200px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                    <th className="w-10 px-3 py-3" aria-label="Reorder" />
                     <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Tier</th>
                     <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Start</th>
                     <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">End (∞ = open)</th>
@@ -367,16 +460,38 @@ export default function PricingPage() {
                     <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Action</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {sortedBands.length === 0 ? (
+                {bands.length === 0 ? (
+                  <tbody>
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-gray-500">
+                      <td colSpan={9} className="text-center py-8 text-gray-500">
                         No bands configured for this duration.
                       </td>
                     </tr>
-                  ) : (
-                    sortedBands.map((band, index) => (
-                      <tr key={`${band.displayOrder}-${index}-${band.thresholdStart}-${band.thresholdEnd}`} className="border-b border-gray-100 transition-colors hover:bg-gray-50/70">
+                  </tbody>
+                ) : (
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                    <SortableContext items={bands.map((band) => band.rowId)} strategy={verticalListSortingStrategy}>
+                      <tbody>
+                        {bands.map((band, index) => (
+                          <SortableRow
+                            key={band.rowId}
+                            rowId={band.rowId}
+                            className="border-b border-gray-100 transition-colors hover:bg-gray-50/70"
+                          >
+                            {({ attributes, listeners }) => (
+                              <>
+                                <td className="px-2 py-3 align-middle">
+                                  <button
+                                    type="button"
+                                    className="inline-flex cursor-grab items-center justify-center rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                                    aria-label="Drag to reorder tier"
+                                    title="Drag to reorder tier"
+                                    {...(attributes as object)}
+                                    {...(listeners as object)}
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </button>
+                                </td>
                         <td className="px-3 py-3 text-sm font-medium text-gray-700">{index + 1}</td>
                         <td className="px-3 py-3">
                           <div className="group relative flex items-center gap-2">
@@ -426,7 +541,7 @@ export default function PricingPage() {
                                 <span className={hoverTooltipClass}>{fieldValidation.endError.get(band)}</span>
                               ) : null}
                             </div>
-                            {index === sortedBands.length - 1 && (
+                            {index === bands.length - 1 && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -440,7 +555,6 @@ export default function PricingPage() {
                                     : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
                                 }`}
                                 aria-label={band.thresholdEnd <= 0 ? 'Tier end is open' : 'Set tier end to open'}
-                                title={band.thresholdEnd <= 0 ? 'Open ended (infinity)' : 'Set as open ended'}
                               >
                                 ∞
                               </button>
@@ -488,10 +602,14 @@ export default function PricingPage() {
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
+                              </>
+                            )}
+                          </SortableRow>
+                        ))}
+                      </tbody>
+                    </SortableContext>
+                  </DndContext>
+                )}
               </table>
             </div>
           )}
