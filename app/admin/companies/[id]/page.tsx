@@ -47,6 +47,7 @@ import {
   type CompanyReviewStatus,
   type CompanyWhatsAppCredentialUpsertRequest,
   type SubmitCompanyToMnosPayload,
+  type WhatsAppTemplateCatalogItem,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
@@ -97,6 +98,27 @@ function htmlToPlainText(value: string): string {
 function toTitleCaseWord(value: string): string {
   if (!value) return value
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+}
+
+const WA_TEMPLATE_SELECT_SEP = '\u0001'
+
+function waTemplateSelectKey(name: string, language: string): string {
+  return `${name}${WA_TEMPLATE_SELECT_SEP}${language}`
+}
+
+function parseWaTemplateSelectKey(key: string): { name: string; language: string } | null {
+  if (!key) return null
+  const i = key.indexOf(WA_TEMPLATE_SELECT_SEP)
+  if (i < 0) return null
+  return { name: key.slice(0, i), language: key.slice(i + WA_TEMPLATE_SELECT_SEP.length) }
+}
+
+function sortWaCatalogItems(items: WhatsAppTemplateCatalogItem[]): WhatsAppTemplateCatalogItem[] {
+  return [...items].sort((a, b) => {
+    const byName = a.name.localeCompare(b.name)
+    if (byName !== 0) return byName
+    return a.language.localeCompare(b.language)
+  })
 }
 
 function getGreetingName(recipientName: string, recipientEmail: string): string {
@@ -1154,6 +1176,10 @@ export default function CompanyDetailsPage() {
     utilityButtonParameter: '',
     isActive: true,
   })
+  const [waCatalogMarketing, setWaCatalogMarketing] = useState<WhatsAppTemplateCatalogItem[]>([])
+  const [waCatalogUtility, setWaCatalogUtility] = useState<WhatsAppTemplateCatalogItem[]>([])
+  const [waCatalogLoading, setWaCatalogLoading] = useState(false)
+  const [waCatalogError, setWaCatalogError] = useState('')
 
   const senderIdValue = company?.senderId ?? ''
   useEffect(() => {
@@ -1221,6 +1247,63 @@ export default function CompanyDetailsPage() {
       cancelled = true
     }
   }, [company, invalidId, activeTab, waIsTestSlot, env])
+
+  useEffect(() => {
+    if (invalidId || !company || activeTab !== 'settings') {
+      return
+    }
+    let cancelled = false
+    const loadCatalog = async () => {
+      setWaCatalogLoading(true)
+      setWaCatalogError('')
+      try {
+        const [mkt, util] = await Promise.all([
+          adminApi.getBackofficeCompanyWhatsAppTemplateCatalog(company.id, {
+            isTestKey: waIsTestSlot,
+            category: 'marketing',
+          }),
+          adminApi.getBackofficeCompanyWhatsAppTemplateCatalog(company.id, {
+            isTestKey: waIsTestSlot,
+            category: 'utility',
+          }),
+        ])
+        if (!cancelled) {
+          setWaCatalogMarketing(mkt)
+          setWaCatalogUtility(util)
+        }
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setWaCatalogMarketing([])
+          setWaCatalogUtility([])
+          setWaCatalogError(e instanceof Error ? e.message : 'Failed to load Meta template catalog')
+        }
+      } finally {
+        if (!cancelled) {
+          setWaCatalogLoading(false)
+        }
+      }
+    }
+    void loadCatalog()
+    return () => {
+      cancelled = true
+    }
+  }, [company, invalidId, activeTab, waIsTestSlot, env])
+
+  const waMarketingSelectValue = useMemo(() => {
+    const n = waForm.marketingTemplateName.trim()
+    const l = waForm.marketingTemplateLanguage.trim()
+    if (!n || !l) return ''
+    const hit = waCatalogMarketing.some((t) => t.name === n && t.language === l)
+    return hit ? waTemplateSelectKey(n, l) : ''
+  }, [waForm.marketingTemplateName, waForm.marketingTemplateLanguage, waCatalogMarketing])
+
+  const waUtilitySelectValue = useMemo(() => {
+    const n = waForm.utilityTemplateName.trim()
+    const l = waForm.utilityTemplateLanguage.trim()
+    if (!n || !l) return ''
+    const hit = waCatalogUtility.some((t) => t.name === n && t.language === l)
+    return hit ? waTemplateSelectKey(n, l) : ''
+  }, [waForm.utilityTemplateName, waForm.utilityTemplateLanguage, waCatalogUtility])
 
   const networkRows = useMemo(
     () =>
@@ -2704,7 +2787,48 @@ export default function CompanyDetailsPage() {
                   </label>
                 </div>
 
+                {waCatalogError ? (
+                  <p className="text-xs text-amber-800" role="status">
+                    {waCatalogError} You can still type template name and language manually below.
+                  </p>
+                ) : null}
+
                 <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Marketing template (from Meta)
+                    <select
+                      value={waMarketingSelectValue}
+                      onChange={(e) => {
+                        const parsed = parseWaTemplateSelectKey(e.target.value)
+                        setWaForm((f) =>
+                          parsed
+                            ? {
+                                ...f,
+                                marketingTemplateName: parsed.name,
+                                marketingTemplateLanguage: parsed.language,
+                              }
+                            : f,
+                        )
+                      }}
+                      disabled={
+                        !company.isActive || waCredentialLoading || waCatalogLoading || !waCatalogMarketing.length
+                      }
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    >
+                      <option value="">
+                        {waCatalogLoading
+                          ? 'Loading approved templates…'
+                          : waCatalogMarketing.length
+                            ? '— Select approved marketing template —'
+                            : '— No marketing templates in catalog —'}
+                      </option>
+                      {sortWaCatalogItems(waCatalogMarketing).map((t) => (
+                        <option key={waTemplateSelectKey(t.name, t.language)} value={waTemplateSelectKey(t.name, t.language)}>
+                          {t.name} ({t.language})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <label className="block text-xs font-medium text-slate-600">
                     Marketing template name
                     <input
@@ -2739,6 +2863,41 @@ export default function CompanyDetailsPage() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Utility template (from Meta)
+                    <select
+                      value={waUtilitySelectValue}
+                      onChange={(e) => {
+                        const parsed = parseWaTemplateSelectKey(e.target.value)
+                        setWaForm((f) =>
+                          parsed
+                            ? {
+                                ...f,
+                                utilityTemplateName: parsed.name,
+                                utilityTemplateLanguage: parsed.language,
+                              }
+                            : f,
+                        )
+                      }}
+                      disabled={
+                        !company.isActive || waCredentialLoading || waCatalogLoading || !waCatalogUtility.length
+                      }
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
+                    >
+                      <option value="">
+                        {waCatalogLoading
+                          ? 'Loading approved templates…'
+                          : waCatalogUtility.length
+                            ? '— Select approved utility template —'
+                            : '— No utility templates in catalog —'}
+                      </option>
+                      {sortWaCatalogItems(waCatalogUtility).map((t) => (
+                        <option key={waTemplateSelectKey(t.name, t.language)} value={waTemplateSelectKey(t.name, t.language)}>
+                          {t.name} ({t.language})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <label className="block text-xs font-medium text-slate-600">
                     Utility template name
                     <input

@@ -668,6 +668,13 @@ export type CompanyWhatsAppCredentialMaskedResponse = {
   usesPlatformDefaults: boolean;
 };
 
+export type WhatsAppTemplateCatalogItem = {
+  name: string;
+  language: string;
+  category?: string | null;
+  status: string;
+};
+
 export type CompanyWhatsAppCredentialUpsertRequest = {
   isTestKey: boolean;
   isActive: boolean;
@@ -1054,6 +1061,17 @@ function mapCompanyWhatsAppCredentialMasked(
     usesPlatformDefaults: Boolean(
       r.UsesPlatformDefaults ?? r.usesPlatformDefaults,
     ),
+  };
+}
+
+function mapWhatsAppTemplateCatalogItem(
+  r: Record<string, unknown>,
+): WhatsAppTemplateCatalogItem {
+  return {
+    name: String(r.name ?? r.Name ?? ""),
+    language: String(r.language ?? r.Language ?? ""),
+    category: (r.category ?? r.Category) as string | null | undefined,
+    status: String(r.status ?? r.Status ?? ""),
   };
 }
 
@@ -2292,6 +2310,48 @@ export const adminApi = {
       `${BACKOFFICE}/companies/${companyId}/whatsapp-credentials?isTestKey=${isTestKey}`,
       { method: "DELETE", authToken },
     ),
+
+  /** Backoffice: Meta-approved templates for the company WABA (cached on server). */
+  getBackofficeCompanyWhatsAppTemplateCatalog: (
+    companyId: number,
+    params?: {
+      isTestKey?: boolean;
+      category?: "marketing" | "utility" | null;
+      authToken?: string;
+    },
+  ) => {
+    const { isTestKey = false, category, authToken } = params ?? {};
+    const q = new URLSearchParams({ isTestKey: String(isTestKey) });
+    if (category) q.set("category", category);
+    return request<Record<string, unknown>[]>(
+      `${BACKOFFICE}/companies/${companyId}/whatsapp/templates?${q.toString()}`,
+      { authToken },
+    ).then((list) =>
+      Array.isArray(list) ? list.map(mapWhatsAppTemplateCatalogItem) : [],
+    );
+  },
+
+  /** Company member API: same catalog as backoffice, for client campaign UIs. */
+  getCompanyWhatsAppTemplateCatalog: (
+    companyId: number,
+    params?: {
+      useTestCredentialSlot?: boolean;
+      category?: "marketing" | "utility" | null;
+      authToken?: string;
+    },
+  ) => {
+    const { useTestCredentialSlot = false, category, authToken } = params ?? {};
+    const q = new URLSearchParams({
+      useTestCredentialSlot: String(useTestCredentialSlot),
+    });
+    if (category) q.set("category", category);
+    return request<Record<string, unknown>[]>(
+      `v1/companies/${companyId}/whatsapp/templates?${q.toString()}`,
+      { authToken },
+    ).then((list) =>
+      Array.isArray(list) ? list.map(mapWhatsAppTemplateCatalogItem) : [],
+    );
+  },
 
   getCompanyMembers: (companyId: number, authToken?: string) =>
     request<Record<string, unknown>[]>(

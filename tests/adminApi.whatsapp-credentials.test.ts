@@ -143,3 +143,64 @@ test("deactivateCompanyWhatsAppCredentials sends DELETE", async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test("getBackofficeCompanyWhatsAppTemplateCatalog targets Backoffice path and maps PascalCase rows", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    requestedUrl = String(input);
+    return new Response(
+      JSON.stringify([
+        {
+          Name: "hello_world",
+          Language: "en_US",
+          Category: "MARKETING",
+          Status: "APPROVED",
+        },
+      ]),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }) as typeof fetch;
+
+  try {
+    const list = await adminApi.getBackofficeCompanyWhatsAppTemplateCatalog(5, {
+      isTestKey: true,
+      category: "marketing",
+      authToken: "tok-cat",
+    });
+    assert.match(requestedUrl, /\/Backoffice\/companies\/5\/whatsapp\/templates/);
+    assert.match(requestedUrl, /isTestKey=true/);
+    assert.match(requestedUrl, /category=marketing/);
+    assert.equal(list.length, 1);
+    assert.equal(list[0]?.name, "hello_world");
+    assert.equal(list[0]?.language, "en_US");
+    assert.equal(list[0]?.category, "MARKETING");
+    assert.equal(list[0]?.status, "APPROVED");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("getCompanyWhatsAppTemplateCatalog targets v1 path and query flags", async () => {
+  const originalFetch = globalThis.fetch;
+  let requestedUrl = "";
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    requestedUrl = String(input);
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }) as typeof fetch;
+
+  try {
+    await adminApi.getCompanyWhatsAppTemplateCatalog(12, {
+      useTestCredentialSlot: true,
+      category: "utility",
+    });
+    assert.match(requestedUrl, /v1\/companies\/12\/whatsapp\/templates/);
+    assert.match(requestedUrl, /useTestCredentialSlot=true/);
+    assert.match(requestedUrl, /category=utility/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

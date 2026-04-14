@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, usePathname } from 'next/navigation'
 import {
@@ -18,6 +18,7 @@ import {
   adminApi,
   type AdsCampaignResponse,
   type CampaignLogResponse,
+  type WhatsAppTemplateCatalogItem,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import {
@@ -52,6 +53,16 @@ export default function CampaignDetailsPage() {
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<'overview' | 'recipients' | 'actions' | 'logs'>('overview')
   const { confirm, confirmDialog } = useConfirmDialog()
+  const [waCampaignCatalog, setWaCampaignCatalog] = useState<WhatsAppTemplateCatalogItem[]>([])
+  const [waCampaignCatalogLoading, setWaCampaignCatalogLoading] = useState(false)
+  const [waCampaignCatalogError, setWaCampaignCatalogError] = useState('')
+
+  const waCampaignCatalogCategory = useMemo(() => {
+    const ch = (campaign?.campaignChannel ?? '').toLowerCase()
+    if (ch.includes('utility')) return 'utility' as const
+    if (ch.includes('whatsapp')) return 'marketing' as const
+    return null
+  }, [campaign?.campaignChannel])
 
   const loadCampaign = async () => {
     if (Number.isNaN(companyId) || Number.isNaN(campaignId)) {
@@ -86,6 +97,39 @@ export default function CampaignDetailsPage() {
   useEffect(() => {
     loadCampaign()
   }, [companyId, campaignId, env])
+
+  useEffect(() => {
+    if (!campaign || Number.isNaN(companyId) || !waCampaignCatalogCategory) {
+      setWaCampaignCatalog([])
+      setWaCampaignCatalogError('')
+      setWaCampaignCatalogLoading(false)
+      return
+    }
+    let cancelled = false
+    const loadCatalog = async () => {
+      setWaCampaignCatalogLoading(true)
+      setWaCampaignCatalogError('')
+      try {
+        const list = await adminApi.getBackofficeCompanyWhatsAppTemplateCatalog(companyId, {
+          category: waCampaignCatalogCategory,
+        })
+        if (!cancelled) setWaCampaignCatalog(list)
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setWaCampaignCatalog([])
+          setWaCampaignCatalogError(
+            e instanceof Error ? e.message : 'Failed to load Meta template catalog',
+          )
+        }
+      } finally {
+        if (!cancelled) setWaCampaignCatalogLoading(false)
+      }
+    }
+    void loadCatalog()
+    return () => {
+      cancelled = true
+    }
+  }, [campaign, companyId, waCampaignCatalogCategory, env])
 
   const runAction = async (
     fn: () => Promise<AdsCampaignResponse>,
@@ -489,6 +533,36 @@ export default function CampaignDetailsPage() {
               <pre className="mt-2 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
                 {campaign.whatsAppTemplatePayload}
               </pre>
+            </div>
+          ) : null}
+
+          {waCampaignCatalogCategory ? (
+            <div className="mt-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Meta-approved templates (company WABA)
+              </p>
+              {waCampaignCatalogLoading ? (
+                <p className="mt-2 text-xs text-slate-500">Loading catalog…</p>
+              ) : waCampaignCatalogError ? (
+                <p className="mt-2 text-xs text-amber-800">{waCampaignCatalogError}</p>
+              ) : waCampaignCatalog.length ? (
+                <ul className="mt-2 max-h-48 overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                  {[...waCampaignCatalog]
+                    .sort(
+                      (a, b) => a.name.localeCompare(b.name) || a.language.localeCompare(b.language),
+                    )
+                    .map((t) => (
+                      <li key={`${t.name}\t${t.language}`}>
+                        <span className="font-medium text-slate-800">{t.name}</span>{' '}
+                        <span className="text-slate-500">({t.language})</span>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-xs text-slate-500">
+                  No approved templates returned for this channel category.
+                </p>
+              )}
             </div>
           ) : null}
 
