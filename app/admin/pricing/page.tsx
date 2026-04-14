@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Trash2, GripVertical } from 'lucide-react'
 import {
   DndContext,
@@ -26,6 +26,7 @@ import {
   type PricingLadderRateRequest,
   type PricingPlatform,
 } from '@/lib/adminApi'
+import { usePathname, useRouter } from 'next/navigation'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
 
@@ -65,7 +66,7 @@ const createEmptyBand = (displayOrder: number, rowId = createRowId()): EditableB
 function mapBandToEditable(band: PricingLadderBandResponse): EditableBand {
   const editable = createEmptyBand(band.displayOrder, `tier-${band.id}-${band.displayOrder}`)
   editable.thresholdStart = band.thresholdStart
-  editable.thresholdEnd = band.thresholdEnd
+  editable.thresholdEnd = band.thresholdEnd <= 0 ? Math.ceil(band.thresholdStart / 100) * 100 : band.thresholdEnd
   editable.displayOrder = band.displayOrder
   editable.isEnabled = band.isEnabled
   for (const rate of band.rates) {
@@ -115,13 +116,11 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
     if (!Number.isFinite(band.thresholdEnd)) {
       return `Tier ${i + 1}: threshold end must be a valid number.`
     }
-    if (band.thresholdEnd > 0 && band.thresholdStart > band.thresholdEnd) {
-      return `Tier ${i + 1}: threshold start cannot be greater than threshold end.`
-    }
     if (band.thresholdEnd <= 0) {
-      if (i !== ordered.length - 1) {
-        return 'Open-ended band (threshold end <= 0) must be the last band.'
-      }
+      return `Tier ${i + 1}: threshold end must be greater than zero.`
+    }
+    if (band.thresholdStart > band.thresholdEnd) {
+      return `Tier ${i + 1}: threshold start cannot be greater than threshold end.`
     }
 
     for (const platform of platforms) {
@@ -135,15 +134,37 @@ function validateBands(duration: number, bands: EditableBand[]): string | null {
   for (let i = 1; i < ordered.length; i++) {
     const prev = ordered[i - 1]
     const current = ordered[i]
-    if (prev.thresholdEnd <= 0) {
-      return 'Open-ended band must be the final band.'
-    }
     if (current.thresholdStart !== prev.thresholdEnd + 1) {
       return `Gap/overlap detected between band ${i} and band ${i + 1}; bands must be contiguous.`
     }
   }
 
   return null
+}
+
+function parseMaybeNumber(value: string): number | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeBandForCompare(band: EditableBand) {
+  const normalizedRates = platforms.map((platform) => ({
+    platform,
+    amountPerMessage: Number.isFinite(band.rates[platform].amountPerMessage)
+      ? band.rates[platform].amountPerMessage
+      : 'NaN',
+  }))
+  return {
+    thresholdStart: Number.isFinite(band.thresholdStart) ? band.thresholdStart : 'NaN',
+    thresholdEnd: Number.isFinite(band.thresholdEnd) ? band.thresholdEnd : 'NaN',
+    rates: normalizedRates,
+  }
+}
+
+function createBandsSnapshot(bands: EditableBand[]): string {
+  return JSON.stringify(bands.map(normalizeBandForCompare))
 }
 
 function SortableRow({
@@ -177,13 +198,28 @@ function SortableRow({
 
 export default function PricingPage() {
   const { env } = useApiEnv()
+  const router = useRouter()
+  const pathname = usePathname()
   const [duration, setDuration] = useState(30)
   const [bands, setBands] = useState<EditableBand[]>([])
+  const [lastSyncedSnapshot, setLastSyncedSnapshot] = useState('[]')
+  const [importSources, setImportSources] = useState<Array<{ value: number; label: string }>>([])
+  const [selectedImportDuration, setSelectedImportDuration] = useState<number | ''>('')
+  const [importing, setImporting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [focusedField, setFocusedField] = useState<string | null>(null)
+  const [endInputDrafts, setEndInputDrafts] = useState<Record<string, string>>({})
+  const [showUnsavedPrompt, setShowUnsavedPrompt] = useState(false)
+  const [pendingAction, setPendingAction] = useState<
+    | { type: 'durationSwitch'; nextDuration: number }
+    | { type: 'importFromDuration'; sourceDuration: number }
+    | { type: 'routeLeave'; href: string }
+    | null
+  >(null)
+  const bypassGuardRef = useRef(false)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -195,9 +231,37 @@ export default function PricingPage() {
     setSuccess('')
     try {
       const data = await adminApi.getPricingLadder(duration)
-      setBands(data.map(mapBandToEditable))
+      const mappedBands = data.map(mapBandToEditable)
+      setBands(mappedBands)
+      setLastSyncedSnapshot(createBandsSnapshot(mappedBands))
+
+      const sourceResults = await Promise.all(
+        durationOptions
+          .filter((option) => option.value !== duration)
+          .map(async (option) => {
+            try {
+              const sourceData = await adminApi.getPricingLadder(option.value)
+              if (sourceData.length === 0) return null
+              return { value: option.value, label: option.label }
+            } catch {
+              return null
+            }
+          }),
+      )
+      const sourceOptions = sourceResults.filter(
+        (option): option is NonNullable<(typeof sourceResults)[number]> => option !== null,
+      )
+      setImportSources(sourceOptions)
+      setSelectedImportDuration((prev) =>
+        prev !== '' && sourceOptions.some((option) => option.value === prev)
+          ? prev
+          : (sourceOptions[0]?.value ?? ''),
+      )
     } catch (e: unknown) {
       setBands([])
+      setLastSyncedSnapshot('[]')
+      setImportSources([])
+      setSelectedImportDuration('')
       setError(e instanceof Error ? e.message : 'Failed to load pricing ladder')
     } finally {
       setLoading(false)
@@ -209,6 +273,10 @@ export default function PricingPage() {
   }, [env, load])
 
   const orderedBands = useMemo(() => [...bands], [bands])
+  const hasUnsavedChanges = useMemo(
+    () => createBandsSnapshot(bands) !== lastSyncedSnapshot,
+    [bands, lastSyncedSnapshot],
+  )
   const validationError = useMemo(() => validateBands(duration, bands), [duration, bands])
   const fieldValidation = useMemo(() => {
     const validDurations: number[] = durationOptions.map((option) => option.value)
@@ -238,22 +306,16 @@ export default function PricingPage() {
       rateError.set(band, errorByPlatform)
     }
 
-    const openEndedBands = orderedBands.filter((band) => band.thresholdEnd <= 0)
-    if (openEndedBands.length > 1) {
-      for (const band of openEndedBands) addEndError(band, 'Only one open-ended tier is allowed.')
-    }
-
     for (let i = 0; i < orderedBands.length; i++) {
       const band = orderedBands[i]
       if (!Number.isFinite(band.thresholdStart) || band.thresholdStart < 0) {
         addStartError(band, `Tier ${i + 1}: threshold start must be zero or greater.`)
       }
 
-      if (!Number.isFinite(band.thresholdEnd) || (band.thresholdEnd > 0 && band.thresholdStart > band.thresholdEnd)) {
+      if (!Number.isFinite(band.thresholdEnd) || band.thresholdEnd <= 0) {
+        addEndError(band, `Tier ${i + 1}: threshold end must be greater than zero.`)
+      } else if (band.thresholdStart > band.thresholdEnd) {
         addEndError(band, `Tier ${i + 1}: threshold start cannot be greater than threshold end.`)
-      }
-      if (band.thresholdEnd <= 0 && i !== orderedBands.length - 1) {
-        addEndError(band, 'Open-ended tier must be the last tier.')
       }
 
       for (const platform of platforms) {
@@ -267,7 +329,7 @@ export default function PricingPage() {
     for (let i = 1; i < orderedBands.length; i++) {
       const prev = orderedBands[i - 1]
       const current = orderedBands[i]
-      if (prev.thresholdEnd > 0 && current.thresholdStart !== prev.thresholdEnd + 1) {
+      if (current.thresholdStart !== prev.thresholdEnd + 1) {
         addEndError(prev, `Gap/overlap between tier ${i} and tier ${i + 1}; tiers must be contiguous.`)
         addStartError(current, `Gap/overlap between tier ${i} and tier ${i + 1}; tiers must be contiguous.`)
       }
@@ -283,21 +345,17 @@ export default function PricingPage() {
       const lastBand = ordered[ordered.length - 1]
 
       if (!lastBand) {
+        newBand.thresholdEnd = Math.ceil(newBand.thresholdStart / 100) * 100
         return [...prev, newBand]
       }
 
-      if (lastBand.thresholdEnd > 0) {
-        newBand.thresholdStart = lastBand.thresholdEnd + 1
-        return [...prev, newBand]
+      for (const platform of platforms) {
+        newBand.rates[platform].amountPerMessage = lastBand.rates[platform].amountPerMessage
       }
 
-      const roundedEnd = Math.ceil(lastBand.thresholdStart / 100) * 100
-      newBand.thresholdStart = roundedEnd + 1
-      newBand.thresholdEnd = 0
-
-      return prev.map((band) =>
-        band === lastBand ? { ...band, thresholdEnd: roundedEnd } : band,
-      ).concat(newBand)
+      newBand.thresholdStart = lastBand.thresholdEnd + 1
+      newBand.thresholdEnd = Math.ceil(newBand.thresholdStart / 100) * 100
+      return [...prev, newBand]
     })
   }
   const hoverTooltipClass =
@@ -305,6 +363,11 @@ export default function PricingPage() {
 
   const removeBand = (bandToRemove: EditableBand) => {
     setBands((prev) => prev.filter((band) => band.rowId !== bandToRemove.rowId))
+    setEndInputDrafts((prev) => {
+      const next = { ...prev }
+      delete next[bandToRemove.rowId]
+      return next
+    })
   }
 
   const updateBand = (bandToUpdate: EditableBand, patch: Partial<EditableBand>) => {
@@ -345,16 +408,134 @@ export default function PricingPage() {
       const newIndex = prev.findIndex((band) => band.rowId === String(over.id))
       if (oldIndex < 0 || newIndex < 0) return prev
 
-      const reordered = arrayMove(prev, oldIndex, newIndex)
-      const lastIndex = reordered.length - 1
-      return reordered.map((band, index) => {
-        if (index < lastIndex && band.thresholdEnd <= 0) {
-          return { ...band, thresholdEnd: Math.ceil(band.thresholdStart / 100) * 100 }
-        }
-        return band
-      })
+      return arrayMove(prev, oldIndex, newIndex)
     })
   }
+
+  const runImportFromDuration = async (sourceDuration: number) => {
+    setImporting(true)
+    setError('')
+    setSuccess('')
+    try {
+      const sourceData = await adminApi.getPricingLadder(sourceDuration)
+      if (sourceData.length === 0) {
+        setError('Selected duration has no tiers to import.')
+        return
+      }
+
+      const imported = sourceData.map((band, index) => ({
+        ...mapBandToEditable(band),
+        rowId: createRowId(),
+        displayOrder: index + 1,
+      }))
+
+      setBands(imported)
+      setEndInputDrafts({})
+      const sourceLabel =
+        durationOptions.find((option) => option.value === sourceDuration)?.label ??
+        String(sourceDuration)
+      setSuccess(`Imported ${imported.length} tier(s) from ${sourceLabel}.`)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to import tiers')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const requestGuardedAction = (
+    action:
+      | { type: 'durationSwitch'; nextDuration: number }
+      | { type: 'importFromDuration'; sourceDuration: number }
+      | { type: 'routeLeave'; href: string },
+  ) => {
+    if (bypassGuardRef.current || !hasUnsavedChanges) {
+      if (action.type === 'durationSwitch') {
+        setDuration(action.nextDuration)
+      } else if (action.type === 'importFromDuration') {
+        void runImportFromDuration(action.sourceDuration)
+      } else {
+        if (action.href.startsWith('/')) {
+          router.push(action.href)
+        } else {
+          window.location.href = action.href
+        }
+      }
+      return
+    }
+
+    setPendingAction(action)
+    setShowUnsavedPrompt(true)
+  }
+
+  const continuePendingAction = () => {
+    if (!pendingAction) return
+
+    bypassGuardRef.current = true
+    const action = pendingAction
+    setPendingAction(null)
+    setShowUnsavedPrompt(false)
+    setError('')
+    setSuccess('')
+
+    if (action.type === 'durationSwitch') {
+      setDuration(action.nextDuration)
+    } else if (action.type === 'importFromDuration') {
+      void runImportFromDuration(action.sourceDuration).finally(() => {
+        bypassGuardRef.current = false
+      })
+      return
+    } else if (action.href.startsWith('/')) {
+      router.push(action.href)
+    } else {
+      window.location.href = action.href
+    }
+
+    window.setTimeout(() => {
+      bypassGuardRef.current = false
+    }, 0)
+  }
+
+  const cancelPendingAction = () => {
+    setPendingAction(null)
+    setShowUnsavedPrompt(false)
+  }
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges || bypassGuardRef.current) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  useEffect(() => {
+    const onDocumentClick = (event: MouseEvent) => {
+      if (!hasUnsavedChanges || bypassGuardRef.current) return
+      const target = event.target as HTMLElement | null
+      if (!target) return
+      const anchor = target.closest('a[href]') as HTMLAnchorElement | null
+      if (!anchor) return
+      if (anchor.target === '_blank' || anchor.hasAttribute('download')) return
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const hrefAttr = anchor.getAttribute('href')
+      if (!hrefAttr || hrefAttr.startsWith('#')) return
+
+      const url = new URL(anchor.href, window.location.origin)
+      if (url.origin !== window.location.origin) return
+      const nextHref = `${url.pathname}${url.search}${url.hash}`
+      const currentHref = `${pathname}${window.location.search}${window.location.hash}`
+      if (nextHref === currentHref) return
+
+      event.preventDefault()
+      requestGuardedAction({ type: 'routeLeave', href: nextHref })
+    }
+
+    document.addEventListener('click', onDocumentClick, true)
+    return () => document.removeEventListener('click', onDocumentClick, true)
+  }, [hasUnsavedChanges, pathname])
 
   const saveLadder = async () => {
     if (validationError) {
@@ -368,7 +549,9 @@ export default function PricingPage() {
     try {
       const payload = buildSavePayload(duration, bands)
       const saved = await adminApi.replacePricingLadder(payload)
-      setBands(saved.map(mapBandToEditable))
+      const mappedBands = saved.map(mapBandToEditable)
+      setBands(mappedBands)
+      setLastSyncedSnapshot(createBandsSnapshot(mappedBands))
       setSuccess('Pricing ladder saved successfully.')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to save pricing ladder')
@@ -406,7 +589,11 @@ export default function PricingPage() {
               </label>
               <select
                 value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
+                onChange={(e) => {
+                  const nextDuration = Number(e.target.value)
+                  if (nextDuration === duration) return
+                  requestGuardedAction({ type: 'durationSwitch', nextDuration })
+                }}
                 className={`w-40 rounded-lg border bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:ring-2 ${
                   fieldValidation.durationInvalid
                     ? 'border-red-400 ring-red-200 focus:ring-red-300'
@@ -452,11 +639,11 @@ export default function PricingPage() {
                     <th className="w-10 px-3 py-3" aria-label="Reorder" />
                     <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Tier</th>
                     <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Start</th>
-                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">End (∞ = open)</th>
-                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">SMS</th>
-                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Email</th>
-                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">WhatsApp</th>
-                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">WhatsApp Utility</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">End</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">SMS (ZMW)</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Email (ZMW)</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">WhatsApp (ZMW)</th>
+                    <th className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">WhatsApp Utility (ZMW)</th>
                     <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.08em] text-gray-600">Action</th>
                   </tr>
                 </thead>
@@ -464,7 +651,43 @@ export default function PricingPage() {
                   <tbody>
                     <tr>
                       <td colSpan={9} className="text-center py-8 text-gray-500">
-                        No bands configured for this duration.
+                        <div className="mx-auto max-w-xl">
+                          <p>No bands configured for this duration.</p>
+                          <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-left">
+                            <p className="mb-2 text-xs font-medium text-blue-900">Import tiers from another duration</p>
+                            {importSources.length > 0 ? (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <select
+                                  value={selectedImportDuration}
+                                  onChange={(e) => setSelectedImportDuration(Number(e.target.value))}
+                                  className="rounded-md border border-blue-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-[var(--admin-ui-accent)]/20 focus:ring-2"
+                                >
+                                  {importSources.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (selectedImportDuration === '') return
+                                    requestGuardedAction({
+                                      type: 'importFromDuration',
+                                      sourceDuration: selectedImportDuration,
+                                    })
+                                  }}
+                                  disabled={importing || selectedImportDuration === ''}
+                                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                  {importing ? 'Importing...' : 'Import tiers'}
+                                </button>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-blue-900/80">No populated durations available to import from.</p>
+                            )}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   </tbody>
@@ -496,9 +719,13 @@ export default function PricingPage() {
                         <td className="px-3 py-3">
                           <div className="group relative flex items-center gap-2">
                             <input
-                              type="number"
+                              type="text"
                               value={band.thresholdStart}
-                              onChange={(e) => updateBand(band, { thresholdStart: Number(e.target.value) })}
+                              onChange={(e) => {
+                                const parsed = parseMaybeNumber(e.target.value)
+                                if (parsed === null) return
+                                updateBand(band, { thresholdStart: parsed })
+                              }}
                               onFocus={() => setFocusedField(`start-${index}`)}
                               onBlur={() => setFocusedField(null)}
                               className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
@@ -518,17 +745,33 @@ export default function PricingPage() {
                           <div className="flex items-center gap-2">
                             <div className="group relative flex items-center gap-2">
                               <input
-                                type="number"
-                                value={band.thresholdEnd > 0 ? band.thresholdEnd : ''}
-                                onChange={(e) =>
-                                  updateBand(band, {
-                                    thresholdEnd: e.target.value === '' ? 0 : Number(e.target.value),
+                                type="text"
+                                value={endInputDrafts[band.rowId] ?? String(band.thresholdEnd)}
+                                onChange={(e) => {
+                                  const nextValue = e.target.value
+                                  setEndInputDrafts((prev) => ({ ...prev, [band.rowId]: nextValue }))
+
+                                  if (nextValue.trim() === '') {
+                                    updateBand(band, { thresholdEnd: Number.NaN })
+                                    return
+                                  }
+
+                                  const parsed = parseMaybeNumber(nextValue)
+                                  if (parsed === null) {
+                                    updateBand(band, { thresholdEnd: Number.NaN })
+                                    return
+                                  }
+
+                                  updateBand(band, { thresholdEnd: parsed })
+                                  setEndInputDrafts((prev) => {
+                                    const next = { ...prev }
+                                    delete next[band.rowId]
+                                    return next
                                   })
-                                }
+                                }}
                                 onFocus={() => setFocusedField(`end-${index}`)}
                                 onBlur={() => setFocusedField(null)}
-                                disabled={band.thresholdEnd <= 0}
-                                placeholder={band.thresholdEnd <= 0 ? '∞' : ''}
+                                placeholder="End threshold"
                                 className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 ${
                                   fieldValidation.endInvalid.has(band)
                                     ? 'border-red-400 ring-red-200 focus:ring-red-300'
@@ -541,24 +784,6 @@ export default function PricingPage() {
                                 <span className={hoverTooltipClass}>{fieldValidation.endError.get(band)}</span>
                               ) : null}
                             </div>
-                            {index === bands.length - 1 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  updateBand(band, {
-                                    thresholdEnd: band.thresholdEnd <= 0 ? Math.max(band.thresholdStart, 1) : 0,
-                                  })
-                                }
-                                className={`inline-flex min-w-[2.2rem] items-center justify-center rounded-md border px-2 py-1 text-sm font-semibold transition ${
-                                  band.thresholdEnd <= 0
-                                    ? 'border-[var(--admin-ui-accent)]/40 bg-[var(--admin-ui-accent)]/10 text-[var(--admin-ui-accent)]'
-                                    : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                                aria-label={band.thresholdEnd <= 0 ? 'Tier end is open' : 'Set tier end to open'}
-                              >
-                                ∞
-                              </button>
-                            )}
                           </div>
                         </td>
                         {platforms.map((platform) => (
@@ -566,12 +791,13 @@ export default function PricingPage() {
                             <div className="flex items-center">
                               <div className="group relative flex items-center gap-2">
                                 <input
-                                  type="number"
-                                  step="0.0001"
+                                  type="text"
                                   value={band.rates[platform].amountPerMessage}
-                                  onChange={(e) =>
-                                    updateRate(band, platform, { amountPerMessage: Number(e.target.value) })
-                                  }
+                                  onChange={(e) => {
+                                    const parsed = parseMaybeNumber(e.target.value)
+                                    if (parsed === null) return
+                                    updateRate(band, platform, { amountPerMessage: parsed })
+                                  }}
                                   onFocus={() => setFocusedField(`rate-${index}-${platform}`)}
                                   onBlur={() => setFocusedField(null)}
                                   className={`w-28 rounded-md border px-2 py-1 text-sm outline-none focus:ring-2 ${
@@ -615,6 +841,32 @@ export default function PricingPage() {
           )}
         </div>
       </div>
+      {showUnsavedPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
+            <h2 className="text-base font-semibold text-slate-900">Leave without saving?</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              You have unsaved pricing changes. If you proceed, your edits will be lost.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={cancelPendingAction}
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Stay on page
+              </button>
+              <button
+                type="button"
+                onClick={continuePendingAction}
+                className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+              >
+                Proceed and leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
