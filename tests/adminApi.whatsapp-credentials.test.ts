@@ -156,6 +156,7 @@ test("getBackofficeCompanyWhatsAppTemplateCatalog targets Backoffice path and ma
           Language: "en_US",
           Category: "MARKETING",
           Status: "APPROVED",
+          Components: [{ type: "BODY", text: "Hi {{1}}" }],
         },
       ]),
       { status: 200, headers: { "Content-Type": "application/json" } },
@@ -176,6 +177,7 @@ test("getBackofficeCompanyWhatsAppTemplateCatalog targets Backoffice path and ma
     assert.equal(list[0]?.language, "en_US");
     assert.equal(list[0]?.category, "MARKETING");
     assert.equal(list[0]?.status, "APPROVED");
+    assert.deepEqual(list[0]?.components, [{ type: "BODY", text: "Hi {{1}}" }]);
   } finally {
     globalThis.fetch = originalFetch;
   }

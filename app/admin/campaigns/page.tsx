@@ -28,7 +28,7 @@ type SortOption =
   | 'oldest_first'
   | 'name_az'
   | 'name_za'
-type ReviewTab = 'pending' | 'approved' | 'rejected'
+type ReviewTab = 'all' | 'pending' | 'approved' | 'rejected'
 
 function getDateMs(value?: string) {
   if (!value) return Number.NaN
@@ -58,7 +58,7 @@ export default function CampaignsPage() {
   const [approvalFilter, setApprovalFilter] = useState<'all' | 'approved' | 'not_approved'>('all')
   const [companyFilter, setCompanyFilter] = useState('all')
   const [sortBy, setSortBy] = useState<SortOption>('most_recently_sent')
-  const [reviewTab, setReviewTab] = useState<ReviewTab>('pending')
+  const [reviewTab, setReviewTab] = useState<ReviewTab>('all')
 
   useEffect(() => {
     let cancelled = false
@@ -113,7 +113,7 @@ export default function CampaignsPage() {
     const rejected = campaigns.filter(
       (campaign) => !campaign.isApproved && campaign.status.toLowerCase().includes('cancel'),
     ).length
-    return { pending, approved, rejected }
+    return { all: campaigns.length, pending, approved, rejected }
   }, [campaigns])
 
   const companyOptions = useMemo(
@@ -136,9 +136,11 @@ export default function CampaignsPage() {
 
     const filtered = campaigns.filter((campaign) => {
       const normalizedStatus = campaign.status.toLowerCase()
-      if (reviewTab === 'pending' && campaign.isApproved) return false
-      if (reviewTab === 'approved' && !campaign.isApproved) return false
-      if (reviewTab === 'rejected' && (campaign.isApproved || !normalizedStatus.includes('cancel'))) return false
+      if (reviewTab !== 'all') {
+        if (reviewTab === 'pending' && campaign.isApproved) return false
+        if (reviewTab === 'approved' && !campaign.isApproved) return false
+        if (reviewTab === 'rejected' && (campaign.isApproved || !normalizedStatus.includes('cancel'))) return false
+      }
 
       if (companyFilter !== 'all' && campaign.companyName !== companyFilter) return false
       if (statusFilter !== 'all' && campaign.status !== statusFilter) return false
@@ -179,6 +181,26 @@ export default function CampaignsPage() {
         />
 
         <div className="admin-tab-bar" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={reviewTab === 'all'}
+            onClick={() => setReviewTab('all')}
+            className={`admin-tab-bar__tab inline-flex items-center gap-2 ${
+              reviewTab === 'all' ? 'admin-tab-bar__tab--active' : ''
+            }`}
+          >
+            All
+            <span
+              className={`inline-flex min-w-[1.7rem] items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                reviewTab === 'all'
+                  ? 'bg-[#3bb9e4]/20 text-[var(--admin-ui-accent)]'
+                  : 'bg-slate-200 text-slate-600'
+              }`}
+            >
+              {reviewCounts.all}
+            </span>
+          </button>
           <button
             type="button"
             role="tab"

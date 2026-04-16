@@ -49,6 +49,13 @@ import {
   type SubmitCompanyToMnosPayload,
   type WhatsAppTemplateCatalogItem,
 } from '@/lib/adminApi'
+import {
+  parseWaTemplateSelectKey,
+  sortWaCatalogItems,
+  storedTemplateOutsideCatalog,
+  waTemplateSelectKey,
+  waTemplateSelectValueForForm,
+} from '@/lib/waTemplateSelect'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
@@ -98,27 +105,6 @@ function htmlToPlainText(value: string): string {
 function toTitleCaseWord(value: string): string {
   if (!value) return value
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
-}
-
-const WA_TEMPLATE_SELECT_SEP = '\u0001'
-
-function waTemplateSelectKey(name: string, language: string): string {
-  return `${name}${WA_TEMPLATE_SELECT_SEP}${language}`
-}
-
-function parseWaTemplateSelectKey(key: string): { name: string; language: string } | null {
-  if (!key) return null
-  const i = key.indexOf(WA_TEMPLATE_SELECT_SEP)
-  if (i < 0) return null
-  return { name: key.slice(0, i), language: key.slice(i + WA_TEMPLATE_SELECT_SEP.length) }
-}
-
-function sortWaCatalogItems(items: WhatsAppTemplateCatalogItem[]): WhatsAppTemplateCatalogItem[] {
-  return [...items].sort((a, b) => {
-    const byName = a.name.localeCompare(b.name)
-    if (byName !== 0) return byName
-    return a.language.localeCompare(b.language)
-  })
 }
 
 function getGreetingName(recipientName: string, recipientEmail: string): string {
@@ -1289,21 +1275,45 @@ export default function CompanyDetailsPage() {
     }
   }, [company, invalidId, activeTab, waIsTestSlot, env])
 
-  const waMarketingSelectValue = useMemo(() => {
-    const n = waForm.marketingTemplateName.trim()
-    const l = waForm.marketingTemplateLanguage.trim()
-    if (!n || !l) return ''
-    const hit = waCatalogMarketing.some((t) => t.name === n && t.language === l)
-    return hit ? waTemplateSelectKey(n, l) : ''
-  }, [waForm.marketingTemplateName, waForm.marketingTemplateLanguage, waCatalogMarketing])
+  const waMarketingSelectValue = useMemo(
+    () =>
+      waTemplateSelectValueForForm(
+        waForm.marketingTemplateName,
+        waForm.marketingTemplateLanguage,
+        waCatalogMarketing,
+      ),
+    [waForm.marketingTemplateName, waForm.marketingTemplateLanguage, waCatalogMarketing],
+  )
 
-  const waUtilitySelectValue = useMemo(() => {
-    const n = waForm.utilityTemplateName.trim()
-    const l = waForm.utilityTemplateLanguage.trim()
-    if (!n || !l) return ''
-    const hit = waCatalogUtility.some((t) => t.name === n && t.language === l)
-    return hit ? waTemplateSelectKey(n, l) : ''
-  }, [waForm.utilityTemplateName, waForm.utilityTemplateLanguage, waCatalogUtility])
+  const waUtilitySelectValue = useMemo(
+    () =>
+      waTemplateSelectValueForForm(
+        waForm.utilityTemplateName,
+        waForm.utilityTemplateLanguage,
+        waCatalogUtility,
+      ),
+    [waForm.utilityTemplateName, waForm.utilityTemplateLanguage, waCatalogUtility],
+  )
+
+  const waMarketingStoredOutsideCatalog = useMemo(
+    () =>
+      storedTemplateOutsideCatalog(
+        waForm.marketingTemplateName,
+        waForm.marketingTemplateLanguage,
+        waCatalogMarketing,
+      ),
+    [waForm.marketingTemplateName, waForm.marketingTemplateLanguage, waCatalogMarketing],
+  )
+
+  const waUtilityStoredOutsideCatalog = useMemo(
+    () =>
+      storedTemplateOutsideCatalog(
+        waForm.utilityTemplateName,
+        waForm.utilityTemplateLanguage,
+        waCatalogUtility,
+      ),
+    [waForm.utilityTemplateName, waForm.utilityTemplateLanguage, waCatalogUtility],
+  )
 
   const networkRows = useMemo(
     () =>
@@ -2789,7 +2799,8 @@ export default function CompanyDetailsPage() {
 
                 {waCatalogError ? (
                   <p className="text-xs text-amber-800" role="status">
-                    {waCatalogError} You can still type template name and language manually below.
+                    {waCatalogError} Template name and language from the last save are kept until you pick a template from
+                    the catalog.
                   </p>
                 ) : null}
 
@@ -2807,7 +2818,7 @@ export default function CompanyDetailsPage() {
                                 marketingTemplateName: parsed.name,
                                 marketingTemplateLanguage: parsed.language,
                               }
-                            : f,
+                            : { ...f, marketingTemplateName: '', marketingTemplateLanguage: '' },
                         )
                       }}
                       disabled={
@@ -2829,27 +2840,16 @@ export default function CompanyDetailsPage() {
                       ))}
                     </select>
                   </label>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Marketing template name
-                    <input
-                      type="text"
-                      value={waForm.marketingTemplateName}
-                      onChange={(e) => setWaForm((f) => ({ ...f, marketingTemplateName: e.target.value }))}
-                      disabled={!company.isActive || waCredentialLoading}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                    />
-                  </label>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Marketing template language
-                    <input
-                      type="text"
-                      placeholder="en_GB"
-                      value={waForm.marketingTemplateLanguage}
-                      onChange={(e) => setWaForm((f) => ({ ...f, marketingTemplateLanguage: e.target.value }))}
-                      disabled={!company.isActive || waCredentialLoading}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                    />
-                  </label>
+                  {waMarketingStoredOutsideCatalog ? (
+                    <p className="text-xs text-slate-600 sm:col-span-2" role="status">
+                      Saved marketing template{' '}
+                      <span className="font-mono text-slate-800">
+                        {waMarketingStoredOutsideCatalog.name} ({waMarketingStoredOutsideCatalog.language})
+                      </span>{' '}
+                      is not in the current catalog (or catalog is empty). It will be kept on save until you choose
+                      another template.
+                    </p>
+                  ) : null}
                   <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
                     Default marketing image URL
                     <input
@@ -2876,7 +2876,7 @@ export default function CompanyDetailsPage() {
                                 utilityTemplateName: parsed.name,
                                 utilityTemplateLanguage: parsed.language,
                               }
-                            : f,
+                            : { ...f, utilityTemplateName: '', utilityTemplateLanguage: '' },
                         )
                       }}
                       disabled={
@@ -2898,26 +2898,16 @@ export default function CompanyDetailsPage() {
                       ))}
                     </select>
                   </label>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Utility template name
-                    <input
-                      type="text"
-                      value={waForm.utilityTemplateName}
-                      onChange={(e) => setWaForm((f) => ({ ...f, utilityTemplateName: e.target.value }))}
-                      disabled={!company.isActive || waCredentialLoading}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                    />
-                  </label>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Utility template language
-                    <input
-                      type="text"
-                      value={waForm.utilityTemplateLanguage}
-                      onChange={(e) => setWaForm((f) => ({ ...f, utilityTemplateLanguage: e.target.value }))}
-                      disabled={!company.isActive || waCredentialLoading}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900"
-                    />
-                  </label>
+                  {waUtilityStoredOutsideCatalog ? (
+                    <p className="text-xs text-slate-600 sm:col-span-2" role="status">
+                      Saved utility template{' '}
+                      <span className="font-mono text-slate-800">
+                        {waUtilityStoredOutsideCatalog.name} ({waUtilityStoredOutsideCatalog.language})
+                      </span>{' '}
+                      is not in the current catalog (or catalog is empty). It will be kept on save until you choose
+                      another template.
+                    </p>
+                  ) : null}
                   <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
                     Utility button parameter (optional)
                     <input

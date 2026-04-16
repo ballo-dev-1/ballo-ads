@@ -108,7 +108,7 @@ function CompaniesPageContent() {
   const [filterPendingVerification, setFilterPendingVerification] = useState(true)
   const [filterActive, setFilterActive] = useState(true)
   const [filterDeactivated, setFilterDeactivated] = useState(true)
-  const [reviewTab, setReviewTab] = useState<ReviewTab>('pending')
+  const [reviewTab, setReviewTab] = useState<ReviewTab>('all')
   const [filtersPopoverOpen, setFiltersPopoverOpen] = useState(false)
   const filtersPopoverRef = useRef<HTMLDivElement>(null)
   const [selectedIds, setSelectedIds] = useState<number[]>([])

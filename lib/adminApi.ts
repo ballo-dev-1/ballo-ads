@@ -673,6 +673,8 @@ export type WhatsAppTemplateCatalogItem = {
   language: string;
   category?: string | null;
   status: string;
+  /** Meta template `components` (HEADER/BODY/BUTTONS) when the API returns them. */
+  components?: unknown;
 };
 
 export type CompanyWhatsAppCredentialUpsertRequest = {
@@ -1067,11 +1069,16 @@ function mapCompanyWhatsAppCredentialMasked(
 function mapWhatsAppTemplateCatalogItem(
   r: Record<string, unknown>,
 ): WhatsAppTemplateCatalogItem {
+  const components = r.components ?? r.Components;
   return {
     name: String(r.name ?? r.Name ?? ""),
     language: String(r.language ?? r.Language ?? ""),
     category: (r.category ?? r.Category) as string | null | undefined,
     status: String(r.status ?? r.Status ?? ""),
+    components:
+      components !== undefined && components !== null
+        ? (components as WhatsAppTemplateCatalogItem["components"])
+        : undefined,
   };
 }
 
