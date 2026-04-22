@@ -40,6 +40,7 @@ import { LoadingSpinner } from '@/app/components/LoadingSpinner'
 import {
   adminApi,
   type AdsCampaignResponse,
+  type RecurringScheduleResponse,
   type CompanyLeanResponse,
   type CompanyMemberResponse,
   type CompanyMemberRole,
@@ -57,7 +58,11 @@ import {
   waTemplateSelectValueForForm,
 } from '@/lib/waTemplateSelect'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
-import { formatDateRange, getCampaignStatusClasses } from '@/app/admin/utils/campaignDisplay'
+import {
+  formatDateRange,
+  formatRecurringPattern,
+  getCampaignStatusClasses,
+} from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
@@ -505,6 +510,8 @@ export default function CompanyDetailsPage() {
   })
   const [campaigns, setCampaigns] = useState<AdsCampaignResponse[]>([])
   const [campaignsLoading, setCampaignsLoading] = useState(false)
+  const [recurringSchedules, setRecurringSchedules] = useState<RecurringScheduleResponse[]>([])
+  const [recurringLoading, setRecurringLoading] = useState(false)
   const [lifecycleLoading, setLifecycleLoading] = useState(false)
   const [purgeConfirmModalOpen, setPurgeConfirmModalOpen] = useState(false)
   const [purgeConfirmText, setPurgeConfirmText] = useState('')
@@ -603,18 +610,25 @@ export default function CompanyDetailsPage() {
 
     const loadCampaigns = async () => {
       setCampaignsLoading(true)
+      setRecurringLoading(true)
       try {
-        const data = await adminApi.getCompanyCampaignsAll(companyId)
+        const [data, recurring] = await Promise.all([
+          adminApi.getCompanyCampaignsAll(companyId),
+          adminApi.getCompanyRecurringSchedules(companyId).catch(() => []),
+        ])
         if (!cancelled) {
           setCampaigns(data)
+          setRecurringSchedules(recurring)
         }
       } catch {
         if (!cancelled) {
           setCampaigns([])
+          setRecurringSchedules([])
         }
       } finally {
         if (!cancelled) {
           setCampaignsLoading(false)
+          setRecurringLoading(false)
         }
       }
     }
@@ -2531,6 +2545,7 @@ export default function CompanyDetailsPage() {
         ) : null}
 
         {activeTab === 'campaigns' ? (
+        <>
         <SectionCard
           title="Campaigns"
           subtitle={`${campaigns.length} total, ${approvedCampaignsCount} approved`}
@@ -2608,6 +2623,70 @@ export default function CompanyDetailsPage() {
             </div>
           )}
         </SectionCard>
+
+        <SectionCard
+          className="mt-6"
+          title="Recurring schedules"
+          subtitle={`${recurringSchedules.length} definition${recurringSchedules.length === 1 ? '' : 's'}`}
+        >
+          {recurringLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[var(--admin-ui-accent)]" />
+            </div>
+          ) : recurringSchedules.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-8 text-center text-sm text-slate-500">
+              No recurring schedules
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white/90 p-4">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-50 to-white text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <th className="whitespace-nowrap px-3 py-3">Name</th>
+                    <th className="whitespace-nowrap px-3 py-3">Channel / purpose</th>
+                    <th className="whitespace-nowrap px-3 py-3">Pattern</th>
+                    <th className="whitespace-nowrap px-3 py-3">Status</th>
+                    <th className="whitespace-nowrap px-3 py-3">Occurrences</th>
+                    <th className="whitespace-nowrap px-3 py-3">Recent campaign IDs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recurringSchedules.map((row) => (
+                    <tr key={`rec-${row.id}`} className="border-t border-slate-100">
+                      <td className="px-3 py-3 text-slate-800">
+                        <div className="font-medium">{row.name}</div>
+                        <div className="mt-0.5 line-clamp-2 text-xs text-slate-500">{row.campaignMessage}</div>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">
+                        {row.campaignChannel} · {row.campaignPurpose}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-slate-600">
+                        {formatRecurringPattern(row.frequency, row.interval, row.sendTime)}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={classNames(
+                            'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                            getCampaignStatusClasses(row.status),
+                          )}
+                        >
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">{row.occurrencesGenerated}</td>
+                      <td className="px-3 py-3 text-xs text-slate-600">
+                        {row.recentOccurrenceIds.length > 0
+                          ? row.recentOccurrenceIds.join(', ')
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </SectionCard>
+        </>
         ) : null}
 
         {activeTab === 'settings' ? (

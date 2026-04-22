@@ -16,6 +16,9 @@ export const PROD_API_BASE =
 
 const BACKOFFICE = "Backoffice";
 
+/** Must stay aligned with `BackofficeService.GetCampaignsAsync` max page size (500). */
+export const BACKOFFICE_CAMPAIGNS_CHUNK_SIZE = 500;
+
 function inferEnvFromPathname(
   pathname: string | null | undefined,
 ): "dev" | "staging" | "prod" {
@@ -844,6 +847,36 @@ export type AdsCampaignResponse = {
   networkDispatchSummary?: NetworkDispatchSummary;
 };
 
+/** Back office recurring campaign schedule (matches `RecurringScheduleResponse` on API). */
+export type RecurringScheduleResponse = {
+  id: number;
+  companyId: number;
+  creatorId: number;
+  name: string;
+  campaignMessage: string;
+  campaignPurpose: string;
+  campaignChannel: string;
+  mediaFileUrl?: string;
+  whatsAppTemplatePayload?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  frequency: string;
+  interval: number;
+  daysOfWeek?: string;
+  sendTime: string;
+  cronExpression?: string;
+  occurrenceDurationMinutes: number;
+  startsOn: string;
+  endsOn?: string;
+  maxOccurrences?: number;
+  status: string;
+  occurrencesGenerated: number;
+  lastOccurrenceAt?: string;
+  nextOccurrenceAt?: string;
+  recentOccurrenceIds: number[];
+  createdAt: string;
+};
+
 export type CampaignLogResponse = {
   id: number;
   campaignId: number;
@@ -1175,6 +1208,73 @@ function mapAdsCampaignResponse(
           })(),
         }
       : undefined,
+  };
+}
+
+function mapRecurringScheduleResponse(
+  r: Record<string, unknown>,
+): RecurringScheduleResponse {
+  const recentRaw = (r.RecentOccurrenceIds ?? r.recentOccurrenceIds) as unknown;
+  const recentIds = Array.isArray(recentRaw)
+    ? recentRaw.map((x) => Number(x))
+    : [];
+
+  const sendTimeRaw = r.SendTime ?? r.sendTime;
+  let sendTime = "";
+  if (typeof sendTimeRaw === "string") {
+    sendTime = sendTimeRaw;
+  } else if (
+    sendTimeRaw &&
+    typeof sendTimeRaw === "object" &&
+    "hour" in (sendTimeRaw as object)
+  ) {
+    const t = sendTimeRaw as {
+      hour?: number;
+      minute?: number;
+      second?: number;
+    };
+    const h = String(t.hour ?? 0).padStart(2, "0");
+    const m = String(t.minute ?? 0).padStart(2, "0");
+    const s = String(t.second ?? 0).padStart(2, "0");
+    sendTime = `${h}:${m}:${s}`;
+  }
+
+  return {
+    id: Number(r.Id ?? r.id ?? 0),
+    companyId: Number(r.CompanyId ?? r.companyId ?? 0),
+    creatorId: Number(r.CreatorId ?? r.creatorId ?? 0),
+    name: String(r.Name ?? r.name ?? ""),
+    campaignMessage: String(r.CampaignMessage ?? r.campaignMessage ?? ""),
+    campaignPurpose: String(r.CampaignPurpose ?? r.campaignPurpose ?? ""),
+    campaignChannel: String(r.CampaignChannel ?? r.campaignChannel ?? ""),
+    mediaFileUrl: (r.MediaFileUrl ?? r.mediaFileUrl) as string | undefined,
+    whatsAppTemplatePayload: (r.WhatsAppTemplatePayload ??
+      r.whatsAppTemplatePayload) as string | undefined,
+    ctaLabel: (r.CtaLabel ?? r.ctaLabel) as string | undefined,
+    ctaUrl: (r.CtaUrl ?? r.ctaUrl) as string | undefined,
+    frequency: String(r.Frequency ?? r.frequency ?? ""),
+    interval: Number(r.Interval ?? r.interval ?? 1),
+    daysOfWeek: (r.DaysOfWeek ?? r.daysOfWeek) as string | undefined,
+    sendTime,
+    cronExpression: (r.CronExpression ?? r.cronExpression) as string | undefined,
+    occurrenceDurationMinutes: Number(
+      r.OccurrenceDurationMinutes ?? r.occurrenceDurationMinutes ?? 0,
+    ),
+    startsOn: String(r.StartsOn ?? r.startsOn ?? ""),
+    endsOn: (r.EndsOn ?? r.endsOn) as string | undefined,
+    maxOccurrences: (r.MaxOccurrences ?? r.maxOccurrences) as number | undefined,
+    status: String(r.Status ?? r.status ?? ""),
+    occurrencesGenerated: Number(
+      r.OccurrencesGenerated ?? r.occurrencesGenerated ?? 0,
+    ),
+    lastOccurrenceAt: (r.LastOccurrenceAt ?? r.lastOccurrenceAt) as
+      | string
+      | undefined,
+    nextOccurrenceAt: (r.NextOccurrenceAt ?? r.nextOccurrenceAt) as
+      | string
+      | undefined,
+    recentOccurrenceIds: recentIds.filter((n) => Number.isFinite(n)),
+    createdAt: String(r.CreatedAt ?? r.createdAt ?? ""),
   };
 }
 
@@ -2421,26 +2521,52 @@ export const adminApi = {
       },
     ).then(mapAdsCampaignResponse),
 
-  getCompanyCampaignsAll: (
+  getCompanyCampaignsAll: async (
     companyId: number,
     params?: { id?: number; pageSize?: number; pageNumber?: number; query?: string },
     authToken?: string,
-  ) => {
-    const search = new URLSearchParams();
-    if (params?.id != null) search.set("Id", String(params.id));
-    if (params?.pageSize != null)
-      search.set("PageSize", String(params.pageSize));
-    if (params?.pageNumber != null)
-      search.set("PageNumber", String(params.pageNumber));
-    if (params?.query) search.set("Query", params.query);
-    const qs = search.toString();
-    const path = qs
-      ? `${BACKOFFICE}/companies/${companyId}/campaigns?${qs}`
-      : `${BACKOFFICE}/companies/${companyId}/campaigns`;
-    return request<Record<string, unknown>[]>(path, { authToken }).then(
-      (list) => list.map(mapAdsCampaignResponse),
+  ): Promise<AdsCampaignResponse[]> => {
+    const fetchPage = async (pageNumber: number, pageSize: number) => {
+      const search = new URLSearchParams();
+      if (params?.id != null) search.set("Id", String(params.id));
+      search.set("PageSize", String(pageSize));
+      search.set("PageNumber", String(pageNumber));
+      if (params?.query) search.set("Query", params.query);
+      const path = `${BACKOFFICE}/companies/${companyId}/campaigns?${search.toString()}`;
+      const list = await request<Record<string, unknown>[]>(path, { authToken });
+      return list.map(mapAdsCampaignResponse);
+    };
+
+    if (params?.id != null) {
+      const pageSize = params.pageSize ?? 10;
+      const pageNumber = params.pageNumber ?? 1;
+      return fetchPage(pageNumber, pageSize);
+    }
+
+    const chunkSize = Math.min(
+      params?.pageSize ?? BACKOFFICE_CAMPAIGNS_CHUNK_SIZE,
+      BACKOFFICE_CAMPAIGNS_CHUNK_SIZE,
     );
+
+    const combined: AdsCampaignResponse[] = [];
+    let pageNumber = 1;
+    while (true) {
+      const page = await fetchPage(pageNumber, chunkSize);
+      combined.push(...page);
+      if (page.length < chunkSize) break;
+      pageNumber += 1;
+    }
+    return combined;
   },
+
+  getCompanyRecurringSchedules: (
+    companyId: number,
+    authToken?: string,
+  ): Promise<RecurringScheduleResponse[]> =>
+    request<Record<string, unknown>[]>(
+      `${BACKOFFICE}/companies/${companyId}/campaigns/recurring`,
+      { authToken },
+    ).then((list) => list.map(mapRecurringScheduleResponse)),
 
   getCampaignById: async (
     companyId: number,

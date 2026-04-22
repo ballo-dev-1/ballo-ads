@@ -8,17 +8,23 @@ import {
   adminApi,
   type AdsCampaignResponse,
   type CompanyLeanResponse,
+  type RecurringScheduleResponse,
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import {
   classNames,
   formatDateRange,
+  formatRecurringPattern,
   getCampaignStatusClasses,
 } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 
 type CampaignWithCompany = AdsCampaignResponse & {
+  companyName: string
+}
+
+type RecurringWithCompany = RecurringScheduleResponse & {
   companyName: string
 }
 
@@ -50,6 +56,7 @@ export default function CampaignsPage() {
   const basePath = getAdminBasePath(pathname)
   const { env } = useApiEnv()
   const [campaigns, setCampaigns] = useState<CampaignWithCompany[]>([])
+  const [recurringRows, setRecurringRows] = useState<RecurringWithCompany[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -72,26 +79,37 @@ export default function CampaignsPage() {
 
         const campaignsPerCompany = await Promise.all(
           companies.map(async (company: CompanyLeanResponse) => {
+            const companyName = company.name || `Company #${company.id}`
             try {
-              const companyCampaigns = await adminApi.getCompanyCampaignsAll(company.id)
-              return companyCampaigns.map((campaign) => ({
-                ...campaign,
-                companyName: company.name || `Company #${company.id}`,
-              }))
+              const [companyCampaigns, schedules] = await Promise.all([
+                adminApi.getCompanyCampaignsAll(company.id),
+                adminApi.getCompanyRecurringSchedules(company.id).catch(() => []),
+              ])
+              return {
+                campaigns: companyCampaigns.map((campaign) => ({
+                  ...campaign,
+                  companyName,
+                })),
+                recurring: schedules.map((row) => ({
+                  ...row,
+                  companyName,
+                })),
+              }
             } catch {
-              return []
+              return { campaigns: [], recurring: [] as RecurringWithCompany[] }
             }
           }),
         )
 
         if (!cancelled) {
-          const flattened = campaignsPerCompany.flat()
-          setCampaigns(flattened)
+          setCampaigns(campaignsPerCompany.flatMap((x) => x.campaigns))
+          setRecurringRows(campaignsPerCompany.flatMap((x) => x.recurring))
         }
       } catch (e: unknown) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : 'Failed to load campaigns')
           setCampaigns([])
+          setRecurringRows([])
         }
       } finally {
         if (!cancelled) {
@@ -121,10 +139,13 @@ export default function CampaignsPage() {
     [campaigns],
   )
 
-  const statusOptions = useMemo(
-    () => Array.from(new Set(campaigns.map((campaign) => campaign.status))).sort((a, b) => a.localeCompare(b)),
-    [campaigns],
-  )
+  const statusOptions = useMemo(() => {
+    const merged = [
+      ...campaigns.map((c) => c.status),
+      ...recurringRows.map((r) => r.status),
+    ]
+    return Array.from(new Set(merged)).sort((a, b) => a.localeCompare(b))
+  }, [campaigns, recurringRows])
 
   const channelOptions = useMemo(
     () => Array.from(new Set(campaigns.map((campaign) => campaign.campaignChannel))).sort((a, b) => a.localeCompare(b)),
@@ -168,6 +189,38 @@ export default function CampaignsPage() {
       return b.name.localeCompare(a.name)
     })
   }, [approvalFilter, campaigns, channelFilter, companyFilter, reviewTab, searchQuery, sortBy, statusFilter])
+
+  const visibleRecurring = useMemo(() => {
+    if (reviewTab !== 'all') return []
+
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+
+    return recurringRows
+      .filter((row) => {
+        if (companyFilter !== 'all' && row.companyName !== companyFilter) return false
+        if (statusFilter !== 'all' && row.status !== statusFilter) return false
+        if (channelFilter !== 'all' && row.campaignChannel !== channelFilter) return false
+        if (!normalizedQuery) return true
+        return (
+          row.name.toLowerCase().includes(normalizedQuery) ||
+          row.companyName.toLowerCase().includes(normalizedQuery) ||
+          row.campaignMessage.toLowerCase().includes(normalizedQuery) ||
+          row.campaignPurpose.toLowerCase().includes(normalizedQuery)
+        )
+      })
+      .sort((a, b) => {
+        const ca = new Date(a.createdAt).getTime()
+        const cb = new Date(b.createdAt).getTime()
+        return cb - ca || b.id - a.id
+      })
+  }, [
+    channelFilter,
+    companyFilter,
+    recurringRows,
+    reviewTab,
+    searchQuery,
+    statusFilter,
+  ])
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -330,7 +383,16 @@ export default function CampaignsPage() {
             </select>
           </div>
           <p className="mt-3 text-xs text-gray-500">
-            Showing {visibleCampaigns.length} of {campaigns.length} campaigns.
+            Showing {visibleCampaigns.length} of {campaigns.length} campaigns
+            {recurringRows.length > 0
+              ? ` · ${visibleRecurring.length} of ${recurringRows.length} recurring schedules`
+              : ''}
+            .
+            {reviewTab !== 'all' ? (
+              <span className="ml-1 text-slate-500">
+                Recurring schedules are shown on the &quot;All&quot; review tab only.
+              </span>
+            ) : null}
           </p>
         </section>
 
@@ -428,6 +490,71 @@ export default function CampaignsPage() {
             </table>
           </div>
         )}
+
+        {!loading && visibleRecurring.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="mb-3 text-lg font-semibold text-slate-900">Recurring schedules</h2>
+            <p className="mb-4 text-xs text-slate-500">
+              Master definitions for recurring sends (not individual occurrence campaigns). Open the company to
+              manage schedules in context.
+            </p>
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-transparent p-4">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-50 to-white text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <th className="whitespace-nowrap px-3 py-3">Name</th>
+                    <th className="whitespace-nowrap px-3 py-3">Company</th>
+                    <th className="whitespace-nowrap px-3 py-3">Channel / purpose</th>
+                    <th className="whitespace-nowrap px-3 py-3">Pattern</th>
+                    <th className="whitespace-nowrap px-3 py-3">Status</th>
+                    <th className="whitespace-nowrap px-3 py-3">Occurrences</th>
+                    <th className="whitespace-nowrap px-3 py-3">Next run</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleRecurring.map((row) => (
+                    <tr key={`rec:${row.companyId}:${row.id}`} className="border-t border-slate-100">
+                      <td className="px-3 py-3 text-slate-800">
+                        <div className="font-medium">{row.name}</div>
+                        <div className="mt-0.5 line-clamp-2 text-xs text-slate-500">{row.campaignMessage}</div>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">
+                        <Link
+                          href={`${basePath}/companies/${row.companyId}`}
+                          className="text-[var(--admin-ui-accent)] hover:underline"
+                        >
+                          {row.companyName}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">
+                        {row.campaignChannel} · {row.campaignPurpose}
+                      </td>
+                      <td className="px-3 py-3 text-xs text-slate-600">
+                        {formatRecurringPattern(row.frequency, row.interval, row.sendTime)}
+                      </td>
+                      <td className="px-3 py-3">
+                        <span
+                          className={classNames(
+                            'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
+                            getCampaignStatusClasses(row.status),
+                          )}
+                        >
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-slate-700">{row.occurrencesGenerated}</td>
+                      <td className="px-3 py-3 text-xs text-slate-600">
+                        {row.nextOccurrenceAt
+                          ? new Date(row.nextOccurrenceAt).toLocaleString()
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   )

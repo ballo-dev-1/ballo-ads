@@ -1,3 +1,4 @@
+/** Roadmap: admin UI completeness only; no product roadmap row. */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { adminApi } from "@/lib/adminApi";
@@ -154,6 +155,123 @@ test("getCompanyCampaignsAll maps recipients and delivery statuses", async () =>
     assert.equal(campaigns[0].recipients?.length, 2);
     assert.equal(campaigns[0].recipients?.[0].status, "Sent");
     assert.equal(campaigns[0].recipients?.[1].status, "Failed");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("getCompanyCampaignsAll fetches every page when Id filter is not used", async () => {
+  const originalFetch = globalThis.fetch;
+  const pageSize = 2;
+  let callCount = 0;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    assert.match(url, /Backoffice\/companies\/7\/campaigns/);
+    const u = new URL(url, "https://example.test");
+    assert.equal(u.searchParams.get("PageSize"), String(pageSize));
+    callCount += 1;
+    const page = u.searchParams.get("PageNumber");
+    if (page === "1") {
+      return createJsonResponse([
+        {
+          Id: 1,
+          Name: "A",
+          CampaignMessage: "m",
+          CampaignPurpose: "SmsAdvert",
+          CampaignChannel: "Sms",
+          CompanyId: 7,
+          CreatorId: 9,
+          StartDate: "2026-03-20T10:00:00Z",
+          EndDate: "2026-03-21T10:00:00Z",
+          Status: "Active",
+          IsApproved: true,
+        },
+        {
+          Id: 2,
+          Name: "B",
+          CampaignMessage: "m",
+          CampaignPurpose: "SmsAdvert",
+          CampaignChannel: "Sms",
+          CompanyId: 7,
+          CreatorId: 9,
+          StartDate: "2026-03-20T10:00:00Z",
+          EndDate: "2026-03-21T10:00:00Z",
+          Status: "Active",
+          IsApproved: true,
+        },
+      ]);
+    }
+    if (page === "2") {
+      return createJsonResponse([
+        {
+          Id: 3,
+          Name: "C",
+          CampaignMessage: "m",
+          CampaignPurpose: "SmsAdvert",
+          CampaignChannel: "Sms",
+          CompanyId: 7,
+          CreatorId: 9,
+          StartDate: "2026-03-20T10:00:00Z",
+          EndDate: "2026-03-21T10:00:00Z",
+          Status: "Completed",
+          IsApproved: true,
+        },
+      ]);
+    }
+    return createJsonResponse([]);
+  }) as typeof fetch;
+
+  try {
+    const campaigns = await adminApi.getCompanyCampaignsAll(7, { pageSize });
+    assert.equal(callCount, 2);
+    assert.equal(campaigns.length, 3);
+    assert.deepEqual(
+      campaigns.map((c) => c.id).sort((a, b) => a - b),
+      [1, 2, 3],
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("getCompanyRecurringSchedules maps PascalCase schedule", async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = String(input);
+    assert.match(url, /Backoffice\/companies\/7\/campaigns\/recurring$/);
+    return createJsonResponse([
+      {
+        Id: 6,
+        CompanyId: 7,
+        CreatorId: 2,
+        Name: "BalloAds",
+        CampaignMessage: "Dear @name",
+        CampaignPurpose: "PersonalizedMessage",
+        CampaignChannel: "Sms",
+        Frequency: "Daily",
+        Interval: 3,
+        SendTime: "09:45:00",
+        OccurrenceDurationMinutes: 60,
+        StartsOn: "2026-04-16T07:33:55Z",
+        EndsOn: "2026-04-17T22:00:00Z",
+        Status: "Cancelled",
+        OccurrencesGenerated: 0,
+        RecentOccurrenceIds: [],
+        CreatedAt: "2026-04-16T07:33:55Z",
+      },
+    ]);
+  }) as typeof fetch;
+
+  try {
+    const rows = await adminApi.getCompanyRecurringSchedules(7);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].id, 6);
+    assert.equal(rows[0].name, "BalloAds");
+    assert.equal(rows[0].interval, 3);
+    assert.equal(rows[0].sendTime, "09:45:00");
+    assert.equal(rows[0].status, "Cancelled");
   } finally {
     globalThis.fetch = originalFetch;
   }

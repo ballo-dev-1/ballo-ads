@@ -39,3 +39,15 @@ export function formatDateRange(startDate?: string, endDate?: string) {
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return '—'
   return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`
 }
+
+/** Human-readable recurrence line for admin recurring schedules. */
+export function formatRecurringPattern(
+  frequency: string,
+  interval: number,
+  sendTime: string,
+): string {
+  const f = frequency.trim() || 'custom'
+  const i = Number.isFinite(interval) && interval > 0 ? interval : 1
+  const timePart = sendTime?.trim() ? sendTime : '—'
+  return `${f} every ${i} · ${timePart}`
+}
