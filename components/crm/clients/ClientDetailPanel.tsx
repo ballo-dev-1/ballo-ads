@@ -10,6 +10,7 @@ import { formatRelativeTime, getHealthColor, getHealthTier } from "@/lib/crmHelp
 
 interface ClientDetail {
   usageEvents?: Array<{ id: string; eventType: string; occurredAt: string }>;
+  contacts?: Array<{ id: string | number; email?: string; phone?: string; name?: string }>;
 }
 
 export function ClientDetailPanel() {
@@ -30,6 +31,7 @@ export function ClientDetailPanel() {
   });
 
   const events = detail?.usageEvents || [];
+  const contacts = detail?.contacts || [];
 
   const saveNote = useMutation({
     mutationFn: () => clientsApi.addNote(client!.id, note.trim()),
@@ -203,6 +205,48 @@ export function ClientDetailPanel() {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <SectionLabel>Contacts used by CRM</SectionLabel>
+            {contacts.length === 0 ? (
+              <p className="text-[12.5px] text-slate-500 py-2">No contacts available for this company.</p>
+            ) : (
+              <div className="space-y-2">
+                {contacts.map((contact) => {
+                  const hasPhone = !!contact.phone?.trim();
+                  const hasEmail = !!contact.email?.trim();
+                  const label = contact.name?.trim() || "Unnamed contact";
+
+                  return (
+                    <div
+                      key={String(contact.id)}
+                      className="bg-white/[0.04] border border-white/[0.08] rounded-[10px] p-3"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="text-[12.5px] text-slate-200 font-medium truncate">{label}</div>
+                        <div className="flex items-center gap-1.5">
+                          {hasPhone && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border border-blue-500/20 bg-blue-500/10 text-blue-300">
+                              SMS / WhatsApp
+                            </span>
+                          )}
+                          {hasEmail && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border border-violet-500/20 bg-violet-500/10 text-violet-300">
+                              Email
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-[11.5px] text-slate-400 space-y-1">
+                        <div>Phone: {hasPhone ? contact.phone : "Not set"}</div>
+                        <div>Email: {hasEmail ? contact.email : "Not set"}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div>
