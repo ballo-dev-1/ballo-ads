@@ -1,0 +1,135 @@
+/* BalloAds CRM — scoped styles (applied within .crm-root only) */
+
+@import "reactflow/dist/style.css";
+
+.crm-root {
+  --crm-bg: #0b1437;
+  --crm-panel: #111c47;
+  --crm-accent: #3b82f6;
+  background: var(--crm-bg);
+  color: #cbd5e1;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.crm-root .font-syne {
+  font-family: var(--font-syne), sans-serif;
+}
+.crm-root .font-mono {
+  font-family: var(--font-dm-mono), ui-monospace, monospace;
+}
+
+.crm-root *,
+.crm-root *::before,
+.crm-root *::after {
+  box-sizing: border-box;
+}
+
+.crm-root ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.crm-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.crm-root ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+.crm-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.crm-root .crm-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  padding: 8px 11px;
+  font-size: 13px;
+  color: #e2e8f0;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.crm-root .crm-input:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+}
+.crm-root .crm-input option {
+  background: #111c47;
+  color: #e2e8f0;
+}
+
+.crm-root table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.crm-root th,
+.crm-root td {
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crm-root .react-flow__background {
+  background: #0b1437 !important;
+}
+.crm-root .react-flow__edge-path {
+  stroke: rgba(59, 130, 246, 0.45) !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 5 3;
+}
+.crm-root .react-flow__controls {
+  background: #111c47 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 9px !important;
+}
+.crm-root .react-flow__controls button {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+}
+.crm-root .react-flow__controls button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+.crm-root .react-flow__minimap {
+  background: #111c47 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 9px !important;
+}
+.crm-root .react-flow__handle {
+  background: #3b82f6 !important;
+  border: 2px solid #0b1437 !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+.crm-root .react-flow__handle:hover {
+  transform: scale(1.3);
+}
+
+.crm-root [data-tt] {
+  cursor: help;
+}
+.crm-root [data-tt].ni,
+.crm-root [data-tt] button {
+  cursor: pointer;
+}
+
+.crm-ncp-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  color: #e2e8f0;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.crm-ncp-input:focus {
+  border-color: #3b82f6;
+}

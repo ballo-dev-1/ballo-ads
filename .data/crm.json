@@ -1,0 +1,51 @@
+{
+  "users": [
+    {
+      "id": "543fac94-bb05-4143-8f33-174ac07ff0b5",
+      "name": "CRM Admin",
+      "email": "crm@balloads.com",
+      "passwordHash": "6f2cb9dd8f4b65e24e1c3f3fa5bc57982349237f11abceacd45bbcb74d621c25",
+      "role": "admin",
+      "isInternal": true,
+      "createdAt": "2026-04-24T10:09:53.674Z"
+    }
+  ],
+  "clients": [
+    {
+      "id": "58c26fa7-e9a6-4efa-afb0-6a482c0744a0",
+      "companyName": "Acme Insurance Zambia",
+      "industry": "Insurance",
+      "region": "Lusaka, Zambia",
+      "balloadsAccountId": "acct_1001",
+      "planTier": "Pro",
+      "accountStatus": "active",
+      "healthScore": 78,
+      "creditsRemaining": 4200,
+      "lastActiveAt": "2026-04-24T10:09:53.676Z",
+      "signedUpAt": "2026-04-24T10:09:53.676Z",
+      "syncedAt": "2026-04-24T10:09:53.676Z"
+    },
+    {
+      "id": "a66f1284-e310-40fb-a9b2-b78e992aac17",
+      "companyName": "Green Retail Hub",
+      "industry": "Retail",
+      "region": "Ndola, Zambia",
+      "balloadsAccountId": "acct_1002",
+      "planTier": "Standard",
+      "accountStatus": "at_risk",
+      "healthScore": 33,
+      "creditsRemaining": 500,
+      "lastActiveAt": "2026-03-31T10:09:53.676Z",
+      "signedUpAt": "2026-04-24T10:09:53.676Z",
+      "syncedAt": "2026-04-24T10:09:53.676Z"
+    }
+  ],
+  "segments": [],
+  "journeys": [],
+  "campaigns": [],
+  "messageLogs": [],
+  "trackedLinks": [],
+  "linkClicks": [],
+  "clientAttributes": [],
+  "auditLogs": []
+}
