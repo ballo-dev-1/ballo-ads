@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CrmClient {
+  id                String   @id @default(uuid())
+  companyName       String   @map("company_name")
+  industry          String
+  region            String   @default("Lusaka, Zambia")
+  balloadsAccountId String   @unique @map("balloads_account_id")
+  planTier          String   @map("plan_tier")
+  accountStatus     String   @map("account_status") @default("active")
+  healthScore       Int      @map("health_score") @default(100)
+  creditsRemaining  Int      @map("credits_remaining") @default(0)
+  lastActiveAt      DateTime? @map("last_active_at")
+  signedUpAt        DateTime @map("signed_up_at")
+  syncedAt          DateTime @map("synced_at") @updatedAt
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("crm_clients")
+}
+
+model CrmSegment {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  type            String    @default("dynamic")
+  rules           Json      @default("[]")
+  clientCount     Int       @map("client_count") @default(0)
+  lastEvaluatedAt DateTime? @map("last_evaluated_at")
+  archivedAt      DateTime? @map("archived_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@map("crm_segments")
+}
+
+model CrmJourney {
+  id              String   @id @default(uuid())
+  name            String
+  status          String   @default("draft")
+  triggerType     String   @map("trigger_type")
+  triggerConfig   Json     @map("trigger_config") @default("{}")
+  flowDefinition  Json     @map("flow_definition") @default("{\"nodes\":[],\"edges\":[]}")
+  entrySegmentId  String?  @map("entry_segment_id")
+  maxDurationDays Int      @map("max_duration_days") @default(7)
+  entryMode       String   @map("entry_mode") @default("once_per_client")
+  createdBy       String   @map("created_by")
+  activatedAt     DateTime? @map("activated_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("crm_journeys")
+}
+
+model CrmCampaign {
+  id          String    @id @default(uuid())
+  name        String
+  journeyId   String?   @map("journey_id")
+  segmentId   String?   @map("segment_id")
+  channel     String
+  status      String    @default("draft")
+  content     Json      @default("{}")
+  scheduledAt DateTime? @map("scheduled_at")
+  sentAt      DateTime? @map("sent_at")
+  userLimit   Int       @map("user_limit") @default(100000)
+  execSpeed   Int       @map("exec_speed") @default(500)
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("crm_campaigns")
+}
+
+model CrmAuditLog {
+  id         String   @id @default(uuid())
+  actorId    String   @map("actor_id")
+  actorEmail String   @map("actor_email")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  payload    Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("crm_audit_logs")
+}
