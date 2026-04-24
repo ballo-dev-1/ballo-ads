@@ -28,7 +28,7 @@ export default function ClientsScreen() {
           ...(search ? { search } : {}),
           limit: 100,
         })
-        .then((r) => r.data),
+        .then((r) => (Array.isArray(r) ? r : r.data)),
     staleTime: 30_000,
   });
 

@@ -44,7 +44,7 @@ export default function DashboardScreen() {
         ]);
         if (!mounted) return;
         setOverview(ov as DashboardOverview);
-        setAtRiskClients((clients.data as Client[]) || []);
+        setAtRiskClients((Array.isArray(clients) ? clients : (clients.data as Client[])) || []);
         const arr = (msgs as ChannelRow[]) || [];
         setChannelData(arr[arr.length - 1] || null);
       } finally {
