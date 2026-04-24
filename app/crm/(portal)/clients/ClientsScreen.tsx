@@ -9,6 +9,10 @@ import { formatRelativeTime } from "@/lib/crmHelpers";
 import type { Client } from "@/lib/crmTypes";
 
 const INDUSTRIES = ["All", "Insurance", "Finance", "Retail", "Government", "Tech", "Other"];
+const INDUSTRY_API_MAP: Record<string, string> = {
+  Finance: "FinancialServices",
+  Tech: "InformationTechnology",
+};
 
 export default function ClientsScreen() {
   const selectClient = useClientStore((s) => s.selectClient);
@@ -20,7 +24,7 @@ export default function ClientsScreen() {
     queryFn: () =>
       clientsApi
         .list({
-          ...(industry !== "All" ? { industry } : {}),
+          ...(industry !== "All" ? { industry: INDUSTRY_API_MAP[industry] ?? industry } : {}),
           ...(search ? { search } : {}),
           limit: 100,
         })
