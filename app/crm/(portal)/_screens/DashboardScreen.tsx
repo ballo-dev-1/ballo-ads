@@ -64,13 +64,11 @@ export default function DashboardScreen() {
   return (
     <>
       <div className="grid grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total clients" value={overview?.totalClients ?? 0} delta="↑ 4 this month" deltaType="up" />
-        <StatCard label="Active journeys" value={overview?.activeJourneys ?? 0} delta="↑ 2 this week" deltaType="up" />
+        <StatCard label="Total clients" value={overview?.totalClients ?? 0} />
+        <StatCard label="Active journeys" value={overview?.activeJourneys ?? 0} />
         <StatCard
-          label="Messages sent"
+          label="Messages sent (MTD)"
           value={(overview?.messagesSentMtd ?? 0).toLocaleString()}
-          delta="↑ 18% vs last month"
-          deltaType="up"
         />
         <StatCard label="At-risk clients" value={overview?.atRiskCount ?? 0} delta="Needs attention" deltaType="down" />
       </div>
@@ -227,14 +225,16 @@ function StatCard({
 }: {
   label: string;
   value: string | number;
-  delta: string;
-  deltaType: "up" | "down";
+  delta?: string;
+  deltaType?: "up" | "down";
 }) {
   return (
     <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
       <div className="text-[11px] text-slate-500 uppercase tracking-[0.05em] mb-1.5">{label}</div>
       <div className="font-syne text-[26px] font-bold text-slate-100 leading-none mb-1.5">{value}</div>
-      <div className={`text-[11px] ${deltaType === "up" ? "text-emerald-400" : "text-red-400"}`}>{delta}</div>
+      {delta && (
+        <div className={`text-[11px] ${deltaType === "up" ? "text-emerald-400" : "text-red-400"}`}>{delta}</div>
+      )}
     </div>
   );
 }

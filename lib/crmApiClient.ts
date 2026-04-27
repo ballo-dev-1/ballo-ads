@@ -155,7 +155,7 @@ export const segmentsApi = {
   list: () => crmApi.get<Segment[]>("/segments"),
   get: (id: string) => crmApi.get<Segment>(`/segments/${id}`),
   getClients: (id: string) => crmApi.get<{ data: Client[]; count: number }>(`/segments/${id}/clients`),
-  create: (data: { name: string; description?: string; rules: SegmentRule[] }) =>
+  create: (data: { name: string; description?: string; rules: SegmentRule[]; manualContacts?: string[] }) =>
     crmApi.post<Segment>("/segments", data),
   delete: (id: string) => crmApi.delete<{ message: string }>(`/segments/${id}`),
   estimateReach: (rules: SegmentRule[]) =>

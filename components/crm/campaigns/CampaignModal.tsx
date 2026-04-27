@@ -2,8 +2,9 @@
 
 import React, { useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/lib/crmStores";
-import { campaignsApi, linksApi, uploadsApi } from "@/lib/crmApiClient";
+import { campaignsApi, linksApi, uploadsApi, segmentsApi } from "@/lib/crmApiClient";
 import { Button, FormField, Input, Modal, Select, Textarea } from "@/components/crm/ui/Primitives";
 import type { Channel } from "@/lib/crmTypes";
 
@@ -15,6 +16,31 @@ const CHANNELS: { id: Channel; label: string; icon: string }[] = [
   { id: "popup", label: "Popup", icon: "🔔" },
   { id: "inbox", label: "Inbox", icon: "📥" },
 ];
+
+function parseCsvContacts(file: File): Promise<string[]> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length < 2) { resolve([]); return; }
+      const headers = lines[0].toLowerCase().split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+      const phoneIdx = headers.findIndex((h) => h === "phone" || h.includes("phone"));
+      const emailIdx = headers.findIndex((h) => h === "email" || h.includes("email"));
+      const contacts: string[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+        const phone = phoneIdx >= 0 ? cols[phoneIdx] : "";
+        const email = emailIdx >= 0 ? cols[emailIdx] : "";
+        if (phone) contacts.push(phone);
+        else if (email) contacts.push(email);
+      }
+      resolve(contacts);
+    };
+    reader.onerror = () => resolve([]);
+    reader.readAsText(file);
+  });
+}
 
 export function CampaignModal() {
   const closeModal = useAppStore((s) => s.closeModal);
@@ -43,12 +69,18 @@ export function CampaignModal() {
   const [inboxMsg, setInboxMsg] = useState("");
   const [shortLink, setShortLink] = useState("");
   const [linkInput, setLinkInput] = useState("");
-  const [sendWhen, setSendWhen] = useState<"now" | "later" | "recurring">("now");
+  const [sendWhen, setSendWhen] = useState<"now" | "later">("now");
   const [schedDate, setSchedDate] = useState("");
   const [schedTime, setSchedTime] = useState("09:00");
   const [userLimit, setUserLimit] = useState(1000);
+  const [execSpeed, setExecSpeed] = useState(500);
   const [launching, setLaunching] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const { data: segments = [] } = useQuery({
+    queryKey: ["segments"],
+    queryFn: () => segmentsApi.list(),
+  });
 
   const addPill = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -95,13 +127,50 @@ export function CampaignModal() {
     }
   };
 
-  const launch = async () => {
-    if (!name.trim()) {
-      toast.error("Campaign name required");
-      return;
+  const validateStep = (): boolean => {
+    if (step === 0) {
+      if (!name.trim()) { toast.error("Campaign name is required"); return false; }
     }
+    if (step === 1) {
+      if (audMode === "segment" && !segmentId) { toast.error("Please select a segment"); return false; }
+      if (audMode === "manual" && manualContacts.length === 0) { toast.error("Add at least one contact"); return false; }
+      if (audMode === "csv" && !csvFile) { toast.error("Please upload a CSV file"); return false; }
+    }
+    if (step === 2) {
+      if ((channel === "sms" || channel === "whatsapp") && !msg.trim()) {
+        toast.error("Message text is required"); return false;
+      }
+      if (channel === "email") {
+        if (!subject.trim()) { toast.error("Subject line is required"); return false; }
+        if (!emailBody.trim()) { toast.error("Email body is required"); return false; }
+      }
+      if (channel === "popup" && !popTitle.trim()) { toast.error("Popup title is required"); return false; }
+      if (channel === "inbox" && !inboxTitle.trim()) { toast.error("Inbox title is required"); return false; }
+    }
+    if (step === 3 && sendWhen === "later" && !schedDate) {
+      toast.error("Please select a send date"); return false;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateStep()) setStep((s) => s + 1);
+  };
+
+  const launch = async () => {
+    if (!validateStep()) return;
     setLaunching(true);
     try {
+      let csvContactIds: string[] | undefined;
+      if (audMode === "csv" && csvFile) {
+        csvContactIds = await parseCsvContacts(csvFile);
+        if (csvContactIds.length === 0) {
+          toast.error("No valid contacts found in CSV. Ensure columns include 'phone' or 'email'.");
+          setLaunching(false);
+          return;
+        }
+      }
+
       const content: Record<string, unknown> = {};
       if (channel === "sms" || channel === "whatsapp") {
         content.msg = msg;
@@ -124,10 +193,12 @@ export function CampaignModal() {
         name,
         channel,
         segmentId: audMode === "segment" ? segmentId : undefined,
-        manualContactIds: audMode === "manual" ? manualContacts : undefined,
+        manualContactIds:
+          audMode === "manual" ? manualContacts : audMode === "csv" ? csvContactIds : undefined,
         content,
         scheduledAt: sendWhen === "later" ? `${schedDate}T${schedTime}:00` : null,
         userLimit,
+        execSpeed,
       });
 
       toast.success(`Campaign "${name}" launched!`);
@@ -142,6 +213,9 @@ export function CampaignModal() {
   const steps = ["Channel", "Audience", "Content", "Schedule"];
   const charCount = msg.length;
   const smsParts = Math.ceil(charCount / 160) || 1;
+
+  const selectedSegmentName =
+    segments.find((s) => s.id === segmentId)?.name || segmentId || "No segment selected";
 
   return (
     <Modal
@@ -161,7 +235,7 @@ export function CampaignModal() {
           )}
           <Button
             variant="primary"
-            onClick={step === 3 ? launch : () => setStep((s) => s + 1)}
+            onClick={step === 3 ? launch : handleNext}
             disabled={launching}
           >
             {step === 3 ? (launching ? "Launching..." : "Launch campaign ✓") : "Next →"}
@@ -238,11 +312,15 @@ export function CampaignModal() {
             <FormField label="Select segment">
               <Select value={segmentId} onChange={(e) => setSegmentId(e.target.value)}>
                 <option value="">Choose a segment...</option>
-                <option value="at-risk">At-risk clients (7)</option>
-                <option value="inactive">Inactive 30+ days (12)</option>
-                <option value="low-credits">Low credits (9)</option>
-                <option value="all">All clients (48)</option>
+                {segments.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.clientCount} clients)
+                  </option>
+                ))}
               </Select>
+              {segments.length === 0 && (
+                <p className="text-[11px] text-slate-500 mt-1">No segments found. Create one in the Segments tab first.</p>
+              )}
             </FormField>
           )}
 
@@ -436,10 +514,9 @@ export function CampaignModal() {
       {step === 3 && (
         <div className="space-y-4">
           <FormField label="When to send">
-            <Select value={sendWhen} onChange={(e) => setSendWhen(e.target.value as "now" | "later" | "recurring")}>
+            <Select value={sendWhen} onChange={(e) => setSendWhen(e.target.value as "now" | "later")}>
               <option value="now">Send immediately</option>
               <option value="later">Schedule for specific date/time</option>
-              <option value="recurring">Recurring</option>
             </Select>
           </FormField>
           {sendWhen === "later" && (
@@ -462,7 +539,7 @@ export function CampaignModal() {
               />
             </FormField>
             <FormField label="Execution speed">
-              <Select defaultValue="500">
+              <Select value={String(execSpeed)} onChange={(e) => setExecSpeed(parseInt(e.target.value))}>
                 <option value="100">100 per minute</option>
                 <option value="500">500 per minute</option>
                 <option value="1000">1000 per minute</option>
@@ -483,19 +560,20 @@ export function CampaignModal() {
                 Audience:{" "}
                 <span className="text-slate-100">
                   {audMode === "segment"
-                    ? segmentId || "No segment selected"
+                    ? selectedSegmentName
+                    : audMode === "csv"
+                    ? `CSV: ${csvFile?.name || "No file"}`
                     : `${manualContacts.length} manual contacts`}
                 </span>
               </div>
               <div>
                 Schedule:{" "}
                 <span className="text-slate-100">
-                  {sendWhen === "now"
-                    ? "Immediately"
-                    : sendWhen === "later"
-                    ? `${schedDate} ${schedTime}`
-                    : "Recurring"}
+                  {sendWhen === "now" ? "Immediately" : `${schedDate} at ${schedTime}`}
                 </span>
+              </div>
+              <div>
+                Speed: <span className="text-slate-100">{execSpeed} msgs/min · limit {userLimit.toLocaleString()}</span>
               </div>
             </div>
           </div>

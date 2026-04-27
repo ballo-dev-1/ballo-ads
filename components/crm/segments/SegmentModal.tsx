@@ -70,7 +70,13 @@ export function SegmentModal() {
   };
 
   const create = useMutation({
-    mutationFn: () => segmentsApi.create({ name, description, rules }),
+    mutationFn: () =>
+      segmentsApi.create({
+        name,
+        description,
+        rules,
+        ...(manualContacts.length > 0 ? { manualContacts } : {}),
+      }),
     onSuccess: () => {
       toast.success("Segment created");
       qc.invalidateQueries({ queryKey: ["segments"] });
