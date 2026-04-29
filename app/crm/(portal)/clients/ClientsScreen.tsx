@@ -14,25 +14,33 @@ const INDUSTRY_API_MAP: Record<string, string> = {
   Tech: "InformationTechnology",
 };
 
+const PAGE_SIZE = 50;
+
 export default function ClientsScreen() {
   const selectClient = useClientStore((s) => s.selectClient);
   const [industry, setIndustry] = useState("All");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["clients", industry, search],
+  // Reset to page 1 when filters change
+  React.useEffect(() => { setPage(1); }, [industry, search]);
+
+  const { data: rawData, isLoading } = useQuery({
+    queryKey: ["clients", industry, search, page],
     queryFn: () =>
-      clientsApi
-        .list({
-          ...(industry !== "All" ? { industry: INDUSTRY_API_MAP[industry] ?? industry } : {}),
-          ...(search ? { search } : {}),
-          limit: 100,
-        })
-        .then((r) => (Array.isArray(r) ? r : r.data)),
+      clientsApi.list({
+        ...(industry !== "All" ? { industry: INDUSTRY_API_MAP[industry] ?? industry } : {}),
+        ...(search ? { search } : {}),
+        limit: PAGE_SIZE,
+        page,
+      }),
     staleTime: 30_000,
   });
 
-  const clients: Client[] = data || [];
+  const clients: Client[] = Array.isArray(rawData) ? rawData : (rawData?.data ?? []);
+  const total: number = Array.isArray(rawData) ? clients.length : (rawData?.total ?? clients.length);
+  const hasMore: boolean = Array.isArray(rawData) ? false : (rawData?.hasMore ?? false);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div>
@@ -63,7 +71,7 @@ export default function ClientsScreen() {
       </div>
 
       <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] overflow-hidden">
-        <table className="w-full">
+        <table className="w-full" aria-label="Clients">
           <thead>
             <tr className="border-b border-white/[0.08]">
               {["Company", "Plan", "Industry", "Health", "Last active", "Credits", "Status"].map((label) => (
@@ -97,6 +105,31 @@ export default function ClientsScreen() {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.06] mt-0">
+          <span className="text-[12px] text-slate-500">
+            {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, total)} of {total} clients
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || isLoading}
+              className="px-3 py-1.5 text-[12px] bg-white/[0.05] text-slate-300 border border-white/[0.1] rounded-[7px] hover:bg-white/[0.09] disabled:opacity-40 transition-colors"
+            >
+              ← Prev
+            </button>
+            <span className="text-[12px] text-slate-400 px-2">{page} / {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasMore || isLoading}
+              className="px-3 py-1.5 text-[12px] bg-white/[0.05] text-slate-300 border border-white/[0.1] rounded-[7px] hover:bg-white/[0.09] disabled:opacity-40 transition-colors"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

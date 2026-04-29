@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Send, Zap, FileText, AlertTriangle } from "lucide-react";
+import { X, Send, Zap, FileText, AlertTriangle, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
-import { clientsApi } from "@/lib/crmApiClient";
+import { clientsApi, journeysApi } from "@/lib/crmApiClient";
 import { useAppStore, useClientStore } from "@/lib/crmStores";
 import { formatRelativeTime, getHealthColor, getHealthTier } from "@/lib/crmHelpers";
+import type { Journey } from "@/lib/crmTypes";
 
 interface ClientDetail {
   usageEvents?: Array<{ id: string; eventType: string; occurredAt: string }>;
@@ -21,6 +22,16 @@ export function ClientDetailPanel() {
   const navigate = useAppStore((state) => state.navigate);
   const qc = useQueryClient();
   const [note, setNote] = useState("");
+  const [enrolOpen, setEnrolOpen] = useState(false);
+  const [selectedJourneyId, setSelectedJourneyId] = useState("");
+
+  const { data: journeysData } = useQuery({
+    queryKey: ["journeys"],
+    queryFn: () => journeysApi.list(),
+    enabled: enrolOpen,
+    staleTime: 30_000,
+  });
+  const activeJourneys: Journey[] = (journeysData || []).filter((j) => j.status === "active");
 
   const client = selectedClient;
 
@@ -49,6 +60,26 @@ export function ClientDetailPanel() {
       qc.invalidateQueries({ queryKey: ["clients"] });
       closeDetailPanel();
     },
+  });
+
+  const syncClient = useMutation({
+    mutationFn: () => clientsApi.sync(client!.id),
+    onSuccess: () => {
+      toast.success("Client synced");
+      qc.invalidateQueries({ queryKey: ["client-detail", client?.id] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
+    },
+    onError: () => toast.error("Sync failed"),
+  });
+
+  const enrolMutation = useMutation({
+    mutationFn: () => journeysApi.enrol("manual", client!.id),
+    onSuccess: () => {
+      toast.success("Client enrolled in journey");
+      setEnrolOpen(false);
+      setSelectedJourneyId("");
+    },
+    onError: () => toast.error("Failed to enrol client"),
   });
 
   if (!isDetailPanelOpen || !client) return null;
@@ -176,7 +207,56 @@ export function ClientDetailPanel() {
                 label="Send message"
                 onClick={() => openModal({ id: "campaign", props: { clientId: client.id } })}
               />
-              <ActionBtn icon={<Zap size={13} />} label="Enrol in journey" onClick={() => navigate("journeys")} />
+              <ActionBtn
+                icon={<Zap size={13} />}
+                label="Enrol in journey"
+                onClick={() => setEnrolOpen((o) => !o)}
+              />
+            </div>
+
+            {enrolOpen && (
+              <div className="mb-3 p-3 bg-white/[0.04] border border-white/[0.08] rounded-[10px] space-y-2">
+                <p className="text-[11px] text-slate-400 font-medium">Select active journey</p>
+                <select
+                  className="w-full bg-white/[0.06] border border-white/[0.1] rounded-[7px] px-2.5 py-1.5 text-[12.5px] text-slate-200 outline-none focus:border-blue-500/50"
+                  value={selectedJourneyId}
+                  onChange={(e) => setSelectedJourneyId(e.target.value)}
+                >
+                  <option value="">Choose a journey...</option>
+                  {activeJourneys.map((j) => (
+                    <option key={j.id} value={j.id}>{j.name}</option>
+                  ))}
+                </select>
+                {activeJourneys.length === 0 && (
+                  <p className="text-[11px] text-slate-500">No active journeys. Activate one first.</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => enrolMutation.mutate()}
+                    disabled={!selectedJourneyId || enrolMutation.isPending}
+                    className="flex-1 py-1.5 text-[12px] bg-[#3B82F6] text-white rounded-[7px] hover:bg-blue-600 disabled:opacity-40 font-medium transition-colors"
+                  >
+                    {enrolMutation.isPending ? "Enrolling..." : "Enrol"}
+                  </button>
+                  <button
+                    onClick={() => { setEnrolOpen(false); setSelectedJourneyId(""); }}
+                    className="px-3 py-1.5 text-[12px] text-slate-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-2">
+              <button
+                onClick={() => syncClient.mutate()}
+                disabled={syncClient.isPending}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[12px] bg-white/[0.05] text-slate-300 border border-white/[0.1] rounded-[7px] hover:bg-white/[0.09] disabled:opacity-40 transition-colors font-medium"
+              >
+                <RefreshCw size={12} className={syncClient.isPending ? "animate-spin" : ""} />
+                {syncClient.isPending ? "Syncing..." : "Sync client data"}
+              </button>
             </div>
 
             <div>

@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/lib/crmStores";
 import { campaignsApi, linksApi, uploadsApi, segmentsApi } from "@/lib/crmApiClient";
+import type { TrackedLink } from "@/lib/crmTypes";
 import { Button, FormField, Input, Modal, Select, Textarea } from "@/components/crm/ui/Primitives";
 import type { Channel } from "@/lib/crmTypes";
 
@@ -68,6 +69,8 @@ export function CampaignModal() {
   const [inboxTitle, setInboxTitle] = useState("");
   const [inboxMsg, setInboxMsg] = useState("");
   const [shortLink, setShortLink] = useState("");
+  const [shortCode, setShortCode] = useState("");
+  const [linkStats, setLinkStats] = useState<(TrackedLink & { clicks?: number }) | null>(null);
   const [linkInput, setLinkInput] = useState("");
   const [sendWhen, setSendWhen] = useState<"now" | "later">("now");
   const [schedDate, setSchedDate] = useState("");
@@ -94,6 +97,10 @@ export function CampaignModal() {
   };
 
   const handleCSV = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("CSV file must be under 10 MB");
+      return;
+    }
     setCsvFile(file);
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -108,7 +115,10 @@ export function CampaignModal() {
     try {
       const res = await linksApi.create(linkInput);
       const sl = res.shortUrl ?? "";
+      const sc = res.shortCode ?? "";
       setShortLink(sl);
+      setShortCode(sc);
+      setLinkStats(null);
       if (channel === "sms" || channel === "whatsapp") setMsg((p) => `${p} ${sl}`.trim());
       else if (channel === "email") setEmailBody((p) => `${p}\n${sl}`);
       toast.success(`Tracked link: ${sl}`);
@@ -117,7 +127,21 @@ export function CampaignModal() {
     }
   };
 
+  const fetchLinkStats = async () => {
+    if (!shortCode) return;
+    try {
+      const res = await linksApi.stats(shortCode);
+      setLinkStats(res);
+    } catch {
+      toast.error("Failed to load link stats");
+    }
+  };
+
   const handlePopupImg = async (file: File) => {
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be under 2 MB");
+      return;
+    }
     try {
       const res = await uploadsApi.uploadImage(file, "popup-images");
       setPopImgUrl(res.url ?? "");
@@ -500,11 +524,25 @@ export function CampaignModal() {
               <div className="mt-2 bg-blue-500/[0.08] border border-blue-500/20 rounded-lg p-3 text-[12px]">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-slate-300">Shortened link (tracked)</span>
-                  <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full">
-                    CTR tracked
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full">
+                      CTR tracked
+                    </span>
+                    <button
+                      onClick={fetchLinkStats}
+                      className="text-[10px] text-blue-400 hover:text-blue-300 underline transition-colors"
+                    >
+                      View stats
+                    </button>
+                  </div>
                 </div>
                 <code className="text-blue-300 font-mono">{shortLink}</code>
+                {linkStats && (
+                  <div className="mt-2 pt-2 border-t border-blue-500/20 flex gap-4 text-[11px] text-slate-400">
+                    <span>Clicks: <strong className="text-slate-200">{linkStats.clickCount ?? 0}</strong></span>
+                    <span>Created: <strong className="text-slate-200">{new Date(linkStats.createdAt).toLocaleDateString()}</strong></span>
+                  </div>
+                )}
               </div>
             )}
           </FormField>
