@@ -1034,8 +1034,8 @@ function mapCompanyLeanResponse(
     signatureImageUrl: (r.SignatureImageUrl ??
       r.signatureImageUrl) as string | undefined,
     senderIdApproval: (() => {
-      const src = r.senderIdApproval ?? r.SenderIdApproval ?? {};
-      const nets = src.networks ?? src.Networks ?? {};
+      const src = (r.senderIdApproval ?? r.SenderIdApproval ?? {}) as Record<string, unknown>;
+      const nets = (src.networks ?? src.Networks ?? {}) as Record<string, unknown>;
       return {
         global: Boolean(src.global ?? src.Global),
         networks: {
