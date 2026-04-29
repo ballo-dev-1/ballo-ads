@@ -193,7 +193,7 @@ function SenderIdStatusBadge({
     )
   }
 
-  if (company.isApprovedSenderId) {
+  if (company.senderIdApproval.global) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -574,7 +574,7 @@ export default function CompanyDetailsPage() {
         const data = await adminApi.getCompanyById(numericId)
         if (!cancelled) {
           setCompany(data)
-          if (data.senderId && !data.isApprovedSenderId) {
+          if (data.senderId && !data.senderIdApproval.global) {
             await notifyBackofficeEvent("sender_id_approval_request", {
               companyId: data.id,
               companyName: data.name ?? "Company",
@@ -725,7 +725,7 @@ export default function CompanyDetailsPage() {
   }
 
   const handleSetSenderIdPending = () => {
-    if (company?.isApprovedSenderId) {
+    if (company?.senderIdApproval.global) {
       handleApproveSenderId(false, { intent: 'pending' })
     } else {
       setRejectedSenderId(false)
@@ -1098,7 +1098,7 @@ export default function CompanyDetailsPage() {
     if (!company?.senderId) {
       return 'No sender ID'
     }
-    if (company.isApprovedSenderId) {
+    if (company.senderIdApproval.global) {
       return 'Approved'
     }
     if (rejectedSenderId) {
@@ -1337,21 +1337,21 @@ export default function CompanyDetailsPage() {
           label: 'MTN',
           link: 'https://www.mtn.zm/',
           logoSrc: 'https://www.google.com/s2/favicons?domain_url=https%3A%2F%2Fwww.mtn.zm%2F&sz=128',
-          approved: company?.isApprovedSenderIdMtn ?? false,
+          approved: company?.senderIdApproval.networks.mtn ?? false,
         },
         {
           key: 'Airtel' as const,
           label: 'Airtel',
           link: 'https://commons.wikimedia.org/wiki/File:Bharti_Airtel_Logo.svg',
           logoSrc: 'https://upload.wikimedia.org/wikipedia/commons/f/fb/Bharti_Airtel_Logo.svg',
-          approved: company?.isApprovedSenderIdAirtel ?? false,
+          approved: company?.senderIdApproval.networks.airtel ?? false,
         },
         {
           key: 'Zamtel' as const,
           label: 'Zamtel',
           link: 'https://upload.wikimedia.org/wikipedia/en/a/a1/ZAMTEL_LOGO.gif',
           logoSrc: 'https://upload.wikimedia.org/wikipedia/en/a/a1/ZAMTEL_LOGO.gif',
-          approved: company?.isApprovedSenderIdZamtel ?? false,
+          approved: company?.senderIdApproval.networks.zamtel ?? false,
         },
         {
           key: 'Zedmobile' as const,
@@ -1359,14 +1359,14 @@ export default function CompanyDetailsPage() {
           link: 'https://play-lh.googleusercontent.com/5TdLGU6zf9J9MppdR9ROoTMaLyxlUkivwfIEDu7Q929pllvdVT1yCkbXJ81p9fgt8Ow',
           logoSrc:
             'https://play-lh.googleusercontent.com/5TdLGU6zf9J9MppdR9ROoTMaLyxlUkivwfIEDu7Q929pllvdVT1yCkbXJ81p9fgt8Ow',
-          approved: company?.isApprovedSenderIdZedmobile ?? false,
+          approved: company?.senderIdApproval.networks.zedmobile ?? false,
         },
       ] as const,
     [
-      company?.isApprovedSenderIdAirtel,
-      company?.isApprovedSenderIdMtn,
-      company?.isApprovedSenderIdZamtel,
-      company?.isApprovedSenderIdZedmobile,
+      company?.senderIdApproval.networks.airtel,
+      company?.senderIdApproval.networks.mtn,
+      company?.senderIdApproval.networks.zamtel,
+      company?.senderIdApproval.networks.zedmobile,
     ],
   )
 

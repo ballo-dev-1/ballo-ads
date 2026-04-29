@@ -717,11 +717,15 @@ export type CompanyLeanResponse = {
   profileImageUrl?: string;
   registrationDocumentUrl?: string;
   signatureImageUrl?: string;
-  isApprovedSenderId: boolean;
-  isApprovedSenderIdMtn?: boolean;
-  isApprovedSenderIdAirtel?: boolean;
-  isApprovedSenderIdZamtel?: boolean;
-  isApprovedSenderIdZedmobile?: boolean;
+  senderIdApproval: {
+    global: boolean;
+    networks: {
+      mtn: boolean;
+      airtel: boolean;
+      zamtel: boolean;
+      zedmobile: boolean;
+    };
+  };
   reviewStatus?: CompanyReviewStatus;
   reviewReason?: string;
   createdAt?: string;
@@ -1029,16 +1033,19 @@ function mapCompanyLeanResponse(
       r.registrationDocumentUrl) as string | undefined,
     signatureImageUrl: (r.SignatureImageUrl ??
       r.signatureImageUrl) as string | undefined,
-    isApprovedSenderId: (r.IsApprovedSenderId ??
-      r.isApprovedSenderId) as boolean,
-    isApprovedSenderIdMtn: (r.IsApprovedSenderIdMtn ??
-      r.isApprovedSenderIdMtn) as boolean | undefined,
-    isApprovedSenderIdAirtel: (r.IsApprovedSenderIdAirtel ??
-      r.isApprovedSenderIdAirtel) as boolean | undefined,
-    isApprovedSenderIdZamtel: (r.IsApprovedSenderIdZamtel ??
-      r.isApprovedSenderIdZamtel) as boolean | undefined,
-    isApprovedSenderIdZedmobile: (r.IsApprovedSenderIdZedmobile ??
-      r.isApprovedSenderIdZedmobile) as boolean | undefined,
+    senderIdApproval: (() => {
+      const src = r.senderIdApproval ?? r.SenderIdApproval ?? {};
+      const nets = src.networks ?? src.Networks ?? {};
+      return {
+        global: Boolean(src.global ?? src.Global),
+        networks: {
+          mtn: Boolean(nets.mtn ?? nets.Mtn),
+          airtel: Boolean(nets.airtel ?? nets.Airtel),
+          zamtel: Boolean(nets.zamtel ?? nets.Zamtel),
+          zedmobile: Boolean(nets.zedmobile ?? nets.Zedmobile),
+        },
+      };
+    })(),
     reviewStatus: (r.ReviewStatus ?? r.reviewStatus) as CompanyReviewStatus | undefined,
     reviewReason: (r.ReviewReason ?? r.reviewReason) as string | undefined,
     createdAt: (r.CreatedAt ?? r.createdAt) as string | undefined,

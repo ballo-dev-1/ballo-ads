@@ -281,7 +281,7 @@ function Dashboard() {
             companies.filter((company) => getCompanyReviewStatus(company) === 'Pending').length,
           )
           setPendingPhoneNumbersCount(
-            companies.filter((company) => Boolean(company.senderId) && !company.isApprovedSenderId).length,
+            companies.filter((company) => Boolean(company.senderId) && !company.senderIdApproval.global).length,
           )
 
           const campaignsPerCompany = await Promise.allSettled(

@@ -96,7 +96,7 @@ function buildOverviewSnapshotFromData(
   let senderStatusLabel = 'Pending'
   if (!company.senderId) {
     senderStatusLabel = 'No sender ID'
-  } else if (company.isApprovedSenderId) {
+  } else if (company.senderIdApproval.global) {
     senderStatusLabel = 'Approved'
   }
   const approvedRate =
