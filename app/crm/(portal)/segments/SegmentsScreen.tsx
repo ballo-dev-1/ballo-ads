@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { Trash2 } from "lucide-react";
 import { segmentsApi } from "@/lib/crmApiClient";
 import { useAppStore, useClientStore } from "@/lib/crmStores";
 import { formatRelativeTime } from "@/lib/crmHelpers";
@@ -11,11 +13,28 @@ export default function SegmentsScreen() {
   const [selectedSegId, setSelectedSegId] = useState<string | null>(null);
   const openModal = useAppStore((s) => s.openModal);
   const selectClient = useClientStore((s) => s.selectClient);
+  const qc = useQueryClient();
 
   const { data: segsData } = useQuery({
     queryKey: ["segments"],
     queryFn: () => segmentsApi.list().then((r) => r as Segment[]),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => segmentsApi.delete(id),
+    onSuccess: (_, id) => {
+      toast.success("Segment deleted");
+      if (selectedSegId === id) setSelectedSegId(null);
+      qc.invalidateQueries({ queryKey: ["segments"] });
+    },
+    onError: () => toast.error("Failed to delete segment"),
+  });
+
+  const handleDelete = (e: React.MouseEvent, seg: Segment) => {
+    e.stopPropagation();
+    if (!window.confirm(`Delete segment "${seg.name}"? This cannot be undone.`)) return;
+    deleteMutation.mutate(seg.id);
+  };
 
   const segments = segsData || [];
   const selectedSeg = segments.find((s) => s.id === selectedSegId) || segments[0];
@@ -38,13 +57,20 @@ export default function SegmentsScreen() {
           <div
             key={seg.id}
             onClick={() => setSelectedSegId(seg.id)}
-            className={`bg-white/[0.04] border rounded-[14px] p-4 cursor-pointer transition-all ${
+            className={`bg-white/[0.04] border rounded-[14px] p-4 cursor-pointer transition-all relative group ${
               selectedSeg?.id === seg.id
                 ? "border-blue-500/50 bg-blue-500/[0.06]"
                 : "border-white/[0.08] hover:border-blue-500/30 hover:bg-blue-500/[0.03]"
             }`}
           >
-            <div className="text-[13.5px] font-semibold text-slate-200 font-syne mb-1.5">{seg.name}</div>
+            <button
+              onClick={(e) => handleDelete(e, seg)}
+              disabled={deleteMutation.isPending}
+              className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-[5px] text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-40"
+            >
+              <Trash2 size={12} />
+            </button>
+            <div className="text-[13.5px] font-semibold text-slate-200 font-syne mb-1.5 pr-6">{seg.name}</div>
             <div className="text-[22px] font-bold text-blue-300 font-syne">{seg.clientCount}</div>
             <div className="text-[11.5px] text-slate-500 mt-1.5 mb-2.5 leading-relaxed">{seg.description}</div>
             <div className="flex flex-wrap gap-1">

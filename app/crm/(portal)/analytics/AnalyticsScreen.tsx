@@ -3,15 +3,10 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, TrendingDown } from "lucide-react";
 import { analyticsApi, journeysApi } from "@/lib/crmApiClient";
 import type { Journey } from "@/lib/crmTypes";
 
 export default function AnalyticsScreen() {
-  useQuery({
-    queryKey: ["analytics-overview"],
-    queryFn: () => analyticsApi.overview(),
-  });
   const { data: retention } = useQuery({
     queryKey: ["analytics-retention"],
     queryFn: () => analyticsApi.retention(),
@@ -41,25 +36,10 @@ export default function AnalyticsScreen() {
   });
 
   const stats = [
-    {
-      label: "Avg open rate",
-      value: `${retention?.avgOpenRate ?? "—"}%`,
-      delta: "↑ 4pp vs last month",
-      up: true,
-    },
-    { label: "Avg click rate", value: `${retention?.ctr ?? "8.2"}%`, delta: "↑ 1.1pp", up: true },
-    {
-      label: "Churn rate",
-      value: `${retention?.churnRate ?? "—"}%`,
-      delta: "↓ 0.4pp improvement",
-      up: true,
-    },
-    {
-      label: "Retention score",
-      value: `${retention?.retentionScore ?? "—"}%`,
-      delta: "↑ 3pp",
-      up: true,
-    },
+    { label: "Avg open rate", value: retention?.avgOpenRate != null ? `${retention.avgOpenRate}%` : "—" },
+    { label: "Avg click rate", value: retention?.ctr != null ? `${retention.ctr}%` : "—" },
+    { label: "Churn rate", value: retention?.churnRate != null ? `${retention.churnRate}%` : "—" },
+    { label: "Retention score", value: retention?.retentionScore != null ? `${retention.retentionScore}%` : "—" },
   ];
 
   const healthTotal = health ? health.healthyCount + health.atRiskCount + health.criticalCount : 1;
@@ -70,11 +50,7 @@ export default function AnalyticsScreen() {
         {stats.map((s) => (
           <div key={s.label} className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] p-4">
             <div className="text-[11px] text-slate-500 uppercase tracking-[0.05em] mb-2">{s.label}</div>
-            <div className="text-[26px] font-bold text-slate-200 font-syne leading-none mb-2">{s.value}</div>
-            <div className={`text-[11px] flex items-center gap-1 ${s.up ? "text-green-400" : "text-red-400"}`}>
-              {s.up ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-              {s.delta}
-            </div>
+            <div className="text-[26px] font-bold text-slate-200 font-syne leading-none">{s.value}</div>
           </div>
         ))}
       </div>
