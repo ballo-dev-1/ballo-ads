@@ -2199,6 +2199,31 @@ function shouldFallbackApmToProd(err: unknown): boolean {
   return (err as Error & { status?: number }).status === 404;
 }
 
+export type AnnouncementResponse = {
+  id: number;
+  title: string;
+  description?: string;
+  badge?: string;
+  badgeColor?: string;
+  iconName?: string;
+  isPublished: boolean;
+  sortOrder: number;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AnnouncementRequest = {
+  title: string;
+  description?: string;
+  badge?: string;
+  badgeColor?: string;
+  iconName?: string;
+  isPublished: boolean;
+  sortOrder: number;
+  expiresAt?: string;
+};
+
 export const adminApi = {
   login: (username: string, password: string) =>
     request<AuthResponse>("v1/auth/login", {
@@ -3714,6 +3739,30 @@ export const adminApi = {
   seedRoadmap: (authToken?: string) =>
     request<RoadmapOverviewResponse>(`${BACKOFFICE}/roadmap/seed`, {
       method: "POST",
+      authToken,
+    }),
+
+  // Announcements
+  getAnnouncements: (authToken?: string) =>
+    request<AnnouncementResponse[]>(`${BACKOFFICE}/announcements`, { authToken }),
+
+  createAnnouncement: (payload: AnnouncementRequest, authToken?: string) =>
+    request<AnnouncementResponse>(`${BACKOFFICE}/announcements`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  updateAnnouncement: (id: number, payload: AnnouncementRequest, authToken?: string) =>
+    request<AnnouncementResponse>(`${BACKOFFICE}/announcements/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      authToken,
+    }),
+
+  deleteAnnouncement: (id: number, authToken?: string) =>
+    request<void>(`${BACKOFFICE}/announcements/${id}`, {
+      method: "DELETE",
       authToken,
     }),
 };
