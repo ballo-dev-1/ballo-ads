@@ -70,7 +70,7 @@ export default function ClientsScreen() {
         </div>
       </div>
 
-      <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] overflow-hidden">
+      <div className="crm-card overflow-hidden">
         <table className="w-full" aria-label="Clients">
           <thead>
             <tr className="border-b border-white/[0.08]">

@@ -48,7 +48,7 @@ export default function AnalyticsScreen() {
     <div>
       <div className="grid grid-cols-4 gap-3 mb-5">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] p-4">
+          <div key={s.label} className="crm-card p-4">
             <div className="text-[11px] text-slate-500 uppercase tracking-[0.05em] mb-2">{s.label}</div>
             <div className="text-[26px] font-bold text-slate-200 font-syne leading-none">{s.value}</div>
           </div>
@@ -56,7 +56,7 @@ export default function AnalyticsScreen() {
       </div>
 
       <div className="grid grid-cols-[1.5fr_1fr] gap-4 mb-4">
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] p-4">
+        <div className="crm-card p-4">
           <div className="text-[13px] font-semibold text-slate-200 font-syne mb-0.5">Messages sent per month</div>
           <div className="text-[11.5px] text-slate-500 mb-4">All channels combined</div>
           <ResponsiveContainer width="100%" height={140}>
@@ -89,7 +89,7 @@ export default function AnalyticsScreen() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] p-4">
+        <div className="crm-card p-4">
           <div className="text-[13px] font-semibold text-slate-200 font-syne mb-0.5">Client health</div>
           <div className="text-[11.5px] text-slate-500 mb-4">
             Current snapshot · {health?.total || 0} clients
@@ -103,7 +103,7 @@ export default function AnalyticsScreen() {
       </div>
 
       {firstActiveJourney && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] p-4">
+        <div className="crm-card p-4">
           <div className="text-[13px] font-semibold text-slate-200 font-syne mb-0.5">
             Journey funnel — &ldquo;{firstActiveJourney.name}&rdquo;
           </div>
