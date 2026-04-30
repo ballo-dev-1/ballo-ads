@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { PropsWithChildren, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setCrmNavigator } from "@/lib/crmStores";
+import { useCrmTheme } from "@/app/crm/contexts/CrmThemeContext";
 
 const SCREEN_PATH: Record<string, string> = {
   dashboard: "/crm",
@@ -14,6 +15,30 @@ const SCREEN_PATH: Record<string, string> = {
   campaigns: "/crm/campaigns",
   analytics: "/crm/analytics",
 };
+
+function CrmToaster() {
+  const { isDark } = useCrmTheme();
+  return (
+    <Toaster
+      position="bottom-right"
+      toastOptions={{
+        style: isDark
+          ? {
+              background: "#111C47",
+              color: "#e2e8f0",
+              border: "1px solid rgba(255,255,255,0.08)",
+              fontSize: "12.5px",
+            }
+          : {
+              background: "#ffffff",
+              color: "#111827",
+              border: "1px solid #e5e7eb",
+              fontSize: "12.5px",
+            },
+      }}
+    />
+  );
+}
 
 export default function CrmProviders({ children }: PropsWithChildren) {
   const router = useRouter();
@@ -40,17 +65,7 @@ export default function CrmProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={client}>
       {children}
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          style: {
-            background: "#111C47",
-            color: "#e2e8f0",
-            border: "1px solid rgba(255,255,255,0.08)",
-            fontSize: "12.5px",
-          },
-        }}
-      />
+      <CrmToaster />
     </QueryClientProvider>
   );
 }

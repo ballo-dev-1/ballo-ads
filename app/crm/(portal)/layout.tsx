@@ -58,7 +58,7 @@ export default function CrmProtectedLayout({ children }: { children: React.React
   }, [router, pathname]);
 
   if (checking) {
-    return <div className="h-screen bg-[#0B1437]" />;
+    return <div className="h-screen" style={{ background: "var(--crm-bg)" }} />;
   }
 
   return (
