@@ -81,16 +81,20 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
-  primary: "bg-[#3B82F6] text-white border-transparent hover:bg-blue-600",
-  secondary: "bg-white/[0.06] text-slate-300 border-white/[0.1] hover:bg-white/[0.1] hover:text-white",
-  ghost: "bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-white/[0.05]",
-  danger: "bg-red-500/10 text-red-300 border-red-500/20 hover:bg-red-500/15",
+  primary:
+    "text-white border-transparent hover:brightness-110 active:brightness-95",
+  secondary:
+    "bg-white/[0.06] text-slate-300 border-white/[0.1] hover:bg-white/[0.1] hover:text-white rounded-lg",
+  ghost:
+    "bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-white/[0.05] rounded-lg",
+  danger:
+    "bg-red-500/10 text-red-300 border-red-500/20 hover:bg-red-500/15 rounded-lg",
 };
 
 const BTN_SIZE: Record<ButtonSize, string> = {
-  sm: "px-3 py-1.5 text-[12px] rounded-[7px]",
-  md: "px-4 py-2 text-[13px] rounded-[8px]",
-  lg: "px-5 py-2.5 text-[14px] rounded-[9px]",
+  sm: "px-3.5 py-1.5 text-[12px]",
+  md: "px-4 py-2 text-[13px]",
+  lg: "px-5 py-2.5 text-[14px]",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -106,12 +110,25 @@ export function Button({
   children,
   className = "",
   disabled,
+  style,
   ...rest
 }: ButtonProps) {
+  const isPrimary = variant === "primary";
   return (
     <button
-      className={`inline-flex items-center gap-1.5 font-medium border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-medium border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
+        isPrimary ? "rounded-full" : ""
+      } ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
       disabled={disabled || loading}
+      style={
+        isPrimary
+          ? {
+              background: "var(--brand-color-3)",
+              boxShadow: "0 6px 20px -6px color-mix(in srgb, var(--brand-color-3) 55%, transparent)",
+              ...style,
+            }
+          : style
+      }
       {...rest}
     >
       {loading ? <Spinner size={12} /> : null}
@@ -157,7 +174,7 @@ export function Modal({
     <div className="fixed inset-0 bg-black/60 z-[500] flex items-center justify-center p-4">
       <div className="absolute inset-0" onClick={onClose} />
       <div
-        className="relative bg-[#111C47] border border-white/[0.1] rounded-[14px] shadow-2xl max-h-[88vh] flex flex-col"
+        className="relative crm-card max-h-[88vh] flex flex-col"
         style={{ width: Math.min(width, typeof window === "undefined" ? width : window.innerWidth - 32) }}
       >
         <div className="px-6 pt-5 pb-4 border-b border-white/[0.08] flex items-start gap-3 flex-shrink-0">

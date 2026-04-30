@@ -74,7 +74,7 @@ export default function DashboardScreen() {
       </div>
 
       <div className="grid grid-cols-[1.4fr_1fr] gap-4 mb-4">
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden">
+        <div className="crm-card overflow-hidden">
           <div className="flex items-center px-4 py-3.5 border-b border-white/[0.08]">
             <h2 className="font-syne text-[13.5px] font-semibold flex-1">Recent activity</h2>
             <button
@@ -130,7 +130,7 @@ export default function DashboardScreen() {
           </table>
         </div>
 
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
+        <div className="crm-card p-4">
           <h2 className="font-syne text-[13px] font-semibold mb-1">Messages by channel</h2>
           <p className="text-[11.5px] text-slate-500 mb-4">
             Last 30 days · {channelData?.total?.toLocaleString() ?? 0} total
@@ -142,12 +142,13 @@ export default function DashboardScreen() {
         </div>
       </div>
 
-      <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden">
+      <div className="crm-card overflow-hidden">
         <div className="flex items-center px-4 py-3.5 border-b border-white/[0.08]">
           <h2 className="font-syne text-[13.5px] font-semibold flex-1">At-risk clients</h2>
           <button
             onClick={() => navigate("journeys")}
-            className="px-3 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+            className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
+            style={{ background: "var(--brand-color-3)" }}
           >
             Run retention journey →
           </button>
@@ -196,7 +197,8 @@ export default function DashboardScreen() {
                       e.stopPropagation();
                       openModal({ id: "campaign", props: { clientId: c.id } });
                     }}
-                    className="px-3 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+                    className="px-3.5 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
+                    style={{ background: "var(--brand-color-3)" }}
                   >
                     Send SMS
                   </button>
@@ -229,12 +231,20 @@ function StatCard({
   deltaType?: "up" | "down";
 }) {
   return (
-    <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
-      <div className="text-[11px] text-slate-500 uppercase tracking-[0.05em] mb-1.5">{label}</div>
-      <div className="font-syne text-[26px] font-bold text-slate-100 leading-none mb-1.5">{value}</div>
-      {delta && (
-        <div className={`text-[11px] ${deltaType === "up" ? "text-emerald-400" : "text-red-400"}`}>{delta}</div>
-      )}
+    <div className="crm-card p-4 relative overflow-hidden">
+      <div className="relative z-10">
+        <div className="text-[10.5px] text-slate-400 uppercase tracking-[0.07em] mb-1.5 font-semibold">{label}</div>
+        <div className="font-syne text-[28px] font-bold text-white leading-none mb-1.5">{value}</div>
+        {delta && (
+          <div className={`text-[11px] font-medium ${deltaType === "up" ? "text-emerald-400" : "text-red-400"}`}>
+            {delta}
+          </div>
+        )}
+      </div>
+      <div
+        className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
+        style={{ background: "var(--brand-color-4)" }}
+      />
     </div>
   );
 }
@@ -328,14 +338,14 @@ function ScreenSkeleton() {
     <div className="animate-pulse space-y-4">
       <div className="grid grid-cols-4 gap-3">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-white/[0.04] rounded-2xl" />
+          <div key={i} className="h-24 crm-card" />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="h-64 bg-white/[0.04] rounded-2xl" />
-        <div className="h-64 bg-white/[0.04] rounded-2xl" />
+        <div className="h-64 crm-card" />
+        <div className="h-64 crm-card" />
       </div>
-      <div className="h-64 bg-white/[0.04] rounded-2xl" />
+      <div className="h-64 crm-card" />
     </div>
   );
 }

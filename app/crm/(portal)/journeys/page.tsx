@@ -108,9 +108,10 @@ export default function Page() {
               onClick={() => setTab(t)}
               className={`px-3 py-1.5 rounded-[7px] text-[12.5px] transition-all ${
                 tab === t
-                  ? "bg-[#111C47] text-slate-200 font-medium border border-white/[0.1]"
+                  ? "text-slate-200 font-medium border border-white/[0.1]"
                   : "text-slate-400 hover:text-slate-200"
               }`}
+              style={tab === t ? { background: "var(--crm-panel)" } : undefined}
             >
               {t}
               {t === "All" && ` (${journeys.length})`}
@@ -119,7 +120,8 @@ export default function Page() {
         </div>
         <button
           onClick={handleNew}
-          className="px-4 py-2 text-[12.5px] bg-[#3B82F6] text-white rounded-[9px] hover:bg-blue-600 font-medium transition-colors"
+          className="px-4 py-2 text-[12.5px] text-white rounded-full font-medium transition-all hover:brightness-110"
+          style={{ background: "var(--brand-color-3)" }}
         >
           + New journey
         </button>
@@ -136,7 +138,8 @@ export default function Page() {
           <div className="text-[12.5px] mb-4">Build automated client engagement flows</div>
           <button
             onClick={handleNew}
-            className="text-[12.5px] bg-[#3B82F6] text-white px-4 py-2 rounded-[8px] hover:bg-blue-600 font-medium transition-colors"
+            className="text-[12.5px] text-white px-4 py-2 rounded-full font-medium transition-all hover:brightness-110"
+            style={{ background: "var(--brand-color-3)" }}
           >
             + New journey
           </button>
@@ -183,7 +186,7 @@ function JourneyRow({
     : 0;
 
   return (
-    <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] px-4 py-3.5 flex items-center gap-3 hover:border-white/[0.14] transition-all group">
+    <div className="crm-card px-4 py-3.5 flex items-center gap-3 hover:!border-white/[0.14] transition-all group">
       <div className="w-9 h-9 rounded-[9px] bg-blue-500/15 flex items-center justify-center text-[15px] flex-shrink-0">
         🗺️
       </div>

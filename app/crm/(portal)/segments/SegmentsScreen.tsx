@@ -97,10 +97,10 @@ export default function SegmentsScreen() {
           <div
             key={seg.id}
             onClick={() => { setSelectedSegId(seg.id); setAddMembersOpen(false); }}
-            className={`bg-white/[0.04] border rounded-[14px] p-4 cursor-pointer transition-all relative group ${
+            className={`crm-card p-4 cursor-pointer transition-all relative group ${
               selectedSeg?.id === seg.id
-                ? "border-blue-500/50 bg-blue-500/[0.06]"
-                : "border-white/[0.08] hover:border-blue-500/30 hover:bg-blue-500/[0.03]"
+                ? "!border-blue-500/50 !bg-blue-500/[0.06]"
+                : "hover:!border-blue-500/30 hover:!bg-blue-500/[0.03]"
             }`}
           >
             <button
@@ -132,7 +132,8 @@ export default function SegmentsScreen() {
             <div className="text-[12.5px] mb-4">Create your first segment to group clients dynamically</div>
             <button
               onClick={() => openModal({ id: "segment" })}
-              className="text-[12.5px] bg-[#3B82F6] text-white px-4 py-2 rounded-[8px] hover:bg-blue-600 font-medium transition-colors"
+              className="text-[12.5px] text-white px-4 py-2 rounded-full font-medium transition-all hover:brightness-110"
+              style={{ background: "var(--brand-color-3)" }}
             >
               + New segment
             </button>
@@ -140,7 +141,7 @@ export default function SegmentsScreen() {
         )}
       </div>
 
-      <div className="bg-white/[0.04] border border-white/[0.08] rounded-[14px] overflow-hidden">
+      <div className="crm-card overflow-hidden">
         <div className="flex items-center px-4 py-3 border-b border-white/[0.08] gap-3">
           <div className="text-[13.5px] font-semibold text-slate-200 font-syne flex-1">
             {selectedSeg ? `${selectedSeg.name} — ${segClients?.length || 0} clients` : "Select a segment"}

@@ -49,9 +49,10 @@ export default function CampaignsScreen() {
             onClick={() => setTab(t)}
             className={`px-3 py-1.5 rounded-[7px] text-[12.5px] transition-all ${
               tab === t
-                ? "bg-[#111C47] text-slate-200 font-medium border border-white/[0.1]"
+                ? "text-slate-200 font-medium border border-white/[0.1]"
                 : "text-slate-400 hover:text-slate-200"
             }`}
+            style={tab === t ? { background: "var(--crm-panel)" } : undefined}
           >
             {t}
           </button>
@@ -69,7 +70,8 @@ export default function CampaignsScreen() {
             <div className="text-[12.5px] mb-4">Create your first campaign to start reaching clients</div>
             <button
               onClick={() => openModal({ id: "campaign" })}
-              className="text-[12.5px] bg-[#3B82F6] text-white px-4 py-2 rounded-[8px] hover:bg-blue-600 font-medium transition-colors"
+              className="text-[12.5px] text-white px-4 py-2 rounded-full font-medium transition-all hover:brightness-110"
+              style={{ background: "var(--brand-color-3)" }}
             >
               + New campaign
             </button>
@@ -140,8 +142,8 @@ function CampaignRow({
 
   return (
     <div
-      className={`bg-white/[0.04] border rounded-[14px] transition-all ${
-        expanded ? "border-blue-500/30 bg-blue-500/[0.03]" : "border-white/[0.08] hover:border-white/[0.14] hover:bg-white/[0.06]"
+      className={`crm-card transition-all ${
+        expanded ? "!border-blue-500/30 !bg-blue-500/[0.03]" : "hover:!border-white/[0.14]"
       }`}
     >
       <div

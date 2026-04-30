@@ -52,7 +52,8 @@ export function Topbar() {
       return (
         <button
           onClick={() => openModal({ id: "campaign" })}
-          className="px-3 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+          className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
+          style={{ background: "var(--brand-color-3)" }}
         >
           + New campaign
         </button>
@@ -69,7 +70,8 @@ export function Topbar() {
           </button>
           <button
             onClick={() => openModal({ id: "campaign" })}
-            className="px-3 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+            className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
+          style={{ background: "var(--brand-color-3)" }}
           >
             Run campaign
           </button>
@@ -80,7 +82,8 @@ export function Topbar() {
       return (
         <button
           onClick={() => openModal({ id: "campaign" })}
-          className="px-3 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+          className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
+          style={{ background: "var(--brand-color-3)" }}
         >
           + New campaign
         </button>
@@ -100,7 +103,7 @@ export function Topbar() {
   };
 
   return (
-    <div className="h-[54px] border-b border-white/[0.08] flex items-center px-6 gap-4 flex-shrink-0 bg-[#0B1437]">
+    <div className="h-[54px] border-b border-white/[0.08] flex items-center px-6 gap-4 flex-shrink-0" style={{ background: "color-mix(in srgb, var(--crm-panel) 35%, var(--crm-bg))" }}>
       <h1 className="font-syne text-[15px] font-semibold text-slate-200 flex-1">{title}</h1>
       <div className="flex items-center gap-2">{renderAction()}</div>
     </div>
