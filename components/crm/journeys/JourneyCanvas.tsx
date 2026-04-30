@@ -157,7 +157,7 @@ function JourneyCanvasInner() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-0px)] bg-[#0B1437]">
+    <div className="flex h-[calc(100vh-0px)]" style={{ background: "var(--crm-bg)" }}>
       <PalettePanel />
 
       <div className="flex-1 relative" ref={reactFlowWrapper}>
@@ -184,7 +184,7 @@ function JourneyCanvasInner() {
           <MiniMap nodeColor="#3B82F6" maskColor="rgba(0,0,0,0.4)" />
         </ReactFlow>
 
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#111C47] border border-white/10 rounded-xl px-4 py-2 z-10">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-xl px-4 py-2 z-10" style={{ background: "var(--crm-panel)", border: "1px solid var(--crm-panel-border)" }}>
           <button
             onClick={handleClear}
             className="px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
@@ -199,14 +199,15 @@ function JourneyCanvasInner() {
           </button>
           <button
             onClick={() => openModal({ id: "journey" })}
-            className="px-4 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+            className="px-4 py-1.5 text-xs rounded-full font-medium transition-all hover:brightness-110"
+            style={{ background: "var(--brand-color-3)", color: "white" }}
           >
             Save journey
           </button>
         </div>
 
         {rfNodes.length > 0 && (
-          <div className="absolute top-4 right-4 bg-[#111C47] border border-white/10 rounded-xl px-4 py-3 text-xs z-10">
+          <div className="absolute top-4 right-4 rounded-xl px-4 py-3 text-xs z-10" style={{ background: "var(--crm-panel)", border: "1px solid var(--crm-panel-border)" }}>
             <div className="flex justify-between gap-4 mb-1">
               <span className="text-slate-400">Nodes</span>
               <span className="font-semibold text-white">{rfNodes.length}</span>

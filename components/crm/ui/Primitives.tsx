@@ -124,6 +124,7 @@ export function Button({
         isPrimary
           ? {
               background: "var(--brand-color-3)",
+              color: "white",
               boxShadow: "0 6px 20px -6px color-mix(in srgb, var(--brand-color-3) 55%, transparent)",
               ...style,
             }

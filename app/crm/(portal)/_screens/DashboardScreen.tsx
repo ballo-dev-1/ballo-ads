@@ -148,7 +148,7 @@ export default function DashboardScreen() {
           <button
             onClick={() => navigate("journeys")}
             className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-            style={{ background: "var(--brand-color-3)" }}
+            style={{ background: "var(--brand-color-3)", color: "white" }}
           >
             Run retention journey →
           </button>
@@ -198,7 +198,7 @@ export default function DashboardScreen() {
                       openModal({ id: "campaign", props: { clientId: c.id } });
                     }}
                     className="px-3.5 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-                    style={{ background: "var(--brand-color-3)" }}
+                    style={{ background: "var(--brand-color-3)", color: "white" }}
                   >
                     Send SMS
                   </button>

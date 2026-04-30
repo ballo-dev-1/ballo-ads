@@ -133,7 +133,7 @@ export default function SegmentsScreen() {
             <button
               onClick={() => openModal({ id: "segment" })}
               className="text-[12.5px] text-white px-4 py-2 rounded-full font-medium transition-all hover:brightness-110"
-              style={{ background: "var(--brand-color-3)" }}
+              style={{ background: "var(--brand-color-3)", color: "white" }}
             >
               + New segment
             </button>

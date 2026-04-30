@@ -87,7 +87,7 @@ export function SegmentModal() {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-[500] flex items-center justify-center">
-      <div className="bg-[#111C47] border border-white/[0.1] rounded-[14px] p-6 w-[520px] max-w-[92vw] max-h-[88vh] overflow-y-auto shadow-2xl">
+      <div className="border border-white/[0.1] rounded-[14px] p-6 w-[520px] max-w-[92vw] max-h-[88vh] overflow-y-auto shadow-2xl" style={{ background: "var(--crm-panel)" }}>
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-[16px] font-bold text-slate-200 font-syne">New segment</h2>
           <button onClick={closeModal}>
@@ -231,7 +231,8 @@ export function SegmentModal() {
           <button
             onClick={() => create.mutate()}
             disabled={!name.trim() || create.isPending}
-            className="px-5 py-2 text-[12.5px] bg-[#3B82F6] text-white rounded-[8px] hover:bg-blue-600 disabled:opacity-40 font-medium transition-colors"
+            className="px-5 py-2 text-[12.5px] rounded-[8px] disabled:opacity-40 font-medium transition-colors"
+            style={{ background: "var(--brand-color-3)", color: "white" }}
           >
             {create.isPending ? "Creating..." : "Create segment"}
           </button>

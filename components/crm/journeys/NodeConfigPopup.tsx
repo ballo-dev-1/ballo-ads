@@ -114,11 +114,12 @@ export function NodeConfigPopup({ nodeId }: NodeConfigPopupProps) {
 
   return (
     <div
-      className="fixed z-[600] bg-[#111C47] border border-white/[0.14] rounded-xl p-5 w-[320px] shadow-2xl"
+      className="fixed z-[600] border border-white/[0.14] rounded-xl p-5 w-[320px] shadow-2xl"
+      style={{ background: "var(--crm-panel)" }}
       style={{ top: "80px", right: "20px" }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-white capitalize text-sm">Configure: {node.type}</h3>
+        <h3 className="font-semibold text-slate-200 capitalize text-sm">Configure: {node.type}</h3>
         <button onClick={closeConfigPopup} className="text-slate-400 hover:text-white text-lg leading-none">
           ×
         </button>
@@ -643,7 +644,8 @@ export function NodeConfigPopup({ nodeId }: NodeConfigPopupProps) {
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-1.5 text-xs bg-[#3B82F6] text-white rounded-lg hover:bg-blue-600 font-medium transition-colors"
+          className="px-4 py-1.5 text-xs rounded-lg font-medium transition-colors"
+          style={{ background: "var(--brand-color-3)", color: "white" }}
         >
           Save node
         </button>

@@ -58,6 +58,9 @@
 
 .crm-root[data-crm-theme="light"] .placeholder-slate-500::placeholder { color: var(--crm-text-muted) !important; }
 
+/* Light: text-white (content text) → heading; buttons keep white via inline style */
+.crm-root[data-crm-theme="light"] .text-white { color: var(--crm-heading) !important; }
+
 /* ─── Light: semantic badge/status colors (darker for readability) ───────── */
 .crm-root[data-crm-theme="light"] .text-blue-300  { color: #1d4ed8 !important; }
 .crm-root[data-crm-theme="light"] .text-green-300 { color: #15803d !important; }
