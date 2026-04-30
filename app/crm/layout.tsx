@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Syne, DM_Sans, DM_Mono } from "next/font/google";
 import "./crm.css";
 import CrmProviders from "@/components/crm/providers/CrmProviders";
+import { CrmThemeProvider } from "./contexts/CrmThemeContext";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -31,9 +32,10 @@ export const metadata: Metadata = {
 };
 
 export default function CrmLayout({ children }: { children: React.ReactNode }) {
+  const fontVars = `${syne.variable} ${dmSans.variable} ${dmMono.variable}`;
   return (
-    <div className={`crm-root ${syne.variable} ${dmSans.variable} ${dmMono.variable}`}>
+    <CrmThemeProvider className={fontVars}>
       <CrmProviders>{children}</CrmProviders>
-    </div>
+    </CrmThemeProvider>
   );
 }

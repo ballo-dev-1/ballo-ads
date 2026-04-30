@@ -16,11 +16,13 @@ export function AppShell({ user, children }: PropsWithChildren<AppShellProps>) {
   const isJourneys = pathname.startsWith("/crm/journeys");
 
   return (
-    <div className="flex h-screen text-slate-200 overflow-hidden" style={{ background: "var(--crm-bg)" }}>
+    <div className="flex h-screen overflow-hidden">
       <Sidebar user={user} />
       <main className="crm-main-panel flex-1 flex flex-col min-w-0 overflow-hidden">
         {!isJourneys && <Topbar />}
-        <div className={isJourneys ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-6"}>{children}</div>
+        <div className={isJourneys ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-6"}>
+          {children}
+        </div>
       </main>
       <ModalHost />
       <ClientDetailPanel />
