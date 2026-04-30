@@ -75,7 +75,7 @@ export function PalettePanel() {
   };
 
   return (
-    <aside className="w-[190px] min-w-[190px] bg-[#111C47] border-r border-white/[0.08] flex flex-col h-full overflow-y-auto">
+    <aside className="w-[190px] min-w-[190px] flex flex-col h-full overflow-y-auto" style={{ background: "var(--crm-panel)", borderRight: "1px solid var(--crm-panel-border)" }}>
       <div className="px-3 pt-3 pb-3 border-b border-white/[0.08]">
         <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-[0.08em] mb-2">
           Active journeys
@@ -95,7 +95,8 @@ export function PalettePanel() {
         ))}
         <button
           onClick={() => openModal({ id: "journey" })}
-          className="w-full mt-2 py-1.5 text-[11.5px] bg-[#3B82F6] text-white rounded-[7px] hover:bg-blue-600 transition-colors font-medium"
+          className="w-full mt-2 py-1.5 text-[11.5px] rounded-[7px] transition-colors font-medium"
+          style={{ background: "var(--brand-color-3)", color: "white" }}
         >
           + New journey
         </button>

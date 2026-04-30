@@ -76,7 +76,7 @@ export default function AnalyticsScreen() {
               />
               <Tooltip
                 contentStyle={{
-                  background: "#111C47",
+                  background: "var(--crm-panel)",
                   border: "1px solid rgba(255,255,255,0.1)",
                   borderRadius: 8,
                   fontSize: 12,

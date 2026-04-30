@@ -77,7 +77,8 @@ export default function Page() {
       <div className="relative -m-6" style={{ height: "calc(100vh - 56px)" }}>
         <button
           onClick={() => setView("list")}
-          className="absolute top-4 left-[206px] z-20 px-3 py-1.5 text-[11.5px] bg-[#111C47] border border-white/10 text-slate-300 rounded-lg hover:bg-white/[0.08] transition-colors shadow-lg"
+          className="absolute top-4 left-[206px] z-20 px-3 py-1.5 text-[11.5px] border border-white/10 text-slate-300 rounded-lg hover:bg-white/[0.08] transition-colors shadow-lg"
+          style={{ background: "var(--crm-panel)" }}
         >
           ← All journeys
         </button>
@@ -121,7 +122,7 @@ export default function Page() {
         <button
           onClick={handleNew}
           className="px-4 py-2 text-[12.5px] text-white rounded-full font-medium transition-all hover:brightness-110"
-          style={{ background: "var(--brand-color-3)" }}
+          style={{ background: "var(--brand-color-3)", color: "white" }}
         >
           + New journey
         </button>
@@ -139,7 +140,7 @@ export default function Page() {
           <button
             onClick={handleNew}
             className="text-[12.5px] text-white px-4 py-2 rounded-full font-medium transition-all hover:brightness-110"
-            style={{ background: "var(--brand-color-3)" }}
+            style={{ background: "var(--brand-color-3)", color: "white" }}
           >
             + New journey
           </button>

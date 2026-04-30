@@ -64,7 +64,7 @@ export function Topbar() {
         <button
           onClick={() => openModal({ id: "campaign" })}
           className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-          style={{ background: "var(--brand-color-3)" }}
+          style={{ background: "var(--brand-color-3)", color: "white" }}
         >
           + New campaign
         </button>
@@ -87,7 +87,7 @@ export function Topbar() {
           <button
             onClick={() => openModal({ id: "campaign" })}
             className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-            style={{ background: "var(--brand-color-3)" }}
+            style={{ background: "var(--brand-color-3)", color: "white" }}
           >
             Run campaign
           </button>
@@ -99,7 +99,7 @@ export function Topbar() {
         <button
           onClick={() => openModal({ id: "campaign" })}
           className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-          style={{ background: "var(--brand-color-3)" }}
+          style={{ background: "var(--brand-color-3)", color: "white" }}
         >
           + New campaign
         </button>

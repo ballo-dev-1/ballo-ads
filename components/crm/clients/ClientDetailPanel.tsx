@@ -103,8 +103,8 @@ export function ClientDetailPanel() {
     <>
       <div className="fixed inset-0 z-[99]" onClick={closeDetailPanel} />
 
-      <div className="fixed right-0 top-0 w-[390px] h-screen bg-[#111C47] border-l border-white/[0.12] z-[100] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-[#111C47] z-10 px-5 py-4 border-b border-white/[0.08] flex items-start gap-3">
+      <div className="fixed right-0 top-0 w-[390px] h-screen z-[100] overflow-y-auto shadow-2xl" style={{ background: "var(--crm-panel)", borderLeft: "1px solid var(--crm-panel-border)" }}>
+        <div className="sticky top-0 z-10 px-5 py-4 flex items-start gap-3" style={{ background: "var(--crm-panel)", borderBottom: "1px solid var(--crm-divider)" }}>
           <div className="w-11 h-11 rounded-[10px] bg-blue-500/20 text-blue-300 flex items-center justify-center text-[14px] font-bold flex-shrink-0">
             {initials}
           </div>
