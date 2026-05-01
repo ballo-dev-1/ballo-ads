@@ -77,11 +77,11 @@ export default function AnalyticsScreen() {
               <Tooltip
                 contentStyle={{
                   background: "var(--crm-panel)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  border: "1px solid var(--crm-panel-border)",
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                labelStyle={{ color: "#94A3B8" }}
+                labelStyle={{ color: "var(--crm-text-secondary)" }}
                 itemStyle={{ color: "#60A5FA" }}
               />
               <Bar dataKey="total" fill="#3B82F6" radius={[4, 4, 0, 0]} />

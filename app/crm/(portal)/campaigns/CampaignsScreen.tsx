@@ -253,7 +253,7 @@ function CampaignRow({
 function Metric({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div>
-      <div className="text-[15px] font-semibold font-syne" style={{ color: color || "#e2e8f0" }}>
+      <div className="text-[15px] font-semibold font-syne" style={{ color: color || "var(--crm-text)" }}>
         {value}
       </div>
       <div className="text-[10.5px] text-slate-500">{label}</div>

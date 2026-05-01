@@ -288,7 +288,7 @@ function DonutChart({ data }: { data: ChannelRow | null }) {
 
   return (
     <svg width="96" height="96" viewBox="0 0 96 96">
-      <circle cx="48" cy="48" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="15" />
+      <circle cx="48" cy="48" r={r} fill="none" stroke="var(--crm-panel-border)" strokeWidth="15" />
       {channels.map(({ key, color }) => {
         const val = (data?.[key] as number | undefined) || 0;
         const pct = val / total;
