@@ -29,7 +29,6 @@ export function CustomFlowNode({ id, type, data }: NodeProps) {
   const selectNode = useJourneyStore((s) => s.selectNode);
 
   const style = NODE_STYLES[type || ""] || { color: "#64748B", icon: "?" };
-  const config = (data as { config?: Record<string, any> })?.config || {};
   const label: string = (data as { label?: string })?.label || "";
   const isConfigured = label && label !== "Click to configure";
 

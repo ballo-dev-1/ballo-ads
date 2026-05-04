@@ -115,8 +115,7 @@ export function NodeConfigPopup({ nodeId }: NodeConfigPopupProps) {
   return (
     <div
       className="fixed z-[600] border border-white/[0.14] rounded-xl p-5 w-[320px] shadow-2xl"
-      style={{ background: "var(--crm-panel)" }}
-      style={{ top: "80px", right: "20px" }}
+      style={{ background: "var(--crm-panel)", top: "80px", right: "20px" }}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-slate-200 capitalize text-sm">Configure: {node.type}</h3>
