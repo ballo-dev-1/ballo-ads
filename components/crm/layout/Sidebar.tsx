@@ -11,6 +11,8 @@ import { clearCrmTokens, getCrmApiBase, getCrmToken } from "@/lib/crmApiClient";
 
 const SIDEBAR_WIDTH_MS = 300;
 const LABEL_SHOW_DELAY_MS = Math.round(SIDEBAR_WIDTH_MS * 0.72);
+const LABEL_ANIM_BASE_MS = 24;
+const LABEL_ANIM_STAGGER_MS = 40;
 
 type Screen = "dashboard" | "clients" | "segments" | "journeys" | "campaigns" | "analytics";
 
@@ -147,9 +149,8 @@ export function Sidebar({ user }: { user?: { name: string; email: string; role: 
       </button>
 
       {/* Brand header */}
-      <Link
-        href="/crm"
-        className={`flex items-center gap-2 px-6 pb-2 pt-8 transition-all ${collapsed ? "justify-center px-0" : ""}`}
+      <div
+        className={`flex items-center gap-2 px-4 pb-2 pt-6 ${collapsed ? 'justify-center px-2' : ''}`}
       >
         <Image
           src={logo_1}
@@ -163,25 +164,26 @@ export function Sidebar({ user }: { user?: { name: string; email: string; role: 
             src={logo_2}
             alt="Ballo Ads"
             quality={100}
-            className="scale-150 ml-5 h-9 w-auto flex-1 object-contain object-left brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.22)] admin-sidebar-reveal"
+            className="admin-sidebar-reveal scale-150 ml-5 h-9 w-auto flex-1 object-contain object-left brightness-0 invert drop-shadow-[0_1px_2px_rgba(0,0,0,0.22)]"
+            style={{ animationDelay: `${LABEL_ANIM_BASE_MS}ms` }}
             priority
           />
         )}
-      </Link>
+      </div>
 
       {/* Navigation */}
       <div className={`flex-1 overflow-y-auto py-6 ${collapsed ? "px-2" : ""}`}>
         <SectionLabel collapsed={collapsed} showLabels={showLabels}>Overview</SectionLabel>
-        {navItems.slice(0, 3).map((item) => (
-          <NavButton key={item.screen} item={item} active={isActive(item.href)} collapsed={collapsed} showLabels={showLabels} />
+        {navItems.slice(0, 3).map((item, idx) => (
+          <NavButton key={item.screen} item={item} active={isActive(item.href)} collapsed={collapsed} showLabels={showLabels} index={idx} />
         ))}
         <SectionLabel collapsed={collapsed} showLabels={showLabels}>Automation</SectionLabel>
-        {navItems.slice(3, 5).map((item) => (
-          <NavButton key={item.screen} item={item} active={isActive(item.href)} collapsed={collapsed} showLabels={showLabels} />
+        {navItems.slice(3, 5).map((item, idx) => (
+          <NavButton key={item.screen} item={item} active={isActive(item.href)} collapsed={collapsed} showLabels={showLabels} index={idx + 3} />
         ))}
         <SectionLabel collapsed={collapsed} showLabels={showLabels}>Insights</SectionLabel>
-        {navItems.slice(5).map((item) => (
-          <NavButton key={item.screen} item={item} active={isActive(item.href)} collapsed={collapsed} showLabels={showLabels} />
+        {navItems.slice(5).map((item, idx) => (
+          <NavButton key={item.screen} item={item} active={isActive(item.href)} collapsed={collapsed} showLabels={showLabels} index={idx + 5} />
         ))}
       </div>
 
@@ -246,7 +248,7 @@ function SectionLabel({ children, collapsed, showLabels }: { children: React.Rea
   );
 }
 
-function NavButton({ item, active, collapsed, showLabels }: { item: NavItem; active: boolean; collapsed: boolean; showLabels: boolean }) {
+function NavButton({ item, active, collapsed, showLabels, index }: { item: NavItem; active: boolean; collapsed: boolean; showLabels: boolean; index: number }) {
   return (
     <Link
       href={item.href}
@@ -269,7 +271,12 @@ function NavButton({ item, active, collapsed, showLabels }: { item: NavItem; act
         {item.icon}
       </span>
       {!collapsed && showLabels && (
-        <span className="tracking-wide truncate admin-sidebar-reveal">{item.label}</span>
+        <span 
+          className="tracking-wide truncate admin-sidebar-reveal"
+          style={{ animationDelay: `${LABEL_ANIM_BASE_MS + index * LABEL_ANIM_STAGGER_MS}ms` }}
+        >
+          {item.label}
+        </span>
       )}
       {!collapsed && showLabels && item.badge != null && (
         <span
