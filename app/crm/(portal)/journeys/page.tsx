@@ -74,10 +74,10 @@ export default function Page() {
 
   if (view === "canvas") {
     return (
-      <div className="relative -m-6" style={{ height: "calc(100vh - 56px)" }}>
+      <div className="relative h-full w-full">
         <button
           onClick={() => setView("list")}
-          className="absolute top-4 left-[206px] z-20 px-3 py-1.5 text-[11.5px] border border-white/10 text-slate-300 rounded-lg hover:bg-white/[0.08] transition-colors shadow-lg"
+          className="absolute top-4 left-[236px] z-20 px-3 py-1.5 text-[11.5px] border border-white/10 text-slate-300 rounded-lg hover:bg-white/[0.08] transition-colors shadow-lg"
           style={{ background: "var(--crm-panel)" }}
         >
           ← All journeys
@@ -100,7 +100,7 @@ export default function Page() {
   });
 
   return (
-    <div>
+    <div className="p-6 h-full overflow-y-auto">
       <div className="flex items-center justify-between mb-5">
         <div className="flex gap-0.5 bg-white/[0.04] rounded-[9px] p-[3px]">
           {(["All", "Active", "Paused", "Draft"] as JourneyTab[]).map((t) => (

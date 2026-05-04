@@ -2,9 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { 
+  Users, 
+  Zap, 
+  MessageSquare, 
+  AlertCircle, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  ChevronRight,
+  TrendingUp
+} from "lucide-react";
 import { analyticsApi, clientsApi } from "@/lib/crmApiClient";
 import { useAppStore, useClientStore } from "@/lib/crmStores";
-import { Badge, HealthBar } from "@/components/crm/ui/Primitives";
+import { Badge, HealthBar, Button } from "@/components/crm/ui/Primitives";
 import type { Client } from "@/lib/crmTypes";
 
 interface DashboardOverview {
@@ -63,34 +73,135 @@ export default function DashboardScreen() {
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-3 mb-6">
-        <StatCard label="Total clients" value={overview?.totalClients ?? 0} />
-        <StatCard label="Active journeys" value={overview?.activeJourneys ?? 0} />
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <StatCard 
+          label="Total clients" 
+          value={overview?.totalClients ?? 0} 
+          icon={<Users size={18} />}
+          delta="+12% from last month"
+          deltaType="up"
+        />
+        <StatCard 
+          label="Active journeys" 
+          value={overview?.activeJourneys ?? 0} 
+          icon={<Zap size={18} />}
+          delta="4 running now"
+          deltaType="up"
+        />
         <StatCard
           label="Messages sent (MTD)"
           value={(overview?.messagesSentMtd ?? 0).toLocaleString()}
+          icon={<MessageSquare size={18} />}
+          delta="+8.2k today"
+          deltaType="up"
         />
-        <StatCard label="At-risk clients" value={overview?.atRiskCount ?? 0} delta="Needs attention" deltaType="down" />
+        <StatCard 
+          label="At-risk clients" 
+          value={overview?.atRiskCount ?? 0} 
+          icon={<AlertCircle size={18} />}
+          delta="Needs attention" 
+          deltaType="down" 
+        />
       </div>
 
-      <div className="grid grid-cols-[1.4fr_1fr] gap-4 mb-4">
-        <div className="crm-card overflow-hidden">
-          <div className="flex items-center px-4 py-3.5 border-b border-white/[0.08]">
-            <h2 className="font-syne text-[13.5px] font-semibold flex-1">Recent activity</h2>
+      <div className="grid grid-cols-[1.4fr_1fr] gap-6 mb-6">
+        <div className="crm-card crm-glass-card">
+          <div className="flex items-center px-5 py-4 border-b border-white/[0.08]">
+            <h2 className="font-syne text-[14px] font-bold tracking-tight flex-1">Recent Activity</h2>
             <button
               onClick={() => navigate("clients")}
-              className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+              className="group flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-white transition-colors"
             >
-              View all →
+              View all
+              <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  {["Client", "Event", "Time"].map((h) => (
+                    <th
+                      key={h}
+                      className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] border-b border-white/[0.06]"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {atRiskClients.slice(0, 5).map((c) => (
+                  <tr
+                    key={c.id}
+                    className="hover:bg-white/[0.03] cursor-pointer transition-colors"
+                    onClick={() => selectClient(c)}
+                  >
+                    <td className="px-5 py-4 border-b border-white/[0.04]">
+                      <div className="flex items-center gap-3">
+                        <ClientAvatar name={c.companyName} />
+                        <span className="text-[13px] font-semibold text-slate-200">{c.companyName}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 border-b border-white/[0.04]">
+                      <Badge variant="amber">Credits low</Badge>
+                    </td>
+                    <td className="px-5 py-4 border-b border-white/[0.04] text-[12px] text-slate-500">
+                      {c.lastActiveAt ? formatDistanceToNow(new Date(c.lastActiveAt), { addSuffix: true }) : "—"}
+                    </td>
+                  </tr>
+                ))}
+                {atRiskClients.length === 0 && (
+                  <tr>
+                    <td colSpan={3} className="px-5 py-12 text-center text-slate-500 text-[13px]">
+                      No recent at-risk activity
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="crm-card p-6">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h2 className="font-syne text-[14px] font-bold tracking-tight mb-1">Messages by Channel</h2>
+              <p className="text-[11px] text-slate-500">
+                Last 30 days · {channelData?.total?.toLocaleString() ?? 0} total
+              </p>
+            </div>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+              <TrendingUp size={16} />
+            </div>
+          </div>
+          <div className="flex items-center justify-around gap-6">
+            <DonutChart data={channelData} />
+            <ChannelLegend data={channelData} />
+          </div>
+        </div>
+      </div>
+
+      <div className="crm-card crm-glass-card">
+        <div className="flex items-center px-5 py-4 border-b border-white/[0.08]">
+          <h2 className="font-syne text-[14px] font-bold tracking-tight flex-1">At-risk Clients</h2>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate("journeys")}
+          >
+            Run retention journey
+            <Zap size={14} className="ml-1" />
+          </Button>
+        </div>
+        <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr>
-                {["Client", "Event", "Channel", "Time"].map((h) => (
+                {["Client", "Industry", "Last Active", "Health", "Status", "Action"].map((h) => (
                   <th
                     key={h}
-                    className="px-4 py-2.5 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.05em] border-b border-white/[0.08]"
+                    className="px-5 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] border-b border-white/[0.06]"
                   >
                     {h}
                   </th>
@@ -98,122 +209,54 @@ export default function DashboardScreen() {
               </tr>
             </thead>
             <tbody>
-              {atRiskClients.slice(0, 5).map((c) => (
+              {atRiskClients.map((c) => (
                 <tr
                   key={c.id}
-                  className="hover:bg-white/[0.04] cursor-pointer transition-colors"
+                  className="hover:bg-white/[0.03] cursor-pointer transition-colors group"
                   onClick={() => selectClient(c)}
                 >
-                  <td className="px-4 py-3 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-2">
+                  <td className="px-5 py-4 border-b border-white/[0.04]">
+                    <div className="flex items-center gap-3">
                       <ClientAvatar name={c.companyName} />
-                      <span className="text-[13px] font-medium text-slate-200">{c.companyName}</span>
+                      <span className="text-[13px] font-semibold text-slate-200">{c.companyName}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 border-b border-white/[0.06]">
-                    <Badge variant="amber">Credits low</Badge>
+                  <td className="px-5 py-4 border-b border-white/[0.04] text-[12.5px] text-slate-400">{c.industry}</td>
+                  <td className="px-5 py-4 border-b border-white/[0.04] text-[12px] text-red-400/90 font-medium">
+                    {c.lastActiveAt ? formatDistanceToNow(new Date(c.lastActiveAt), { addSuffix: true }) : "Never"}
                   </td>
-                  <td className="px-4 py-3 border-b border-white/[0.06] text-slate-500">—</td>
-                  <td className="px-4 py-3 border-b border-white/[0.06] text-[11.5px] text-slate-500">
-                    {c.lastActiveAt ? formatDistanceToNow(new Date(c.lastActiveAt), { addSuffix: true }) : "—"}
+                  <td className="px-5 py-4 border-b border-white/[0.04] w-48">
+                    <HealthBar score={c.healthScore} showLabel={false} />
+                  </td>
+                  <td className="px-5 py-4 border-b border-white/[0.04]">
+                    <Badge variant={c.healthScore < 40 ? "red" : "amber"}>
+                      {c.healthScore < 40 ? "Critical" : "At risk"}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-4 border-b border-white/[0.04]">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openModal({ id: "campaign", props: { clientId: c.id } });
+                      }}
+                      className="opacity-0 group-hover:opacity-100 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white rounded-full transition-all hover:scale-105 active:scale-95"
+                      style={{ background: "var(--brand-color-3)", boxShadow: "0 4px 12px -2px rgba(0,0,0,0.3)" }}
+                    >
+                      Send SMS
+                    </button>
                   </td>
                 </tr>
               ))}
               {atRiskClients.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-[13px]">
-                    No recent at-risk activity
+                  <td colSpan={6} className="px-5 py-12 text-center text-slate-500 text-[13px]">
+                    No clients are at risk right now
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-
-        <div className="crm-card p-4">
-          <h2 className="font-syne text-[13px] font-semibold mb-1">Messages by channel</h2>
-          <p className="text-[11.5px] text-slate-500 mb-4">
-            Last 30 days · {channelData?.total?.toLocaleString() ?? 0} total
-          </p>
-          <div className="flex items-center gap-4">
-            <DonutChart data={channelData} />
-            <ChannelLegend data={channelData} />
-          </div>
-        </div>
-      </div>
-
-      <div className="crm-card overflow-hidden">
-        <div className="flex items-center px-4 py-3.5 border-b border-white/[0.08]">
-          <h2 className="font-syne text-[13.5px] font-semibold flex-1">At-risk clients</h2>
-          <button
-            onClick={() => navigate("journeys")}
-            className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-            style={{ background: "var(--brand-color-3)", color: "white" }}
-          >
-            Run retention journey →
-          </button>
-        </div>
-        <table className="w-full">
-          <thead>
-            <tr>
-              {["Client", "Industry", "Last active", "Health", "Risk reason", "Action"].map((h) => (
-                <th
-                  key={h}
-                  className="px-4 py-2.5 text-left text-[10.5px] font-semibold text-slate-500 uppercase tracking-[0.05em] border-b border-white/[0.08]"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {atRiskClients.map((c) => (
-              <tr
-                key={c.id}
-                className="hover:bg-white/[0.04] cursor-pointer transition-colors"
-                onClick={() => selectClient(c)}
-              >
-                <td className="px-4 py-3 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-2">
-                    <ClientAvatar name={c.companyName} />
-                    <span className="text-[13px] font-medium text-slate-200">{c.companyName}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 border-b border-white/[0.06] text-[13px] text-slate-400">{c.industry}</td>
-                <td className="px-4 py-3 border-b border-white/[0.06] text-[12.5px] text-red-400">
-                  {c.lastActiveAt ? formatDistanceToNow(new Date(c.lastActiveAt), { addSuffix: true }) : "Never"}
-                </td>
-                <td className="px-4 py-3 border-b border-white/[0.06]">
-                  <HealthBar score={c.healthScore} showLabel={false} />
-                </td>
-                <td className="px-4 py-3 border-b border-white/[0.06]">
-                  <Badge variant={c.healthScore < 40 ? "red" : "amber"}>
-                    {c.healthScore < 40 ? "Critical" : "At risk"}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3 border-b border-white/[0.06]">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openModal({ id: "campaign", props: { clientId: c.id } });
-                    }}
-                    className="px-3.5 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-                    style={{ background: "var(--brand-color-3)", color: "white" }}
-                  >
-                    Send SMS
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {atRiskClients.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500 text-[13px]">
-                  No clients are at risk right now
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
     </>
   );
@@ -224,25 +267,37 @@ function StatCard({
   value,
   delta,
   deltaType,
+  icon,
 }: {
   label: string;
   value: string | number;
   delta?: string;
   deltaType?: "up" | "down";
+  icon?: React.ReactNode;
 }) {
   return (
-    <div className="crm-card p-4 relative overflow-hidden">
-      <div className="relative z-10">
-        <div className="text-[10.5px] text-slate-400 uppercase tracking-[0.07em] mb-1.5 font-semibold">{label}</div>
-        <div className="font-syne text-[28px] font-bold text-white leading-none mb-1.5">{value}</div>
+    <div className="crm-card p-5 group transition-all duration-300">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.04] border border-white/[0.08] text-slate-300 group-hover:scale-110 group-hover:bg-white/[0.08] transition-all duration-300">
+          {icon}
+        </div>
         {delta && (
-          <div className={`text-[11px] font-medium ${deltaType === "up" ? "text-emerald-400" : "text-red-400"}`}>
+          <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            deltaType === "up" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"
+          }`}>
+            {deltaType === "up" ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
             {delta}
           </div>
         )}
       </div>
+      <div>
+        <div className="text-[10px] text-slate-500 uppercase tracking-[0.12em] mb-1 font-bold">{label}</div>
+        <div className="font-syne text-[26px] font-bold text-white leading-none tracking-tight">{value}</div>
+      </div>
+      
+      {/* Decorative gradient */}
       <div
-        className="absolute -bottom-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-20 pointer-events-none"
+        className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
         style={{ background: "var(--brand-color-4)" }}
       />
     </div>

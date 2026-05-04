@@ -184,25 +184,20 @@ function JourneyCanvasInner() {
           <MiniMap nodeColor="#3B82F6" maskColor="rgba(0,0,0,0.4)" />
         </ReactFlow>
 
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-xl px-4 py-2 z-10" style={{ background: "var(--crm-panel)", border: "1px solid var(--crm-panel-border)" }}>
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 rounded-[14px] px-5 py-2.5 z-10 shadow-2xl border border-white/[0.08]" style={{ background: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(12px)" }}>
           <button
             onClick={handleClear}
-            className="px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-[11.5px] text-slate-500 hover:text-white transition-colors"
           >
-            Clear
+            Clear Canvas
           </button>
-          <button
-            onClick={handleLoadSample}
-            className="px-3 py-1.5 text-xs bg-white/5 text-slate-300 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
-          >
-            Load sample
-          </button>
+          <div className="w-[1px] h-4 bg-white/[0.1]" />
           <button
             onClick={() => openModal({ id: "journey" })}
-            className="px-4 py-1.5 text-xs rounded-full font-medium transition-all hover:brightness-110"
+            className="px-5 py-1.5 text-[12px] rounded-full font-bold transition-all hover:scale-105 active:scale-95"
             style={{ background: "var(--brand-color-3)", color: "white" }}
           >
-            Save journey
+            Save & Activate
           </button>
         </div>
 

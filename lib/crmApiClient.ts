@@ -23,7 +23,13 @@ const CRM_REFRESH_TOKEN_KEY = "crm-refresh-token";
 function currentApiBase() {
   if (typeof window === "undefined") return PROD_API_BASE.replace(/\/+$/, "");
   const host = window.location.hostname.toLowerCase();
-  if (host.includes("dev") || host === "localhost") return DEV_API_BASE.replace(/\/+$/, "");
+  
+  // On localhost, we use relative paths to trigger Next.js rewrites (bypasses CORS)
+  if (host === "localhost" || host.endsWith(".localhost")) {
+    return "";
+  }
+  
+  if (host.includes("dev")) return DEV_API_BASE.replace(/\/+$/, "");
   if (host.includes("staging")) return STAGING_API_BASE.replace(/\/+$/, "");
   return PROD_API_BASE.replace(/\/+$/, "");
 }

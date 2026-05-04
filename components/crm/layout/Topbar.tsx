@@ -47,15 +47,15 @@ export function Topbar() {
         <button
           onClick={triggerSync}
           disabled={isSyncing}
-          className="px-3 py-1.5 text-xs border rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center gap-1.5"
+          className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest border rounded-full transition-all disabled:opacity-50 flex items-center gap-2 hover:bg-white/[0.05]"
           style={{
-            background: "var(--crm-hover-subtle)",
-            borderColor: "var(--crm-panel-border)",
+            background: "transparent",
+            borderColor: "rgba(255,255,255,0.1)",
             color: "var(--crm-text-secondary)",
           }}
         >
-          <span className={isSyncing ? "animate-spin inline-block" : "inline-block"}>↻</span>
-          {isSyncing ? "Syncing..." : "Sync"}
+          <span className={isSyncing ? "animate-spin" : ""}>↻</span>
+          {isSyncing ? "Syncing" : "Refresh"}
         </button>
       );
     }
@@ -63,8 +63,11 @@ export function Topbar() {
       return (
         <button
           onClick={() => openModal({ id: "campaign" })}
-          className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-          style={{ background: "var(--brand-color-3)", color: "white" }}
+          className="px-5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white rounded-full transition-all hover:scale-105 active:scale-95 shadow-lg"
+          style={{ 
+            background: "var(--brand-color-3)", 
+            boxShadow: "0 6px 16px -4px rgba(0,0,0,0.4)"
+          }}
         >
           + New campaign
         </button>
@@ -72,13 +75,13 @@ export function Topbar() {
     }
     if (pathname.startsWith("/crm/segments")) {
       return (
-        <>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => openModal({ id: "segment" })}
-            className="px-3 py-1.5 text-xs border rounded-lg font-medium transition-colors"
+            className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest border rounded-full transition-all hover:bg-white/[0.05]"
             style={{
-              background: "var(--crm-hover-subtle)",
-              borderColor: "var(--crm-panel-border)",
+              background: "transparent",
+              borderColor: "rgba(255,255,255,0.1)",
               color: "var(--crm-text-secondary)",
             }}
           >
@@ -86,20 +89,26 @@ export function Topbar() {
           </button>
           <button
             onClick={() => openModal({ id: "campaign" })}
-            className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-            style={{ background: "var(--brand-color-3)", color: "white" }}
+            className="px-5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white rounded-full transition-all hover:scale-105 active:scale-95 shadow-lg"
+            style={{ 
+              background: "var(--brand-color-3)",
+              boxShadow: "0 6px 16px -4px rgba(0,0,0,0.4)"
+            }}
           >
             Run campaign
           </button>
-        </>
+        </div>
       );
     }
     if (pathname.startsWith("/crm/campaigns")) {
       return (
         <button
           onClick={() => openModal({ id: "campaign" })}
-          className="px-4 py-1.5 text-xs text-white rounded-full font-medium transition-all hover:brightness-110"
-          style={{ background: "var(--brand-color-3)", color: "white" }}
+          className="px-5 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white rounded-full transition-all hover:scale-105 active:scale-95 shadow-lg"
+          style={{ 
+            background: "var(--brand-color-3)",
+            boxShadow: "0 6px 16px -4px rgba(0,0,0,0.4)"
+          }}
         >
           + New campaign
         </button>
@@ -109,10 +118,10 @@ export function Topbar() {
       return (
         <button
           onClick={() => window.print()}
-          className="px-3 py-1.5 text-xs border rounded-lg font-medium transition-colors"
+          className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest border rounded-full transition-all hover:bg-white/[0.05]"
           style={{
-            background: "var(--crm-hover-subtle)",
-            borderColor: "var(--crm-panel-border)",
+            background: "transparent",
+            borderColor: "rgba(255,255,255,0.1)",
             color: "var(--crm-text-secondary)",
           }}
         >
@@ -125,31 +134,29 @@ export function Topbar() {
 
   return (
     <div
-      className="h-[54px] border-b flex items-center px-6 gap-4 flex-shrink-0"
+      className="h-[64px] flex items-center px-8 gap-4 flex-shrink-0 relative z-20"
       style={{
-        borderColor: "var(--crm-divider)",
-        background: "color-mix(in srgb, var(--crm-panel) 35%, var(--crm-bg))",
+        background: "transparent",
       }}
     >
       <h1
-        className="font-syne text-[15px] font-semibold flex-1"
+        className="font-syne text-[17px] font-bold tracking-tight flex-1"
         style={{ color: "var(--crm-heading)" }}
       >
         {title}
       </h1>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         {renderAction()}
+        <div className="w-[1px] h-6 bg-white/[0.08]" />
         <button
           onClick={toggleTheme}
-          className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08]"
           style={{
             color: "var(--crm-text-secondary)",
-            background: "var(--crm-hover-subtle)",
-            border: "1px solid var(--crm-panel-border)",
           }}
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
-          {isDark ? <Sun size={14} /> : <Moon size={14} />}
+          {isDark ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>
     </div>
