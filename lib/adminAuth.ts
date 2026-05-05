@@ -4,6 +4,10 @@ export const ADMIN_TOKEN_COOKIE = "admin-token";
 export const ADMIN_REFRESH_TOKEN_COOKIE = "admin-refresh-token";
 export const ADMIN_ENV_COOKIE = "admin-env";
 
+/** Middleware gate cookie — must be set alongside JWT cookies after login (see `/api/admin/login`). */
+export const ADMIN_GATE_COOKIE = "admin-auth";
+export const ADMIN_GATE_VALUE = "authenticated";
+
 type JwtPayload = {
   exp?: number;
   nbf?: number;

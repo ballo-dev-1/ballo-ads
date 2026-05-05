@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
   ADMIN_ENV_COOKIE,
+  ADMIN_GATE_COOKIE,
+  ADMIN_GATE_VALUE,
   ADMIN_TOKEN_COOKIE,
   ADMIN_REFRESH_TOKEN_COOKIE,
   isAdminTokenActive,
@@ -145,6 +147,14 @@ export async function POST(request: NextRequest) {
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
+    // Middleware only checks this cookie to allow /admin/* (JWT cookies are httpOnly for API).
+    cookieStore.set(ADMIN_GATE_COOKIE, ADMIN_GATE_VALUE, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: COOKIE_MAX_AGE,
+      path: "/",
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: unknown) {
@@ -170,6 +180,7 @@ export async function GET() {
     cookieStore.delete(ADMIN_TOKEN_COOKIE);
     cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE);
     cookieStore.delete(ADMIN_ENV_COOKIE);
+    cookieStore.delete(ADMIN_GATE_COOKIE);
   }
 
   return NextResponse.json({ authenticated: false }, { status: 401 });
