@@ -24,7 +24,8 @@ import buildingRetail from "@/public/Assets/51.png";
 import buildingHealthcare from "@/public/Assets/53.png";
 import buildingEducation from "@/public/Assets/57.png"
 import bglight from "@/public/Assets/2.png"
-import { Building, // 🏢 Building / Corporation
+import {
+  Building, // 🏢 Building / Corporation
   Landmark, // 🏦 Bank / Finance
   Globe,    // 🌍 Globe / Nonprofit / Government
   ShoppingCart, // 🛒 Shopping Cart / Retail
@@ -52,45 +53,45 @@ interface UseCase {
 }
 
 const useCases: UseCase[] = [
-  { 
-    id: 'sme', 
-    icon: <Building className="w-6 h-6" />, 
-    text: "SMEs & Corporations", 
+  {
+    id: 'sme',
+    icon: <Building className="w-6 h-6" />,
+    text: "SMEs & Corporations",
     subtext: "Promote products, services, and offers.",
-    image: building 
+    image: building
   },
-  { 
-    id: 'finance', 
-    icon: <Landmark className="w-6 h-6" />, 
-    text: "Financial Institutions", 
+  {
+    id: 'finance',
+    icon: <Landmark className="w-6 h-6" />,
+    text: "Financial Institutions",
     subtext: "Send loan approvals, transaction updates, and offers.",
-    image: buildingFinance 
+    image: buildingFinance
   },
-  { 
-    id: 'nonprofit', 
-    icon: <Globe className="w-6 h-6" />, 
-    text: "Nonprofits & Government Initiatives", 
+  {
+    id: 'nonprofit',
+    icon: <Globe className="w-6 h-6" />,
+    text: "Nonprofits & Government Initiatives",
     subtext: "Spread awareness with mass communication.",
-    image: buildingNonprofit 
+    image: buildingNonprofit
   },
-  { 
-    id: 'retail', 
-    icon: <ShoppingCart className="w-6 h-6" />, 
-    text: "Retail & E-commerce", 
+  {
+    id: 'retail',
+    icon: <ShoppingCart className="w-6 h-6" />,
+    text: "Retail & E-commerce",
     subtext: "Drive sales and customer engagement.",
-    image: buildingRetail 
+    image: buildingRetail
   },
-  { 
-    id: 'healthcare', 
-    icon: <Heart className="w-6 h-6" />, 
-    text: "Healthcare & Clinics", 
+  {
+    id: 'healthcare',
+    icon: <Heart className="w-6 h-6" />,
+    text: "Healthcare & Clinics",
     subtext: "Send appointment reminders and health campaigns.",
-    image: buildingHealthcare 
+    image: buildingHealthcare
   },
-  { 
-    id: 'education', 
-    icon: <GraduationCap className="w-6 h-6" />, 
-    text: "Education Institutions", 
+  {
+    id: 'education',
+    icon: <GraduationCap className="w-6 h-6" />,
+    text: "Education Institutions",
     subtext: "Notify students, parents, and staff with updates.",
     image: buildingEducation
   },
@@ -172,7 +173,7 @@ export default function Home() {
     { clamp: false }
   );
   //const maxChartValue = Math.max(
-    //...chartSeries.flatMap((series) => series.values));
+  //...chartSeries.flatMap((series) => series.values));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,7 +292,7 @@ export default function Home() {
       <section
         className="relative min-h-screen flex items-center justify-center px-4 md:px-8 py-20 overflow-hidden"
         style={{
-         // background: `url(${background.src})`,
+          // background: `url(${background.src})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -398,11 +399,10 @@ export default function Home() {
                   <button
                     key={index}
                     onClick={() => goToSlide(index)}
-                    className={`w-3 h-3 rounded-full border border-white/85 transition-all ${
-                      index === currentSlide
-                        ? "bg-white"
-                        : "bg-transparent hover:bg-white/25"
-                    }`}
+                    className={`w-3 h-3 rounded-full border border-white/85 transition-all ${index === currentSlide
+                      ? "bg-white"
+                      : "bg-transparent hover:bg-white/25"
+                      }`}
                     aria-label={`Go to slide ${index + 1}`}
                   />
                 ))}
@@ -447,11 +447,10 @@ export default function Home() {
                         alt={features[currentSlide].title}
                         fill
                         sizes="(max-width: 768px) 85vw, 40vw"
-                        className={`object-contain object-bottom ${
-                          features[currentSlide].title === "EMAIL MARKETING AT YOUR FINGERTIPS"
-                            ? "scale-[1.42] mt-5 -ml-2"
-                            : "scale-[1.35] mt-3 -ml-4"
-                        }`}
+                        className={`object-contain object-bottom ${features[currentSlide].title === "EMAIL MARKETING AT YOUR FINGERTIPS"
+                          ? "scale-[1.42] mt-5 -ml-2"
+                          : "scale-[1.35] mt-8 -ml-4"
+                          }`}
                         priority={currentSlide === 0}
                       />
                     </motion.div>
@@ -477,47 +476,26 @@ export default function Home() {
       <section className="relative z-40 pb-16 px-4">
         <div className="container mx-auto flex justify-center relative z-40">
           <div className="relative w-full max-w-[72rem] rounded-[2.25rem] px-8 py-14 md:px-20 md:py-24 text-center overflow-hidden shadow-[0_28px_58px_-20px_rgba(0,0,0,0.85)] bg-[linear-gradient(90deg,#060648_0%,#060648_50%,#060648_100%)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(225,235,255,0.38)_0%,rgba(196,210,255,0.17)_33%,rgba(169,186,255,0.05)_55%,rgba(0,0,0,0)_74%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(63,219,255,0.15)_0%,rgba(34,115,175,0.08)_40%,rgba(0,0,0,0)_75%)] pointer-events-none" />
             <h2
-              className="relative z-10 whitespace-nowrap text-[clamp(2.4rem,6.15vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)]"
-              style={{ fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif", letterSpacing: "0.005em" }}
+              className="relative z-10 whitespace-nowrap text-[clamp(2.4rem,6.15vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)] overflow-hidden"
+              style={{
+                fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+                letterSpacing: "0.005em",
+                backgroundColor: "#060648", // Matching banner background for the darken blend
+                color: "#fff",
+                margin: 0
+              }}
             >
-              <motion.span
-                className="inline-block bg-clip-text text-transparent [text-shadow:0_0_18px_rgba(27,227,236,0.18)]"
-                style={{
-                  backgroundImage: "linear-gradient(90deg,#18E3E8 0%,#13D9E4 28%,#89B3D2 62%,#B4BDC9 100%)",
-                  backgroundSize: "260% 100%",
-                  backgroundPositionX: "0%",
-                }}
-                animate={shouldReduceMotion ? { backgroundPositionX: "40%" } : { backgroundPositionX: ["0%", "200%"] }}
-                transition={shouldReduceMotion ? { duration: 3.4, ease: "linear", repeat: Infinity }}
-              >
-                POWERFUL
-              </motion.span>
-              <motion.span
-                className="inline-block bg-clip-text text-transparent"
-                style={{
-                  backgroundImage: "linear-gradient(90deg,#E0C878 0%,#BBC1CB 46%,#B2B8C5 100%)",
-                  backgroundSize: "240% 100%",
-                  backgroundPositionX: "200%",
-                }}
-                animate={shouldReduceMotion ? { backgroundPositionX: "60%" } : { backgroundPositionX: ["200%", "0%"] }}
-                transition={shouldReduceMotion ? { duration: 3.8, ease: "linear", repeat: Infinity }}
-              >
-                {" AND "}
-              </motion.span>
-              <motion.span
-                className="inline-block bg-clip-text text-transparent [text-shadow:0_0_18px_rgba(138,60,255,0.18)]"
-                style={{
-                  backgroundImage: "linear-gradient(90deg,#AAB4C4 0%,#9B7CCF 44%,#8A55FF 78%,#8A3CFF 100%)",
-                  backgroundSize: "260% 100%",
-                  backgroundPositionX: "0%",
-                }}
-                animate={shouldReduceMotion ? { backgroundPositionX: "45%" } : { backgroundPositionX: ["0%", "200%"] }}
-                transition={shouldReduceMotion ? { duration: 3.6, ease: "linear", repeat: Infinity }}
-              >
-                VERSATILE
-              </motion.span>
+              POWERFUL AND VERSATILE
+
+              {/* Aurora Effect Layer */}
+              <div className="home-banner__aurora-container">
+                <div className="home-banner__aurora-item"></div>
+                <div className="home-banner__aurora-item"></div>
+                <div className="home-banner__aurora-item"></div>
+                <div className="home-banner__aurora-item"></div>
+              </div>
             </h2>
           </div>
         </div>
@@ -709,66 +687,66 @@ export default function Home() {
 
       {/* Who can use BalloAds Section */}
       <section className="py-20 px-4 text-white bg-[var(--dark-blue-2)]">
-      <div className="container mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
-          Who can use BalloAds?
-        </h2>
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          
-          {/* Left Side - Clickable Navigation List */}
-          <div className="space-y-6">
-            {useCases.map((item) => (
-              <div 
-                key={item.id} 
-                className={`flex items-center gap-4 cursor-pointer p-3 rounded-xl transition-colors ${
-                  // Conditional styling: active item has a background
-                  activeCaseId === item.id 
-                    ? 'bg-[var(--brand-color-1)]/20 border-l-4 border-[var(--brand-color-1)] text-white' 
-                    : 'hover:bg-gray-700/30 text-gray-300'
-                }`}
-                // Make the entire div clickable to update the state
-                onClick={() => setActiveCaseId(item.id)}
-              >
-                <span className="text-3xl shrink-0">{item.icon}</span>
+        <div className="container mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16">
+            Who can use BalloAds?
+          </h2>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
 
-                <div className="flex flex-col">
-                  <span className="text-xl font-semibold">{item.text}</span>
-                  <span className="text-sm text-gray-400 mt-1">{item.subtext}</span>
+            {/* Left Side - Clickable Navigation List */}
+            <div className="space-y-6">
+              {useCases.map((item) => (
+                <div
+                  key={item.id}
+                  className={`flex items-center gap-4 cursor-pointer p-3 rounded-xl transition-colors ${
+                    // Conditional styling: active item has a background
+                    activeCaseId === item.id
+                      ? 'bg-[var(--brand-color-1)]/20 border-l-4 border-[var(--brand-color-1)] text-white'
+                      : 'hover:bg-gray-700/30 text-gray-300'
+                    }`}
+                  // Make the entire div clickable to update the state
+                  onClick={() => setActiveCaseId(item.id)}
+                >
+                  <span className="text-3xl shrink-0">{item.icon}</span>
+
+                  <div className="flex flex-col">
+                    <span className="text-xl font-semibold">{item.text}</span>
+                    <span className="text-sm text-gray-400 mt-1">{item.subtext}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Right Side - Dynamic Image Slider */}
-          <div className="relative h-[600px] flex items-center justify-center">
-            
-            {/* STATIC BACKGROUND IMAGE */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                {/* Background Ring/Light effect (Static) */}
-                <Image
-                    src={bglight}
-                    alt="Static Background Light"
-                    fill
-                    className="object-contain opacity-50"
-                    priority
-                />
+              ))}
             </div>
 
-            {/* DYNAMIC BUILDING IMAGE (The Sliding Element) */}
-            <div className="relative w-full h-full flex items-center justify-center transition-opacity duration-500">
+            {/* Right Side - Dynamic Image Slider */}
+            <div className="relative h-[600px] flex items-center justify-center">
+
+              {/* STATIC BACKGROUND IMAGE */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {/* Background Ring/Light effect (Static) */}
                 <Image
-                    key={activeCase.id} // IMPORTANT: Use key to force re-render and trigger CSS transitions
-                    src={activeCase.image}
-                    alt={`${activeCase.text} Building`}
-                    width={350} // Set appropriate dimensions
-                    height={700}
-                    className="object-contain w-auto h-full scale-[1.3] absolute transition-transform duration-500 ease-in-out"
+                  src={bglight}
+                  alt="Static Background Light"
+                  fill
+                  className="object-contain opacity-50"
+                  priority
                 />
+              </div>
+
+              {/* DYNAMIC BUILDING IMAGE (The Sliding Element) */}
+              <div className="relative w-full h-full flex items-center justify-center transition-opacity duration-500">
+                <Image
+                  key={activeCase.id} // IMPORTANT: Use key to force re-render and trigger CSS transitions
+                  src={activeCase.image}
+                  alt={`${activeCase.text} Building`}
+                  width={350} // Set appropriate dimensions
+                  height={700}
+                  className="object-contain w-auto h-full scale-[1.3] absolute transition-transform duration-500 ease-in-out"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
       {/* Testimonials Section */}
       <section className="py-20 px-4 bg-[var(--dark-blue-2)]">

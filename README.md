@@ -1,5 +1,8 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 🚀 Project Roadmap
+For the strategic vision, current progress, and upcoming features, please refer to the [ROADMAP.md](file:///Users/yxzuji/Desktop/Projects/ballo-ads/ROADMAP.md).
+
 ## Getting Started
 
 First, run the development server:

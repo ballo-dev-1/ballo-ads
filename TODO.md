@@ -1,5 +1,7 @@
 # Canva Multi-Route Implementation TODO
 
+*Refer to [ROADMAP.md](file:///Users/yxzuji/Desktop/Projects/ballo-ads/ROADMAP.md) for the high-level project vision.*
+
 - [x] Audit existing route files and shared components used by target pages
 - [ ] Update shared global design tokens/styles for Canva visual language (in progress)
 - [ ] Refactor homepage (`/`) to match provided Canva composition

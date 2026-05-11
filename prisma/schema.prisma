@@ -15,6 +15,7 @@ model CrmClient {
   companyName       String    @map("company_name")
   industry          String
   region            String    @default("Lusaka, Zambia")
+  interests         String[]  @default([]) // For granular interest-based targeting
   balloadsAccountId String    @unique @map("balloads_account_id")
   planTier          String    @map("plan_tier")
   accountStatus     String    @map("account_status") @default("active")
@@ -25,7 +26,34 @@ model CrmClient {
   syncedAt          DateTime  @map("synced_at") @updatedAt
   createdAt         DateTime  @default(now()) @map("created_at")
 
+  events            CrmEvent[]
+  messageLogs       CrmMessageLog[]
+
   @@map("crm_clients")
+}
+
+model CrmEvent {
+  id        String   @id @default(uuid())
+  clientId  String   @map("client_id")
+  client    CrmClient @relation(fields: [clientId], references: [id])
+  type      String   // e.g., "click", "open", "login", "purchase"
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("crm_events")
+}
+
+model CrmMessageLog {
+  id         String    @id @default(uuid())
+  campaignId String    @map("campaign_id")
+  clientId   String    @map("client_id")
+  client     CrmClient @relation(fields: [clientId], references: [id])
+  channel    String    // sms, email, whatsapp, etc.
+  status     String    @default("sent") // sent, delivered, failed, opened, clicked
+  sentAt     DateTime  @default(now()) @map("sent_at")
+  metadata   Json      @default("{}")
+
+  @@map("crm_message_logs")
 }
 
 model CrmSegment {
@@ -104,5 +132,31 @@ model User {
   password  String // In production, this should be hashed!
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id              String   @id @default(uuid())
+  title           String
+  message         String
+  type            String
+  category        String   @default("operations")
+  severity        String   @default("info")
+  read            Boolean  @default(false)
+  link            String?
+  entityType      String?  @map("entity_type")
+  entityId        String?  @map("entity_id")
+  dedupeKey       String?  @map("dedupe_key")
+  cooldownSeconds Int?     @map("cooldown_seconds")
+  targetRoles     String[] @default([]) @map("target_roles")
+  metadata        Json     @default("{}")
+  source          String?
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([read, createdAt])
+  @@index([type, createdAt])
+  @@index([severity, createdAt])
+  @@index([dedupeKey])
+  @@map("Notification")
 }
 

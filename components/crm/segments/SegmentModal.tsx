@@ -9,27 +9,43 @@ import { useAppStore } from "@/lib/crmStores";
 import type { SegmentRule } from "@/lib/crmTypes";
 
 const ATTRIBUTES = [
-  { value: "health_score", label: "health_score", type: "number" },
-  { value: "last_active_days", label: "last_active_days", type: "number" },
-  { value: "credits", label: "credits", type: "number" },
-  { value: "plan", label: "plan", type: "string" },
-  { value: "industry", label: "industry", type: "string" },
-  { value: "signup_age_days", label: "signup_age_days", type: "number" },
-  { value: "account_status", label: "account_status", type: "string" },
+  { value: "health_score", label: "Health Score", type: "number" },
+  { value: "credits_remaining", label: "Credits Remaining", type: "number" },
+  { value: "plan_tier", label: "Plan Tier", type: "string" },
+  { value: "industry", label: "Industry", type: "string" },
+  { value: "region", label: "Region", type: "string" },
+  { value: "account_status", label: "Account Status", type: "string" },
+  { value: "interests", label: "Interests", type: "array" },
+  { value: "has_clicked", label: "Has Clicked Ad", type: "boolean" },
+  { value: "last_active_at", label: "Last Active", type: "date" },
 ];
 
 const NUMBER_OPS = [
-  { value: "<", label: "is less than" },
-  { value: ">", label: "is greater than" },
-  { value: "=", label: "equals" },
-  { value: ">=", label: "is at least" },
-  { value: "<=", label: "is at most" },
+  { value: "eq", label: "equals" },
+  { value: "gt", label: "is greater than" },
+  { value: "lt", label: "is less than" },
+  { value: "gte", label: "is at least" },
+  { value: "lte", label: "is at most" },
 ];
 
 const STRING_OPS = [
-  { value: "=", label: "equals" },
-  { value: "!=", label: "does not equal" },
+  { value: "eq", label: "equals" },
+  { value: "neq", label: "does not equal" },
   { value: "contains", label: "contains" },
+];
+
+const ARRAY_OPS = [
+  { value: "has", label: "includes any of" },
+  { value: "has_all", label: "includes all of" },
+];
+
+const BOOLEAN_OPS = [
+  { value: "eq", label: "is" },
+];
+
+const DATE_OPS = [
+  { value: "before", label: "is before" },
+  { value: "after", label: "is after" },
 ];
 
 export function SegmentModal() {
@@ -62,7 +78,22 @@ export function SegmentModal() {
   };
 
   const updateRule = (i: number, field: keyof SegmentRule, value: string) => {
-    setRules((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+    setRules((prev) =>
+      prev.map((r, idx) => {
+        if (idx !== i) return r;
+        const next = { ...r, [field]: value };
+        // Reset operator if attribute changed to prevent invalid ops
+        if (field === "attr") {
+          const def = ATTRIBUTES.find((a) => a.value === value);
+          if (def?.type === "number") next.op = "eq";
+          else if (def?.type === "array") next.op = "has";
+          else if (def?.type === "boolean") next.op = "eq";
+          else if (def?.type === "date") next.op = "after";
+          else next.op = "eq";
+        }
+        return next;
+      }),
+    );
   };
 
   const removeRule = (i: number) => {
@@ -129,7 +160,12 @@ export function SegmentModal() {
             <div className="space-y-2 mb-2">
               {rules.map((rule, i) => {
                 const attrDef = ATTRIBUTES.find((a) => a.value === rule.attr);
-                const ops = attrDef?.type === "number" ? NUMBER_OPS : STRING_OPS;
+                let ops = STRING_OPS;
+                if (attrDef?.type === "number") ops = NUMBER_OPS;
+                else if (attrDef?.type === "array") ops = ARRAY_OPS;
+                else if (attrDef?.type === "boolean") ops = BOOLEAN_OPS;
+                else if (attrDef?.type === "date") ops = DATE_OPS;
+
                 return (
                   <div key={i} className="flex items-center gap-2">
                     <select
@@ -154,12 +190,24 @@ export function SegmentModal() {
                         </option>
                       ))}
                     </select>
-                    <input
-                      className="crm-input w-24"
-                      value={rule.val}
-                      onChange={(e) => updateRule(i, "val", e.target.value)}
-                      placeholder="value"
-                    />
+                    {attrDef?.type === "boolean" ? (
+                      <select
+                        className="crm-input w-24"
+                        value={rule.val}
+                        onChange={(e) => updateRule(i, "val", e.target.value)}
+                      >
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </select>
+                    ) : (
+                      <input
+                        className="crm-input w-24"
+                        type={attrDef?.type === "date" ? "date" : "text"}
+                        value={rule.val}
+                        onChange={(e) => updateRule(i, "val", e.target.value)}
+                        placeholder={attrDef?.type === "array" ? "tag1,tag2" : "value"}
+                      />
+                    )}
                     <button
                       onClick={() => removeRule(i)}
                       className="text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
