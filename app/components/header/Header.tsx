@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import Image from "next/image";
+import React, { useState } from "react";
 import { usePathname } from "next/navigation";
+import logo_1 from "@/public/BalloAds Logo New/BalloAds-logo.png"
+import logo_2 from "@/public/BalloAds Logo New/BalloAds-logo-full.png"
 
 type NavLink = {
   label: string;
   href: string;
   description?: string;
+  subLinks?: { label: string; href: string }[];
 };
 
 type NavItem = {
@@ -21,20 +25,22 @@ const navItems: NavItem[] = [
     label: "Features",
     href: "/features",
     links: [
-      { label: "Omnichannel Messaging", href: "/features#omnichannel" },
-      { label: "Automations", href: "/features#automations" },
-      { label: "Analytics & Reporting", href: "/features#analytics" },
+      { label: "Bulk SMS", href: "/features#omnichannel" },
+      { label: "WhatsApp Marketing ", href: "/features#automations" },
+      { label: "Email Marketing", href: "/features#analytics" },
+      {label: "Brutus AI", href:"/brutus"},
     ],
   },
+
   {
     label: "How it Works",
     href: "/how-it-works",
     links: [
       { label: "Platform Overview", href: "/how-it-works#overview" },
-      { label: "Onboarding Steps", href: "/how-it-works#steps" },
-      { label: "AI Insights", href: "/how-it-works#ai" },
+      {label: "For My Business", href:"/business"},
     ],
   },
+
   {
     label: "Resources",
     href: "/resources",
@@ -44,17 +50,24 @@ const navItems: NavItem[] = [
       { label: "FAQs", href: "/resources#faqs" },
       { label: "Professional Services", href: "/resources#services" },
       { label: "Blog", href: "/blog" },
+      { 
+        label: "Developers", 
+        href: "/api", 
+        subLinks: [
+          { label: "SMS API", href: "/api/sms-api" },
+          { label: "Email API", href: "/api/email-api" },
+          { label: "WhatsApp API", href: "/api/whatsapp-api" },
+        ],
+      },
+
     ],
   },
+
   {
-    label: "Careers",
-    href: "/careers",
-    links: [
-      { label: "Open Roles", href: "/careers#open-roles" },
-      { label: "Life at BalloAds", href: "/careers#culture" },
-      { label: "Hiring Process", href: "/careers#process" },
-    ],
+    label: "Blog",
+    href: "/blog",
   },
+  
   {
     label: "Pricing",
     href: "/pricing",
@@ -68,37 +81,50 @@ const Header = () => {
 
   const isActive = (path: string) => pathname === path;
 
+  // Hide the public site header on admin routes, which have their own layout/nav
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <header className="header header--sticky">
-      <nav className="header__nav">
+      <nav className="header__nav fixed w-[95vw] min-w-[380px] max-w-[1440px] h-16 md:flex ring ring-[#afc2f234] backdrop-blur-md  
+       mx-0 mt-2 top-4 left-1/2 -translate-x-1/2 data-text-bright:**:text-white shadow rounded-full p-4">
         {/* Logo */}
         <Link href="/" className="header__logo">
           <div className="header__logo-container">
-            <div className="header__logo-icon">
-              <span className="header__logo-text">b</span>
+            <div className="header__logo-icon flex">
+              <Image
+                src={logo_1}
+                alt="BalloAds App"
+                width={300}
+                height={80}
+                className="header__logo-image w-auto h-[3rem]"
+                priority
+              />
+              <Image
+                src={logo_2}
+                alt="BalloAds App"
+                width={300}
+                height={80}
+                className="header__logo-image w-full h-auto ml-[-1.5rem]"
+                priority
+              />
             </div>
-            <span className="header__logo-label">ballo innovations</span>
           </div>
-          <span className="header__logo-tagline">REBRANDING THE FUTURE</span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="header__nav-desktop">
+          {/*Inside your Header component, within the desktop navigation map:*/}
+
           {navItems.map((item) => {
             const hasDropdown = item.links && item.links.length > 0;
             const isDropdownOpen = activeDropdown === item.label;
 
             if (!hasDropdown) {
               return (
-                <Link
-                  key={item.label}
-                  href={item.href ?? "#"}
-                  className={`header__nav-link ${
-                    item.href && isActive(item.href)
-                      ? "header__nav-link--active"
-                      : ""
-                  }`}
-                >
+                <Link key={item.label} href={item.href ?? "#"} className="header__nav-link">
                   {item.label}
                 </Link>
               );
@@ -107,61 +133,63 @@ const Header = () => {
             return (
               <div
                 key={item.label}
-                className="header__nav-dropdown"
+                className="header__nav-dropdown group"
                 onMouseEnter={() => setActiveDropdown(item.label)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
                 <Link
                   href={item.href ?? "#"}
                   className={`header__nav-link header__nav-link--with-dropdown ${
-                    item.href && isActive(item.href)
-                      ? "header__nav-link--active"
-                      : ""
+                    isDropdownOpen ? "header__nav-link--active" : ""
                   }`}
-                  onFocus={() => setActiveDropdown(item.label)}
-                  onBlur={() => setActiveDropdown(null)}
                 >
                   {item.label}
-                  <svg
-                    className={`header__nav-arrow ${
-                      isDropdownOpen ? "header__nav-arrow--open" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                  {/* Your existing SVG arrow */}
                 </Link>
 
                 {isDropdownOpen && (
-                  <div 
-                    className="header__dropdown-menu"
-                    onMouseEnter={() => setActiveDropdown(item.label)}
-                    onMouseLeave={() => setActiveDropdown(null)}
-                  >
-                    <div className="header__dropdown-list">
-                      {item.links?.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className="header__dropdown-link"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                  <div style={{width: 'auto'}} className={`header__dropdown-menu ${item.label === "Resources" ? "header__dropdown-menu--mega" : ""}`}>
+                    <div className={`${item.label === "Resources" ? "flex w-[500px]" : "header__dropdown-list"}`}>
+                      
+                      {/* Left Column: Primary Links */}
+                      <div className={`${item.label === "Resources" ? "w-1/2 p-4 border-r border-[var(--dark-blue)]" : ""}`}>
+                        {item.links?.map((link) => {
+                          // Check if this specific link (like "Developers") has its own sub-links
+                          const hasSubLinks = link.label === "Developers";
+
+                          return (
+                            <div key={link.href} className="group/sub relative">
+                              <Link
+                                href={link.href}
+                                className="flex items-center justify-between p-3 text-[var(--dark-blue)] hover:bg-white/10 rounded-xl transition"
+                              >
+                                <span className="font-bold">{link.label}</span>
+                              </Link>
+
+                              {/* Right Column: API Sub-links (Only for Developers on hover) */}
+                              {hasSubLinks && (
+                                <div className="absolute left-full top-[-16px] h-[calc(100%+32px)] w-full pl-6 hidden group-hover/sub:flex flex-col justify-center gap-4 bg-transparent">
+                                  <Link href="/developers/sms-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">SMS API</Link>
+                                  <Link href="/developers/email-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">Email API</Link>
+                                  <Link href="/developers/whatsapp-api" className="text-[var(--dark-blue)] hover:text-white transition whitespace-nowrap">WhatsApp API</Link>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Empty Right Column Placeholder for non-hover state */}
+                      {item.label === "Resources" && <div className="w-1/2" />}
                     </div>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
 
+        <div className="flex items-center gap-5">
           <svg
             className="header__search-icon"
             fill="none"
@@ -175,22 +203,22 @@ const Header = () => {
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-        </div>
 
-        {/* Sign In and Sign Up Buttons */}
-        <div className="header__actions">
-          <Link
-            href="#signin"
-            className="header__action-link header__action-link--signin"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="#signup"
-            className="header__action-link header__action-link--signup"
-          >
-            Sign Up
-          </Link>
+          {/* Sign In and Sign Up Buttons */}
+          <div className="header__actions">
+            <Link
+              href="#signin"
+              className="header__action-link header__action-link--signin"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="#signup"
+              className="header__action-link header__action-link--signup"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Menu Button */}

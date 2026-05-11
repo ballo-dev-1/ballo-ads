@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,19 +11,19 @@ datasource db {
 }
 
 model CrmClient {
-  id                String   @id @default(uuid())
-  companyName       String   @map("company_name")
+  id                String    @id @default(uuid())
+  companyName       String    @map("company_name")
   industry          String
-  region            String   @default("Lusaka, Zambia")
-  balloadsAccountId String   @unique @map("balloads_account_id")
-  planTier          String   @map("plan_tier")
-  accountStatus     String   @map("account_status") @default("active")
-  healthScore       Int      @map("health_score") @default(100)
-  creditsRemaining  Int      @map("credits_remaining") @default(0)
+  region            String    @default("Lusaka, Zambia")
+  balloadsAccountId String    @unique @map("balloads_account_id")
+  planTier          String    @map("plan_tier")
+  accountStatus     String    @map("account_status") @default("active")
+  healthScore       Int       @map("health_score") @default(100)
+  creditsRemaining  Int       @map("credits_remaining") @default(0)
   lastActiveAt      DateTime? @map("last_active_at")
-  signedUpAt        DateTime @map("signed_up_at")
-  syncedAt          DateTime @map("synced_at") @updatedAt
-  createdAt         DateTime @default(now()) @map("created_at")
+  signedUpAt        DateTime  @map("signed_up_at")
+  syncedAt          DateTime  @map("synced_at") @updatedAt
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   @@map("crm_clients")
 }
@@ -40,18 +43,18 @@ model CrmSegment {
 }
 
 model CrmJourney {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   name            String
-  status          String   @default("draft")
-  triggerType     String   @map("trigger_type")
-  triggerConfig   Json     @map("trigger_config") @default("{}")
-  flowDefinition  Json     @map("flow_definition") @default("{\"nodes\":[],\"edges\":[]}")
-  entrySegmentId  String?  @map("entry_segment_id")
-  maxDurationDays Int      @map("max_duration_days") @default(7)
-  entryMode       String   @map("entry_mode") @default("once_per_client")
-  createdBy       String   @map("created_by")
+  status          String    @default("draft")
+  triggerType     String    @map("trigger_type")
+  triggerConfig   Json      @map("trigger_config") @default("{}")
+  flowDefinition  Json      @map("flow_definition") @default("{\"nodes\":[],\"edges\":[]}")
+  entrySegmentId  String?   @map("entry_segment_id")
+  maxDurationDays Int       @map("max_duration_days") @default(7)
+  entryMode       String    @map("entry_mode") @default("once_per_client")
+  createdBy       String    @map("created_by")
   activatedAt     DateTime? @map("activated_at")
-  createdAt       DateTime @default(now()) @map("created_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
 
   @@map("crm_journeys")
 }
@@ -85,3 +88,21 @@ model CrmAuditLog {
 
   @@map("crm_audit_logs")
 }
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // In production, this should be hashed!
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

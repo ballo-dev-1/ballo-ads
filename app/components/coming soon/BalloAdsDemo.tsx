@@ -1,6 +1,7 @@
 "use client";
 
 import "./style.css";
+
 import background from "@/public/Backgrounds/hero-bg.png";
 import playStore from "@/public/elements small/18.png";
 import appleStore from "@/public/elements small/19.png";

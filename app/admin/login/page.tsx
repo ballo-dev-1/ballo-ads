@@ -1,125 +1,201 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
-import { Eye, EyeOff } from 'lucide-react'
-import { getAdminBasePath } from '@/lib/adminNamespace'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
+import { Eye, EyeOff, Globe, Server, Lock, Mail, Loader2, AlertCircle, ChevronDown, Check } from 'lucide-react'
+import logo_1 from '@/public/BalloAds Logo New/BalloAds-logo.png'
+import logo_2 from '@/public/BalloAds Logo New/BalloAds-logo-full.png'
+import { DEV_API_BASE, PROD_API_BASE, STAGING_API_BASE } from '@/lib/adminApi'
 
-export default function AdminLogin() {
+const API_PRESETS = [
+  { label: 'Production', value: PROD_API_BASE, icon: Globe },
+  { label: 'Staging', value: STAGING_API_BASE, icon: Server },
+  { label: 'Development', value: DEV_API_BASE, icon: Lock },
+  { label: 'Local (5238)', value: 'http://localhost:5238', icon: Server },
+]
+
+export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [apiBase, setApiBase] = useState(PROD_API_BASE)
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showPresets, setShowPresets] = useState(false)
   const router = useRouter()
-  const pathname = usePathname()
-  const { baseUrl } = useApiEnv()
-  const basePath = getAdminBasePath(pathname)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    fetch('/api/admin/login')
-      .then(res => res.json())
-      .then(data => {
-        if (data.authenticated) {
-          router.push(`${basePath}/dashboard`)
-        }
-      })
-  }, [basePath, router])
+    // If the URL has an 'env' hint, pre-select the preset
+    const envHint = searchParams.get('env')
+    if (envHint === 'dev') setApiBase(DEV_API_BASE)
+    else if (envHint === 'staging') setApiBase(STAGING_API_BASE)
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setIsLoading(true)
+    setError('')
 
     try {
-      const response = await fetch('/api/admin/login', {
+      const res = await fetch('/api/admin/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, apiBase: baseUrl }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, apiBase }),
       })
 
-      const data = await response.json()
+      const data = await res.json()
 
-      if (response.ok) {
-        // Full navigation so session cookies from the POST response are applied before middleware runs.
-        window.location.assign(`${basePath}/dashboard`)
+      if (res.ok) {
+        // Find which namespace we are in to redirect correctly
+        const pathname = window.location.pathname
+        const basePath = pathname.startsWith('/dev-admin') ? '/dev-admin' :
+                         pathname.startsWith('/staging-admin') ? '/staging-admin' : '/admin'
+        router.push(`${basePath}/dashboard`)
       } else {
-        setError(data.error || 'Invalid email or password')
+        setError(data.error || 'Login failed')
       }
-    } catch {
-      setError('Login failed. Please try again.')
+    } catch (err) {
+      setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
   }
 
+  const currentPreset = API_PRESETS.find(p => p.value.replace(/\/+$/, '') === apiBase.replace(/\/+$/, ''))
+
   return (
-    <div className=" fixed top-0 left-0 w-screen min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--brand-color-1)] via-[var(--brand-color-2)] to-[var(--brand-color-1)] px-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-[var(--brand-color-1)] mb-2">Backoffice Login</h1>
-        <p className="text-gray-600 mb-4">Enter your credentials to access the dashboard</p>
+    <div className="flex min-h-screen items-center justify-center bg-[#05050a] px-4 font-sans selection:bg-blue-500/30">
+      {/* Background decoration */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-blue-600/10 blur-[120px]" />
+        <div className="absolute -right-[10%] bottom-[10%] h-[30%] w-[30%] rounded-full bg-indigo-600/10 blur-[100px]" />
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-1)] focus:border-transparent outline-none"
-              placeholder="Enter your email"
-              required
-            />
+      <div className="relative w-full max-w-[420px]">
+        <div className="mb-10 flex flex-col items-center text-center">
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <Image src={logo_1} alt="Ballo" className="h-10 w-auto brightness-0 invert" priority />
+            <Image src={logo_2} alt="Ballo Ads" className="h-9 w-auto brightness-0 invert" priority />
           </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Welcome back</h1>
+          <p className="mt-2 text-sm text-gray-400">Admin Control Panel Authentication</p>
+        </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--brand-color-1)] focus:border-transparent outline-none"
-                placeholder="Enter your password"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-[var(--brand-color-1)] focus:outline-none"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl md:p-10">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Backend Environment
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowPresets(!showPresets)}
+                  className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white transition-all hover:bg-white/10"
+                >
+                  <div className="flex items-center gap-3">
+                    {currentPreset ? <currentPreset.icon className="h-4 w-4 text-blue-400" /> : <Server className="h-4 w-4 text-gray-400" />}
+                    <span>{currentPreset?.label || 'Custom Endpoint'}</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${showPresets ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showPresets && (
+                  <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-white/10 bg-[#161622] shadow-2xl backdrop-blur-xl">
+                    {API_PRESETS.map((preset) => (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => {
+                          setApiBase(preset.value)
+                          setShowPresets(false)
+                        }}
+                        className="flex w-full items-center justify-between px-4 py-3 text-sm text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
+                      >
+                        <div className="flex items-center gap-3">
+                          <preset.icon className="h-4 w-4" />
+                          <span>{preset.label}</span>
+                        </div>
+                        {apiBase === preset.value && <Check className="h-4 w-4 text-blue-400" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Email Address
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                </div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-sm text-white placeholder:text-gray-600 transition-all focus:border-blue-500/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  placeholder="name@example.com"
+                  required
+                />
+              </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-[var(--brand-color-1)] text-white py-3 rounded-lg font-semibold hover:bg-[var(--brand-color-2)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Password
+              </label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                  <Lock className="h-4 w-4 text-gray-500" />
+                </div>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-11 pr-12 text-sm text-white placeholder:text-gray-600 transition-all focus:border-blue-500/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500 transition-colors hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex animate-in fade-in slide-in-from-top-1 items-center gap-2 rounded-xl bg-red-500/10 p-3 text-sm text-red-400 border border-red-500/20">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="relative flex w-full items-center justify-center rounded-xl bg-blue-600 py-3.5 text-sm font-semibold text-white transition-all hover:bg-blue-500 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+            >
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                'Sign In to Dashboard'
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p className="mt-8 text-center text-xs text-gray-500">
+          Secure Administrative Access &copy; {new Date().getFullYear()} BalloAds
+        </p>
       </div>
     </div>
   )
 }
-

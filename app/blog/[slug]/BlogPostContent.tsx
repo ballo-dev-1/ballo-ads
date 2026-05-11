@@ -4,12 +4,18 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import laptopImage from "@/public/elements small/4.png";
-import article2 from "@/public/elements small/2.png";
-import article3 from "@/public/elements small/3.png";
-import article5 from "@/public/elements small/5.png";
-import article6 from "@/public/elements small/6.png";
-import handshake from "@/public/elements small/handshake.png";
+import laptopImage from "@/public/BalloAds Assets 2/19.png";
+import article1 from "@/public/BalloAds Assets 2/1.png";
+import article2 from "@/public/BalloAds Assets 2/2.png";
+import article3 from "@/public/BalloAds Assets 2/3.png";
+import article5 from "@/public/BalloAds Assets 2/5.png";
+import article6 from "@/public/BalloAds Assets 2/6.png";
+import article7 from "@/public/BalloAds Assets 2/7.png";
+import handshake from "@/public/BalloAds Assets 2/2.png";
+import strategy from "@/public/elements small/strategy.png";
+import marketAnalysis from "@/public/elements small/market-analysis.png";
+import contentIcon from "@/public/elements small/content-icon.png";
+
 import balloBot from "@/public/elements small/ballo-bot.png";
 
 const articleData = {
@@ -57,7 +63,7 @@ const promotionalArticle = {
 };
 
 const mostViewedArticles = [
-  { title: "Get to know about Insurance", description: "Zambia's collaboration with UNESCO to assess AI readiness and participation in global AI ethics...", image: laptopImage },
+  { title: "Get to know about Insurance", description: "Zambia's collaboration with UNESCO to assess AI readiness and participation in global AI ethics...", image: article1 },
   { title: "Get to know about Insurance", description: "Zambia's collaboration with UNESCO to assess AI readiness and participation in global AI ethics...", image: article2 },
   { title: "Get to know about Insurance", description: "Zambia's collaboration with UNESCO to assess AI readiness and participation in global AI ethics...", image: handshake },
   { title: "Get to know about Insurance", description: "Zambia's collaboration with UNESCO to assess AI readiness and participation in global AI ethics...", image: article3 },
@@ -105,51 +111,62 @@ export default function BlogPostContent({ slug: _slug }: { slug: string }) {
   return (
     <main className="min-h-screen bg-[var(--dark-blue)] text-white">
       <div className="container mx-auto px-4 md:px-8 py-8">
-        <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
-          {/* Main Article Content */}
-          <article className="flex flex-col gap-8">
-            {/* Hero Banner */}
-            <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden">
-              <Image
-                src={articleData.heroImage}
-                alt={articleData.title}
-                fill
-                className="object-cover"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-8">
-                <h1 className="text-3xl md:text-4xl font-bold mb-4">{articleData.title}</h1>
-                <div className="flex items-center gap-4">
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-white/30">
-                    <Image
-                      src={articleData.author.avatar}
-                      alt={articleData.author.name}
-                      fill
-                      className="object-cover"
-                    />
+        {/* Hero Banner */}
+        <div className="relative h-96 md:h-[500px] rounded-4xl overflow-hidden mb-12">
+          <Image
+            src={articleData.heroImage}
+            alt={articleData.title}
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">
+              {articleData.title}
+            </h1>
+            <div className="flex items-center gap-4">
+              <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-white/30">
+                <Image
+                  src={articleData.author.avatar}
+                  alt={articleData.author.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex justify-between w-full items-center">
+                <div className="flex flex-col">
+                  <span className="font-semibold">
+                    {articleData.author.name}
+                  </span>
+                  <span className="text-sm text-white/80">
+                  {articleData.author.role}
+                  </span>
+                  <span className="text-sm text-white/70">
+                    {articleData.date}
+                  </span>
+                </div>
+                <div>
+                  {/* Article Tags */}
+                  <div className="flex flex-wrap gap-3 justify-end">
+                    {articleData.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-[var(--brand-color-1)] px-4 py-2 text-sm font-semibold"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{articleData.author.name}</span>
-                    <span className="text-sm text-white/80">{articleData.author.role}</span>
-                  </div>
-                  <span className="ml-auto text-sm text-white/70">{articleData.date}</span>
                 </div>
               </div>
             </div>
-
-            {/* Article Tags */}
-            <div className="flex flex-wrap gap-3 justify-end">
-              {articleData.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-[var(--brand-color-1)] px-4 py-2 text-sm font-semibold"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
+          </div>
+        </div>
+        
+        <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
+          {/* Main Article Content */}
+          <article className="flex flex-col gap-8">
             {/* Article Content */}
             <div className="flex flex-col gap-6 text-white/90 leading-relaxed">
               {articleData.content.map((paragraph, index) => (

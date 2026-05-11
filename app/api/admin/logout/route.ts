@@ -1,18 +1,18 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 import {
   ADMIN_ENV_COOKIE,
   ADMIN_GATE_COOKIE,
-  ADMIN_TOKEN_COOKIE,
   ADMIN_REFRESH_TOKEN_COOKIE,
-} from "@/lib/adminAuth";
+  ADMIN_TOKEN_COOKIE,
+} from '@/lib/adminAuth'
 
 export async function POST() {
-  const cookieStore = await cookies();
-  cookieStore.delete(ADMIN_TOKEN_COOKIE);
-  cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE);
-  cookieStore.delete(ADMIN_ENV_COOKIE);
-  cookieStore.delete(ADMIN_GATE_COOKIE);
+  const cookieStore = await cookies()
+  cookieStore.delete(ADMIN_TOKEN_COOKIE)
+  cookieStore.delete(ADMIN_REFRESH_TOKEN_COOKIE)
+  cookieStore.delete(ADMIN_ENV_COOKIE)
+  cookieStore.delete(ADMIN_GATE_COOKIE)
 
-  return NextResponse.json({ success: true }, { status: 200 });
+  return NextResponse.json({ success: true })
 }
