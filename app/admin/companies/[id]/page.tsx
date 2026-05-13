@@ -64,6 +64,7 @@ import {
   getCampaignStatusClasses,
 } from '@/app/admin/utils/campaignDisplay'
 import AdminHero from '@/app/admin/components/AdminHero'
+import CompanyMessagingCreditsPanel from '@/app/admin/components/CompanyMessagingCreditsPanel'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { getAdminBasePath } from '@/lib/adminNamespace'
 import { notifyBackofficeEvent } from '@/lib/notifications/client'
@@ -2115,6 +2116,18 @@ export default function CompanyDetailsPage() {
                   />
                 </dl>
               </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Messaging credits"
+              subtitle="Active purchase-order balances used for dashboard campaigns and API sends. Allocate manual credits when the company needs more messages."
+              variant="overview"
+            >
+              <CompanyMessagingCreditsPanel
+                companyId={company.id}
+                companyName={company.name ?? `Company #${company.id}`}
+                apiManagementHref={`${basePath}/api-management`}
+              />
             </SectionCard>
 
             <SectionCard

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import {
   adminApi,
-  type ApiCreditBalanceResponse,
   type ApiClientCreateResponse,
   type ApiClientResponse,
   type ApiUsageSummary,
@@ -12,6 +11,7 @@ import {
 } from '@/lib/adminApi'
 import { useApiEnv } from '@/app/admin/contexts/ApiEnvContext'
 import AdminHero from '@/app/admin/components/AdminHero'
+import CompanyMessagingCreditsPanel from '@/app/admin/components/CompanyMessagingCreditsPanel'
 import { useConfirmDialog } from '@/app/admin/components/useConfirmDialog'
 import { notifyBackofficeEvent } from '@/lib/notifications/client'
 import { LoadingSpinner } from '@/app/components/LoadingSpinner'
@@ -25,16 +25,14 @@ export default function ApiManagementPage() {
   const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [loadingClients, setLoadingClients] = useState(false)
   const [loadingUsage, setLoadingUsage] = useState(false)
-  const [loadingCreditBalance, setLoadingCreditBalance] = useState(false)
   const [savingClient, setSavingClient] = useState(false)
-  const [allocating, setAllocating] = useState(false)
+  const [messagingCreditsRefreshNonce, setMessagingCreditsRefreshNonce] = useState(0)
   const [rotatingId, setRotatingId] = useState<number | null>(null)
   const [revokingId, setRevokingId] = useState<number | null>(null)
   const { confirm, confirmDialog } = useConfirmDialog()
 
   const [apiClients, setApiClients] = useState<ApiClientResponse[]>([])
   const [usageSummary, setUsageSummary] = useState<ApiUsageSummary | null>(null)
-  const [creditBalance, setCreditBalance] = useState<ApiCreditBalanceResponse | null>(null)
   const [lastCreatedKey, setLastCreatedKey] = useState<ApiClientCreateResponse | null>(null)
   const [usageFilterApiClientId, setUsageFilterApiClientId] = useState<number | undefined>(
     undefined,
@@ -45,15 +43,6 @@ export default function ApiManagementPage() {
     requestsPerMinuteLimit: '',
     allowedChannels: ['Sms'] as string[],
     isTestKey: false,
-  })
-
-  const [allocationForm, setAllocationForm] = useState({
-    smsCount: '0',
-    emailCount: '0',
-    whatsAppCount: '0',
-    whatsAppUtilityCount: '0',
-    notes: '',
-    durationDays: '30',
   })
 
   const selectedCompany = useMemo(
@@ -103,19 +92,6 @@ export default function ApiManagementPage() {
     }
   }
 
-  const loadCreditBalance = async (targetCompanyId: number) => {
-    setLoadingCreditBalance(true)
-    try {
-      const balance = await adminApi.getCompanyApiCreditBalance(targetCompanyId)
-      setCreditBalance(balance)
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to load API credit balance')
-      setCreditBalance(null)
-    } finally {
-      setLoadingCreditBalance(false)
-    }
-  }
-
   useEffect(() => {
     loadCompanies()
   }, [env])
@@ -125,7 +101,6 @@ export default function ApiManagementPage() {
     setLastCreatedKey(null)
     loadApiClients(companyId)
     loadUsage(companyId)
-    loadCreditBalance(companyId)
   }, [companyId, env])
 
   const toggleChannel = (channel: string) => {
@@ -168,11 +143,6 @@ export default function ApiManagementPage() {
         isTestKey: clientForm.isTestKey,
       })
       setLastCreatedKey(created)
-      await notifyBackofficeEvent("manual_credit_allocation", {
-        companyId,
-        companyName: selectedCompany?.name ?? "Company",
-        amount: "api_client_created",
-      })
       toast.success('API client created')
       setClientForm({
         name: '',
@@ -182,7 +152,7 @@ export default function ApiManagementPage() {
       })
       await loadApiClients(companyId)
       await loadUsage(companyId, usageFilterApiClientId)
-      await loadCreditBalance(companyId)
+      setMessagingCreditsRefreshNonce((n) => n + 1)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to create API client')
     } finally {
@@ -211,7 +181,7 @@ export default function ApiManagementPage() {
       })
       toast.success('API key rotated')
       await loadApiClients(companyId)
-      await loadCreditBalance(companyId)
+      setMessagingCreditsRefreshNonce((n) => n + 1)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to rotate API key')
     } finally {
@@ -240,77 +210,11 @@ export default function ApiManagementPage() {
       toast.success('API client revoked')
       await loadApiClients(companyId)
       await loadUsage(companyId, usageFilterApiClientId)
-      await loadCreditBalance(companyId)
+      setMessagingCreditsRefreshNonce((n) => n + 1)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to revoke API client')
     } finally {
       setRevokingId(null)
-    }
-  }
-
-  const handleAllocate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!companyId) return
-
-    const smsCount = Number(allocationForm.smsCount || '0')
-    const emailCount = Number(allocationForm.emailCount || '0')
-    const whatsAppCount = Number(allocationForm.whatsAppCount || '0')
-    const whatsAppUtilityCount = Number(allocationForm.whatsAppUtilityCount || '0')
-    const durationDays =
-      allocationForm.durationDays.trim() === ''
-        ? undefined
-        : Number(allocationForm.durationDays)
-
-    const values = [smsCount, emailCount, whatsAppCount, whatsAppUtilityCount]
-    if (values.some((x) => !Number.isFinite(x) || x < 0)) {
-      toast.error('Counts must be zero or positive numbers')
-      return
-    }
-    if (smsCount + emailCount + whatsAppCount + whatsAppUtilityCount <= 0) {
-      toast.error('Allocate at least one message credit')
-      return
-    }
-    if (durationDays !== undefined && (!Number.isFinite(durationDays) || durationDays <= 0)) {
-      toast.error('Duration days must be a positive number')
-      return
-    }
-    const confirmed = await confirm({
-      title: 'Allocate API credits',
-      description: `Allocate credits to ${selectedCompany?.name ?? 'selected company'}?\n\nSMS: ${smsCount}\nEmail: ${emailCount}\nWhatsApp: ${whatsAppCount}\nWA Utility: ${whatsAppUtilityCount}`,
-      confirmLabel: 'Allocate',
-    })
-    if (!confirmed) return
-
-    setAllocating(true)
-    try {
-      await adminApi.allocateCompanyApiCredits(companyId, {
-        smsCount,
-        emailCount,
-        whatsAppCount,
-        whatsAppUtilityCount,
-        notes: allocationForm.notes.trim() || undefined,
-        durationDays,
-      })
-      await notifyBackofficeEvent("manual_credit_allocation", {
-        companyId,
-        companyName: selectedCompany?.name ?? "Company",
-        amount: String(smsCount + emailCount + whatsAppCount + whatsAppUtilityCount),
-      })
-      toast.success('Credits allocated successfully')
-      setAllocationForm({
-        smsCount: '0',
-        emailCount: '0',
-        whatsAppCount: '0',
-        whatsAppUtilityCount: '0',
-        notes: '',
-        durationDays: '30',
-      })
-      await loadUsage(companyId, usageFilterApiClientId)
-      await loadCreditBalance(companyId)
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to allocate credits')
-    } finally {
-      setAllocating(false)
     }
   }
 
@@ -325,7 +229,7 @@ export default function ApiManagementPage() {
         <AdminHero
           eyebrow="Developer platform"
           title="API management"
-          description="Manage company API clients, manual message allocations, and usage."
+          description="Manage company API clients, messaging credit balances (campaigns and API), and usage."
           variant="teal"
         />
 
@@ -458,103 +362,15 @@ export default function ApiManagementPage() {
           </section>
 
           <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-5">
-            <h2 className="text-lg font-semibold text-gray-900">Allocate API credits</h2>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <StatCard
-                label="SMS balance"
-                value={loadingCreditBalance ? '...' : String(creditBalance?.smsCount ?? 0)}
+            <h2 className="text-lg font-semibold text-gray-900">Messaging credits</h2>
+            {companyId ? (
+              <CompanyMessagingCreditsPanel
+                companyId={companyId}
+                companyName={selectedCompany?.name ?? `Company #${companyId}`}
+                refreshNonce={messagingCreditsRefreshNonce}
+                onAllocated={() => loadUsage(companyId, usageFilterApiClientId)}
               />
-              <StatCard
-                label="Email balance"
-                value={loadingCreditBalance ? '...' : String(creditBalance?.emailCount ?? 0)}
-              />
-              <StatCard
-                label="WhatsApp balance"
-                value={loadingCreditBalance ? '...' : String(creditBalance?.whatsAppCount ?? 0)}
-              />
-              <StatCard
-                label="WA Utility balance"
-                value={loadingCreditBalance ? '...' : String(creditBalance?.whatsAppUtilityCount ?? 0)}
-              />
-            </div>
-            <form onSubmit={handleAllocate} className="mt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="SMS">
-                  <input
-                    type="number"
-                    min={0}
-                    value={allocationForm.smsCount}
-                    onChange={(e) =>
-                      setAllocationForm((p) => ({ ...p, smsCount: e.target.value }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </Field>
-                <Field label="Email">
-                  <input
-                    type="number"
-                    min={0}
-                    value={allocationForm.emailCount}
-                    onChange={(e) =>
-                      setAllocationForm((p) => ({ ...p, emailCount: e.target.value }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </Field>
-                <Field label="WhatsApp">
-                  <input
-                    type="number"
-                    min={0}
-                    value={allocationForm.whatsAppCount}
-                    onChange={(e) =>
-                      setAllocationForm((p) => ({ ...p, whatsAppCount: e.target.value }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </Field>
-                <Field label="WhatsApp Utility">
-                  <input
-                    type="number"
-                    min={0}
-                    value={allocationForm.whatsAppUtilityCount}
-                    onChange={(e) =>
-                      setAllocationForm((p) => ({ ...p, whatsAppUtilityCount: e.target.value }))
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  />
-                </Field>
-              </div>
-
-              <Field label="Duration days (optional)">
-                <input
-                  type="number"
-                  min={1}
-                  value={allocationForm.durationDays}
-                  onChange={(e) =>
-                    setAllocationForm((p) => ({ ...p, durationDays: e.target.value }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
-              </Field>
-
-              <Field label="Notes (optional)">
-                <input
-                  type="text"
-                  value={allocationForm.notes}
-                  onChange={(e) => setAllocationForm((p) => ({ ...p, notes: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                  placeholder="Invoice reference"
-                />
-              </Field>
-
-              <button
-                type="submit"
-                disabled={!companyId || allocating}
-                className="px-4 py-2 rounded-lg bg-[var(--brand-color-1)] text-white text-sm font-medium hover:opacity-90 disabled:opacity-50"
-              >
-                {allocating ? 'Allocating...' : 'Allocate credits'}
-              </button>
-            </form>
+            ) : null}
           </section>
         </div>
 
@@ -566,7 +382,7 @@ export default function ApiManagementPage() {
               onClick={() => {
                 if (!companyId) return
                 loadApiClients(companyId)
-                loadCreditBalance(companyId)
+                setMessagingCreditsRefreshNonce((n) => n + 1)
               }}
               disabled={!companyId || loadingClients}
               className="text-sm text-[var(--admin-ui-accent)] hover:underline disabled:opacity-50"
@@ -751,15 +567,6 @@ export default function ApiManagementPage() {
         </section>
         {confirmDialog}
       </div>
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      {children}
     </div>
   )
 }

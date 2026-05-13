@@ -30,7 +30,8 @@ import {
   Globe,    // 🌍 Globe / Nonprofit / Government
   ShoppingCart, // 🛒 Shopping Cart / Retail
   Heart,    // 🏥 Heart/Medical / Healthcare
-  GraduationCap // 🎓 Graduation Cap / Education
+  GraduationCap, // 🎓 Graduation Cap / Education
+  CloudUpload,
 } from "lucide-react";
 
 import woman from "@/public/Assets/11.png";
@@ -40,7 +41,7 @@ import woman3 from "@/public/Assets/10.png";
 import man from "@/public/Assets/14.png";
 import ring from "@/public/Assets/8.png";
 import bank from "@/public/Assets/19.png";
-import phone1 from "@/public/Assets/4.png";
+import phone1 from "@/public/Assets/phone-frame.png";
 import phone from "@/public/Assets/38.png";
 
 // Define the structure for our navigable items
@@ -475,14 +476,15 @@ export default function Home() {
       {/* Powerful and Versatile Banner */}
       <section className="relative z-40 pb-16 px-4">
         <div className="container mx-auto flex justify-center relative z-40">
-          <div className="relative w-full max-w-[72rem] rounded-[2.25rem] px-8 py-14 md:px-20 md:py-24 text-center overflow-hidden shadow-[0_28px_58px_-20px_rgba(0,0,0,0.85)] bg-[linear-gradient(90deg,#060648_0%,#060648_50%,#060648_100%)]">
+          <div className="relative w-full max-w-[72rem] rounded-[2.25rem] px-8 py-14 md:px-20 text-center overflow-hidden shadow-[0_28px_58px_-20px_rgba(0,0,0,0.85)] bg-[linear-gradient(90deg,#060648_0%,#060648_50%,#060648_100%)]">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(63,219,255,0.15)_0%,rgba(34,115,175,0.08)_40%,rgba(0,0,0,0)_75%)] pointer-events-none" />
             <h2
               className="relative z-10 whitespace-nowrap text-[clamp(2.4rem,6.15vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)] overflow-hidden"
               style={{
                 fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
                 letterSpacing: "0.005em",
-                backgroundColor: "#060648", // Matching banner background for the darken blend
+                backgroundImage: "radial-gradient(circle at center, rgba(63,219,255,0.15) 0%, rgba(34,115,175,0.08) 40%, rgba(6,6,72,0) 75%)",
+                backgroundColor: "#060648", // Base color for blend safety
                 color: "#fff",
                 margin: 0
               }}
@@ -502,41 +504,119 @@ export default function Home() {
       </section>
 
       {/* What We're About Section */}
-      <section className="py-20 px-4 bg-[var(--dark-blue-2)]">
+      <section className="py-20 px-4 bg-[#010128]">
         <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Left Side - iPhone Mockup */}
           <div className="relative flex justify-center">
-            <div /*className="relative w-full max-w-xs"*/>
-              <div /*className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl"*/ />
-              <div className="relative">
-                <Image
-                  src={phone}
-                  alt="BalloAds App"
-                  width={300}
-                  height={600}
-                  className="w-full h-auto scale-[1.5]"
+            {/* Background glow — centered behind the phone */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none opacity-50" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-cyan-500/30 rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] border border-cyan-500/10 rounded-full pointer-events-none" />
+
+            {/* Container with explicit dimensions — eliminates h-auto percentage resolution issues.
+                Natural image: 2160×2700 → rendered 280×570 (intentionally stretched).
+                Screen glass area: left 21px, right 21px, top 61px, bottom 19px. */}
+            <div className="relative w-[280px] h-[580px] overflow-visible">
+
+              {/* Screen content — pixel-precise insets to the phone glass area */}
+              <div
+                className="absolute bg-white overflow-hidden"
+                style={{
+                  top: "5px",
+                  left: "14px",
+                  right: "14px",
+                  bottom: "14px",
+                  borderRadius: "2.5rem",
+                  zIndex: 1,
+                }}
+              >
+                {/* Dark blue arc — top-left corner decoration */}
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: "150px",
+                    height: "150px",
+                    top: "-48px",
+                    left: "-48px",
+                    background: "var(--dark-blue-2)",
+                  }}
                 />
-                {/* App Store Buttons */}
-                <div className="flex flex-col gap-3 mt-6 items-center">
-                  <Link href="#" className="w-48">
-                    <Image
-                      src={playStore}
-                      alt="Get it on the App Store"
-                      width={50}
-                      height={60}
-                      className="w-1/4 h-auto absolute -left-10 bottom-20 scale-[2]"
-                    />
-                  </Link>
-                  <Link href="#" className="w-48">
-                    <Image
-                      src={appleStore}
-                      alt="Get it on Google Play"
-                      width={50}
-                      height={60}
-                      className="w-1/4 h-auto absolute -left-10 bottom-0 scale-[2]"
-                    />
-                  </Link>
+
+                {/* Screen UI — justify-evenly distributes the 490px screen height across 3 sections */}
+                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full">
+
+                  {/* Section 1: logo + heading */}
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-lg p-3">
+                      {/* Stylized Logo Icon (A-shape from design) */}
+                      <div className="relative w-full h-full">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#020055] to-[#0b4d8c] rounded-lg" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
+                        <div className="absolute inset-[20%] bg-white rounded-full flex items-center justify-center">
+                           <div className="w-1/2 h-1/2 bg-[#3fdbff] rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <h3 className="text-[var(--dark-blue-2)] font-black text-center text-[10px] tracking-[0.2em] uppercase leading-tight">
+                      Your Digital Marketing
+                      <br />
+                      Assistant
+                    </h3>
+                  </div>
+
+                  {/* Section 2: upload card */}
+                  <div className="w-44 h-44 rounded-[2rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <CloudUpload className="w-16 h-16 text-white mb-2" strokeWidth={1.5} />
+                    <span className="text-white font-bold text-[12px] text-center leading-tight">
+                      Upload your
+                      <br />
+                      artwork here
+                    </span>
+                  </div>
+
+                  {/* Section 3: next button */}
+                  <button className="w-full bg-[#020055] text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-[#060648] transition-colors">
+                    Next
+                  </button>
+
                 </div>
+              </div>
+
+              {/* Phone frame — fills the exact container, overlays the screen content */}
+              <Image
+                src={phone1}
+                alt="iPhone 15 frame"
+                fill
+                className="object-fill pointer-events-none"
+                style={{ zIndex: 2 }}
+              />
+
+              {/* Floating App Store buttons */}
+              <div
+                className="absolute z-40 flex flex-col gap-2.5"
+                style={{ left: "-30px", top: "56%" }}
+              >
+                <button
+                  type="button"
+                  className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
+                >
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
+                    <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
+                  </svg>
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-[9px] text-zinc-600">Get it on the</span>
+                    <span className="text-[11px] font-bold text-zinc-900">App Store</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
+                >
+                  <div className="flex flex-col items-start leading-tight px-0.5">
+                    <span className="text-[9px] text-zinc-600">Get it on</span>
+                    <span className="text-[11px] font-bold text-zinc-900">Google Play</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -547,113 +627,158 @@ export default function Home() {
               What We&apos;re About
             </h2>
             <p className="text-lg md:text-xl leading-relaxed text-white/90">
-              BalloAds is an AI-powered digital advertising platform designed for
-              bulk SMS, targeted message ads, and data-driven campaign management.
-              We help businesses reach their audience effectively and efficiently.
+              BalloAds is an AI-powered digital advertising platform
+              designed to help businesses and organisations
+              connect with the right audience through bulk SMS,
+              targeted message ads, and data-driven campaign
+              management. Whether you&apos;re a startup, an
+              enterprise, or a service provider, BalloAds gives you
+              the tools to launch impactful marketing campaigns
+              with ease
             </p>
           </div>
         </div>
       </section>
 
       {/* Why Choose BalloAds Section */}
-      <section className="py-20 px-4 bg-[var(--dark-blue-2)]">
-        <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
+      <section className="py-20 px-4 bg-[#010128]">
+        <div className="container mx-auto grid md:grid-cols-2 gap-20 items-center">
           {/* Left Side - Content Card */}
-          <div className="gradient-blue-purple rounded-3xl p-8 md:p-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8">
+          <div className="gradient-blue-purple rounded-[3rem] p-10 md:p-16 shadow-2xl">
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-10 tracking-tight">
               Why Choose BalloAds?
             </h2>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3">
-                <span className="font-bold text-[var(--brand-color-4)]">•</span>
-                <span className="text-lg">
-                  <strong>AI-Powered Targeting</strong> - Reach the right audience
-                  at the right time
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="font-bold text-[var(--brand-color-4)]">•</span>
-                <span className="text-lg">
-                  <strong>Bulk & Personalized Messaging</strong> - Scale your
-                  campaigns with personalization
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="font-bold text-[var(--brand-color-4)]">•</span>
-                <span className="text-lg">
-                  <strong>Real-Time Analytics</strong> - Track performance and
-                  optimize on the go
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="font-bold text-[var(--brand-color-4)]">•</span>
-                <span className="text-lg">
-                  <strong>User-Friendly Dashboard</strong> - Manage campaigns
-                  with ease
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="font-bold text-[var(--brand-color-4)]">•</span>
-                <span className="text-lg">
-                  <strong>Affordable & Scalable</strong> - Grow without breaking
-                  the bank
-                </span>
-              </li>
-            </ul>
+            <div className="space-y-8 mb-12">
+              <div>
+                <h3 className="text-xl font-black text-white mb-1">AI-Powered Targeting</h3>
+                <p className="text-white/70 text-base leading-relaxed">Get your message in front of the right audience at the right time.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white mb-1">Bulk & Personalised Messaging</h3>
+                <p className="text-white/70 text-base leading-relaxed">Scale up your outreach while keeping it personal.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white mb-1">Real-Time Analytics</h3>
+                <p className="text-white/70 text-base leading-relaxed">Track campaign performance and optimise results.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white mb-1">User-Friendly Dashboard</h3>
+                <p className="text-white/70 text-base leading-relaxed">Manage all your campaigns in one place.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white mb-1">Affordable & Scalable</h3>
+                <p className="text-white/70 text-base leading-relaxed">Flexible pricing that grows with your business.</p>
+              </div>
+            </div>
+            
             <Link
               href="#signup"
-              className="inline-flex items-center gap-2 border-2 border-white bg-white text-[var(--brand-color-1)] px-8 py-3 rounded-full font-semibold text-lg hover:bg-white/90 transition-all"
+              className="inline-flex items-center gap-4 bg-white text-[#020055] px-8 py-3 rounded-full font-black text-lg hover:bg-white/90 transition-all group"
             >
               Sign up for free today
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
+              <div className="w-8 h-8 rounded-full bg-[#020055] flex items-center justify-center text-white group-hover:scale-110 transition-transform">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
             </Link>
           </div>
 
           {/* Right Side - iPhone Mockup */}
           <div className="relative flex justify-center">
-            <div /*className="relative w-full max-w-xs"*/>
-              <div /*className="absolute inset-0 bg-[var(--brand-color-4)]/20 rounded-full blur-3xl"*/ />
-              <div className="relative">
-                <Image
-                  src={phone}
-                  alt="BalloAds App"
-                  width={300}
-                  height={600}
-                  className="w-full h-auto scale-[1.5]"
+            {/* Background glow — centered behind the phone */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none opacity-50" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-cyan-500/30 rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] border border-cyan-500/10 rounded-full pointer-events-none" />
+
+            <div className="relative w-[280px] h-[580px] overflow-visible">
+              {/* Screen content */}
+              <div
+                className="absolute bg-white overflow-hidden"
+                style={{
+                  top: "5px",
+                  left: "14px",
+                  right: "14px",
+                  bottom: "14px",
+                  borderRadius: "2.5rem",
+                  zIndex: 1,
+                }}
+              >
+                <div
+                  className="absolute rounded-full"
+                  style={{
+                    width: "150px",
+                    height: "150px",
+                    top: "-48px",
+                    left: "-48px",
+                    background: "#020055",
+                  }}
                 />
-                {/* App Store Buttons */}
-                <div className="flex flex-col gap-3 mt-6 items-center">
-                  <Link href="#" className="w-48">
-                    <Image
-                      src={playStore}
-                      alt="Get it on the App Store"
-                      width={50}
-                      height={60}
-                      className="w-1/4 h-auto absolute -left-10 bottom-20 scale-[2]"
-                    />
-                  </Link>
-                  <Link href="#" className="w-48">
-                    <Image
-                      src={appleStore}
-                      alt="Get it on Google Play"
-                      width={50}
-                      height={60}
-                      className="w-1/4 h-auto absolute -left-10 bottom-0 scale-[2]"
-                    />
-                  </Link>
+                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-lg p-3">
+                      <div className="relative w-full h-full">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#020055] to-[#0b4d8c] rounded-lg" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
+                        <div className="absolute inset-[20%] bg-white rounded-full flex items-center justify-center">
+                           <div className="w-1/2 h-1/2 bg-[#3fdbff] rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <h3 className="text-[#020055] font-black text-center text-[10px] tracking-[0.2em] uppercase leading-tight">
+                      Your Digital Marketing
+                      <br />
+                      Assistant
+                    </h3>
+                  </div>
+                  <div className="w-44 h-44 rounded-[2rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl">
+                    <CloudUpload className="w-16 h-16 text-white mb-2" strokeWidth={1.5} />
+                    <span className="text-white font-bold text-[12px] text-center leading-tight">
+                      Upload your
+                      <br />
+                      artwork here
+                    </span>
+                  </div>
+                  <button className="w-full bg-[#020055] text-white py-4 rounded-2xl font-bold text-lg">
+                    Next
+                  </button>
                 </div>
+              </div>
+
+              {/* Phone frame */}
+              <Image
+                src={phone1}
+                alt="iPhone 15 frame"
+                fill
+                className="object-fill pointer-events-none"
+                style={{ zIndex: 2 }}
+              />
+
+              {/* App Store button */}
+              <div
+                className="absolute z-40"
+                style={{ left: "-30px", top: "65%" }}
+              >
+                <button
+                  type="button"
+                  className="flex items-center gap-2 bg-white shadow-xl rounded-2xl px-4 py-2"
+                >
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
+                    <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
+                  </svg>
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-[11px] font-black text-zinc-900">App Store</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
