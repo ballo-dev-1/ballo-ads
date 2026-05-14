@@ -20,7 +20,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(90deg, transparent 0%, rgb(0 196 204 / 75%) 100%);background: linear-gradient(90deg, transparent 0%, rgb(17, 81, 136, 0.9) 100%);
 }
 
 @media (min-width: 768px) {
@@ -358,4 +357,3 @@
 .header__mobile-action-link--signup:hover {
   background-color: rgba(255, 255, 255, 0.9);
 }
-

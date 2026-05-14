@@ -11,13 +11,13 @@ interface FormData {
   // Contact Info (at least one required)
   email: string;
   phoneNumber: string;
-  
+
   // Default Fields
   status: Status;
   optInSMS: boolean;
   optInEmail: boolean;
   optInWhatsApp: boolean;
-  
+
   // Nullable Fields
   firstName: string;
   lastName: string;
@@ -182,9 +182,8 @@ function SubscriptionFormContent() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl bg-white/10 border ${
-                    errors.email ? "border-red-500" : "border-white/20"
-                  } text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]`}
+                  className={`w-full px-4 py-3 rounded-xl bg-white/10 border ${errors.email ? "border-red-500" : "border-white/20"
+                    } text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]`}
                   placeholder="your.email@example.com"
                 />
                 {errors.email && (
@@ -202,9 +201,8 @@ function SubscriptionFormContent() {
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl bg-white/10 border ${
-                    errors.phoneNumber ? "border-red-500" : "border-white/20"
-                  } text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]`}
+                  className={`w-full px-4 py-3 rounded-xl bg-white/10 border ${errors.phoneNumber ? "border-red-500" : "border-white/20"
+                    } text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color-4)]`}
                   placeholder="+260 123 456 789"
                 />
                 {errors.phoneNumber && (
@@ -455,7 +453,7 @@ function SubscriptionFormContent() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-4 rounded-xl gradient-blue-purple text-white font-bold text-lg hover:opacity-90 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-4 rounded-xl gradient-blue-grey text-white font-bold text-lg hover:opacity-90 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Submitting..." : "Complete Subscription"}
             </button>

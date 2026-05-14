@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import logo_1 from "@/public/BalloAds Logo New/BalloAds-logo.png"
 import logo_2 from "@/public/BalloAds Logo New/BalloAds-logo-full.png"
 
@@ -28,7 +29,7 @@ const navItems: NavItem[] = [
       { label: "Bulk SMS", href: "/features#omnichannel" },
       { label: "WhatsApp Marketing ", href: "/features#automations" },
       { label: "Email Marketing", href: "/features#analytics" },
-      {label: "Brutus AI", href:"/brutus"},
+      { label: "Brutus AI", href: "/brutus" },
     ],
   },
 
@@ -37,7 +38,7 @@ const navItems: NavItem[] = [
     href: "/how-it-works",
     links: [
       { label: "Platform Overview", href: "/how-it-works#overview" },
-      {label: "For My Business", href:"/business"},
+      { label: "For My Business", href: "/business" },
     ],
   },
 
@@ -50,9 +51,9 @@ const navItems: NavItem[] = [
       { label: "FAQs", href: "/resources#faqs" },
       { label: "Professional Services", href: "/resources#services" },
       { label: "Blog", href: "/blog" },
-      { 
-        label: "Developers", 
-        href: "/api", 
+      {
+        label: "Developers",
+        href: "/api",
         subLinks: [
           { label: "SMS API", href: "/api/sms-api" },
           { label: "Email API", href: "/api/email-api" },
@@ -67,7 +68,7 @@ const navItems: NavItem[] = [
     label: "Blog",
     href: "/blog",
   },
-  
+
   {
     label: "Pricing",
     href: "/pricing",
@@ -78,6 +79,17 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const pathname = usePathname();
+  const { scrollY } = useScroll();
+  const [isHidden, setIsHidden] = useState(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() ?? 0;
+    if (latest > previous && latest > 150) {
+      setIsHidden(true);
+    } else {
+      setIsHidden(false);
+    }
+  });
 
   const isActive = (path: string) => pathname === path;
 
@@ -88,10 +100,223 @@ const Header = () => {
 
   return (
     <header className="header header--sticky">
-      <nav className="header__nav fixed w-[95vw] min-w-[380px] max-w-[1440px] h-16 md:flex ring ring-[#afc2f234] backdrop-blur-md  
-       mx-0 mt-2 top-4 left-1/2 -translate-x-1/2 data-text-bright:**:text-white shadow rounded-full p-4">
+      <motion.nav
+        variants={{
+          visible: { y: 0, x: "-50%" },
+          hidden: { y: -100, x: "-50%" },
+        }}
+        animate={isHidden ? "hidden" : "visible"}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          mass: 1
+        }}
+        className="header__nav bg-[#010128] fixed w-[95vw] min-w-[380px] max-w-[1440px] h-16 md:flex mx-0 ring ring-[#446dd334] mt-2 top-4 left-1/2 data-text-bright:**:text-white shadow rounded-full p-4 overflow-hidden"
+        style={{ zIndex: 100 }}
+      >
+        {/* ── Ribbon background layers ── */}
+        {/* Main ribbon — right end (mirrors left) */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{
+            rotate: [18, 13, 20, 15, 18],
+            y: [0, -7, -3, -9, 0],
+            scaleX: [1, 1.04, 1, 0.96, 1],
+            borderRadius: [
+              "40% 60% 55% 45% / 50% 40% 60% 50%",
+              "44% 56% 50% 50% / 54% 44% 56% 46%",
+              "38% 62% 58% 42% / 48% 42% 58% 52%",
+              "42% 58% 52% 48% / 52% 46% 54% 48%",
+              "40% 60% 55% 45% / 50% 40% 60% 50%",
+            ],
+          }}
+          transition={{ duration: 12, ease: "easeInOut", repeat: Infinity }}
+          style={{
+            width: "130px",
+            height: "200px",
+            right: "-50px",
+            top: "-110px",
+            background: "linear-gradient(340deg, rgba(37,99,235,0.45) 0%, rgba(10,30,120,0.35) 50%, rgba(2,6,30,0.85) 100%)",
+            boxShadow: "inset 8px 8px 20px rgba(255,255,255,0.05), inset -14px -14px 36px rgba(0,0,0,0.5)",
+            filter: "blur(2px)",
+          }}
+        />
+        {/* Rim light — right end */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{
+            rotate: [18, 13, 20, 15, 18],
+            y: [0, -7, -3, -9, 0],
+            opacity: [0.75, 1, 0.65, 1, 0.75],
+          }}
+          transition={{ duration: 12, ease: "easeInOut", repeat: Infinity }}
+          style={{
+            width: "8px",
+            height: "90px",
+            right: "52px",
+            top: "2px",
+            borderRadius: "50%",
+            background: "linear-gradient(180deg, rgba(80,160,255,0.65) 0%, rgba(40,100,255,0.18) 70%, transparent 100%)",
+            filter: "blur(5px)",
+          }}
+        />
+        {/* Secondary ribbon — left end */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{
+            rotate: [-18, -13, -20, -15, -18],
+            y: [0, 7, 3, 9, 0],
+            scaleX: [1, 0.96, 1, 1.04, 1],
+            borderRadius: [
+              "40% 60% 55% 45% / 50% 40% 60% 50%",
+              "44% 56% 50% 50% / 54% 44% 56% 46%",
+              "38% 62% 58% 42% / 48% 42% 58% 52%",
+              "42% 58% 52% 48% / 52% 46% 54% 48%",
+              "40% 60% 55% 45% / 50% 40% 60% 50%",
+            ],
+          }}
+          transition={{ duration: 12, ease: "easeInOut", repeat: Infinity, delay: 1.5 }}
+          style={{
+            width: "130px",
+            height: "200px",
+            left: "-50px",
+            bottom: "-110px",
+            background: "linear-gradient(160deg, rgba(37,99,235,0.45) 0%, rgba(10,30,120,0.35) 50%, rgba(2,6,30,0.85) 100%)",
+            boxShadow: "inset 8px 8px 20px rgba(255,255,255,0.05), inset -14px -14px 36px rgba(0,0,0,0.5)",
+            filter: "blur(2px)",
+          }}
+        />
+        {/* Secondary rim light */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{
+            rotate: [-18, -13, -20, -15, -18],
+            y: [0, 7, 3, 9, 0],
+            opacity: [0.75, 1, 0.65, 1, 0.75],
+          }}
+          transition={{ duration: 12, ease: "easeInOut", repeat: Infinity, delay: 1.5 }}
+          style={{
+            width: "8px",
+            height: "90px",
+            left: "52px",
+            bottom: "2px",
+            borderRadius: "50%",
+            background: "linear-gradient(0deg, rgba(80,160,255,0.65) 0%, rgba(40,100,255,0.18) 70%, transparent 100%)",
+            filter: "blur(5px)",
+          }}
+        />
+
+        {/* Mid silk wrinkle 1 — narrow diagonal fold, single fine crease */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [14, 19, 16, 11, 14], y: [0, -7, -3, -9, 0], opacity: [0.6, 0.75, 0.5, 0.68, 0.6] }}
+          transition={{ duration: 14, ease: "easeInOut", repeat: Infinity, delay: 0.5 }}
+          style={{
+            width: "240px", height: "200px",
+            left: "calc(28% - 120px)", top: "-110px",
+            background: "linear-gradient(135deg, transparent 0%, rgba(37,99,235,0.04) 14%, rgba(70,130,255,0.11) 37%, rgba(100,170,255,0.15) 50%, rgba(70,130,255,0.11) 63%, rgba(37,99,235,0.04) 86%, transparent 100%)",
+            filter: "blur(12px)",
+          }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [14, 19, 16, 11, 14], y: [0, -7, -3, -9, 0], opacity: [0.18, 0.28, 0.13, 0.22, 0.18] }}
+          transition={{ duration: 14, ease: "easeInOut", repeat: Infinity, delay: 0.5 }}
+          style={{
+            width: "3px", height: "80px",
+            left: "calc(28% - 2px)", top: "50%", marginTop: "-40px",
+            background: "linear-gradient(180deg, transparent 0%, rgba(160,210,255,0.65) 35%, rgba(120,190,255,0.5) 65%, transparent 100%)",
+            borderRadius: "50%", filter: "blur(2px)",
+          }}
+        />
+
+        {/* Mid silk wrinkle 2 — wide shallow double-fold, broad soft crease */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [-10, -6, -12, -8, -10], y: [0, 5, 2, 7, 0], opacity: [0.55, 0.7, 0.45, 0.62, 0.55] }}
+          transition={{ duration: 18, ease: "easeInOut", repeat: Infinity, delay: 1.8 }}
+          style={{
+            width: "300px", height: "160px",
+            left: "calc(68% - 150px)", bottom: "-100px",
+            background: "linear-gradient(165deg, transparent 0%, rgba(37,99,235,0.04) 12%, rgba(70,130,255,0.09) 28%, rgba(100,170,255,0.12) 36%, rgba(50,90,200,0.04) 50%, rgba(80,140,255,0.1) 64%, rgba(100,170,255,0.11) 72%, rgba(37,99,235,0.04) 88%, transparent 100%)",
+            filter: "blur(8px)",
+          }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [-10, -6, -12, -8, -10], y: [0, 5, 2, 7, 0], opacity: [0.14, 0.22, 0.1, 0.18, 0.14] }}
+          transition={{ duration: 18, ease: "easeInOut", repeat: Infinity, delay: 1.8 }}
+          style={{
+            width: "8px", height: "50px",
+            left: "calc(68% - 4px)", top: "50%", marginTop: "-25px",
+            background: "linear-gradient(180deg, transparent 0%, rgba(140,200,255,0.55) 40%, rgba(110,180,255,0.4) 60%, transparent 100%)",
+            borderRadius: "40%", filter: "blur(3px)",
+          }}
+        />
+
+        {/* Mid silk wrinkle 3 — tall thin vertical-ish crumple, bottom edge, ~45% */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [6, 2, 8, 4, 6], y: [0, 6, 2, 8, 0], opacity: [0.5, 0.65, 0.42, 0.58, 0.5] }}
+          transition={{ duration: 22, ease: "easeInOut", repeat: Infinity, delay: 3.2 }}
+          style={{
+            width: "160px", height: "230px",
+            left: "calc(45% - 80px)", bottom: "-130px",
+            background: "linear-gradient(120deg, transparent 0%, rgba(37,99,235,0.03) 18%, rgba(60,110,240,0.08) 40%, rgba(90,150,255,0.12) 52%, rgba(60,110,240,0.08) 64%, rgba(37,99,235,0.03) 82%, transparent 100%)",
+            filter: "blur(14px)",
+          }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [6, 2, 8, 4, 6], y: [0, 6, 2, 8, 0], opacity: [0.12, 0.2, 0.08, 0.16, 0.12] }}
+          transition={{ duration: 22, ease: "easeInOut", repeat: Infinity, delay: 3.2 }}
+          style={{
+            width: "2px", height: "60px",
+            left: "calc(45% - 1px)", top: "50%", marginTop: "-30px",
+            background: "linear-gradient(180deg, transparent 0%, rgba(150,205,255,0.6) 40%, rgba(110,175,255,0.45) 60%, transparent 100%)",
+            borderRadius: "50%", filter: "blur(1.5px)",
+          }}
+        />
+
+        {/* Mid silk wrinkle 4 — compact steep fold, top edge, ~83% */}
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [20, 25, 18, 23, 20], y: [0, -5, -2, -7, 0], opacity: [0.58, 0.72, 0.48, 0.65, 0.58] }}
+          transition={{ duration: 16, ease: "easeInOut", repeat: Infinity, delay: 2.5 }}
+          style={{
+            width: "190px", height: "180px",
+            left: "calc(83% - 95px)", top: "-105px",
+            background: "linear-gradient(148deg, transparent 0%, rgba(37,99,235,0.05) 16%, rgba(80,140,255,0.13) 42%, rgba(110,175,255,0.14) 55%, rgba(37,99,235,0.04) 78%, transparent 100%)",
+            filter: "blur(9px)",
+          }}
+        />
+        <motion.div
+          aria-hidden="true"
+          className="absolute pointer-events-none"
+          animate={{ rotate: [20, 25, 18, 23, 20], y: [0, -5, -2, -7, 0], opacity: [0.16, 0.25, 0.11, 0.2, 0.16] }}
+          transition={{ duration: 16, ease: "easeInOut", repeat: Infinity, delay: 2.5 }}
+          style={{
+            width: "5px", height: "65px",
+            left: "calc(83% - 2px)", top: "50%", marginTop: "-32px",
+            background: "linear-gradient(180deg, transparent 0%, rgba(155,208,255,0.6) 38%, rgba(115,182,255,0.44) 62%, transparent 100%)",
+            borderRadius: "50%", filter: "blur(2.5px)",
+          }}
+        />
+
         {/* Logo */}
-        <Link href="/" className="header__logo">
+        <Link href="/" className="header__logo relative z-10">
           <div className="header__logo-container">
             <div className="header__logo-icon flex">
               <Image
@@ -115,7 +340,7 @@ const Header = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="header__nav-desktop">
+        <div className="header__nav-desktop relative z-10">
           {/*Inside your Header component, within the desktop navigation map:*/}
 
           {navItems.map((item) => {
@@ -139,18 +364,17 @@ const Header = () => {
               >
                 <Link
                   href={item.href ?? "#"}
-                  className={`header__nav-link header__nav-link--with-dropdown ${
-                    isDropdownOpen ? "header__nav-link--active" : ""
-                  }`}
+                  className={`header__nav-link header__nav-link--with-dropdown ${isDropdownOpen ? "header__nav-link--active" : ""
+                    }`}
                 >
                   {item.label}
                   {/* Your existing SVG arrow */}
                 </Link>
 
                 {isDropdownOpen && (
-                  <div style={{width: 'auto'}} className={`header__dropdown-menu ${item.label === "Resources" ? "header__dropdown-menu--mega" : ""}`}>
+                  <div style={{ width: 'auto' }} className={`header__dropdown-menu ${item.label === "Resources" ? "header__dropdown-menu--mega" : ""}`}>
                     <div className={`${item.label === "Resources" ? "flex w-[500px]" : "header__dropdown-list"}`}>
-                      
+
                       {/* Left Column: Primary Links */}
                       <div className={`${item.label === "Resources" ? "w-1/2 p-4 border-r border-[var(--dark-blue)]" : ""}`}>
                         {item.links?.map((link) => {
@@ -189,7 +413,7 @@ const Header = () => {
           })}
         </div>
 
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-5 relative z-10">
           <svg
             className="header__search-icon"
             fill="none"
@@ -223,7 +447,7 @@ const Header = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="header__menu-toggle"
+          className="header__menu-toggle relative z-10"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label="Toggle menu"
         >
@@ -250,7 +474,7 @@ const Header = () => {
             )}
           </svg>
         </button>
-      </nav>
+      </motion.nav>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
@@ -265,11 +489,10 @@ const Header = () => {
                   <Link
                     key={item.label}
                     href={item.href ?? "#"}
-                    className={`header__mobile-nav-link ${
-                      item.href && isActive(item.href)
-                        ? "header__mobile-nav-link--active"
-                        : ""
-                    }`}
+                    className={`header__mobile-nav-link ${item.href && isActive(item.href)
+                      ? "header__mobile-nav-link--active"
+                      : ""
+                      }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.label}
@@ -284,17 +507,15 @@ const Header = () => {
                     onClick={() =>
                       setActiveDropdown((prev) => (prev === item.label ? null : item.label))
                     }
-                    className={`header__mobile-dropdown-toggle ${
-                      item.href && isActive(item.href)
-                        ? "header__mobile-dropdown-toggle--active"
-                        : ""
-                    }`}
+                    className={`header__mobile-dropdown-toggle ${item.href && isActive(item.href)
+                      ? "header__mobile-dropdown-toggle--active"
+                      : ""
+                      }`}
                   >
                     {item.label}
                     <svg
-                      className={`header__mobile-dropdown-arrow ${
-                        isExpanded ? "header__mobile-dropdown-arrow--open" : ""
-                      }`}
+                      className={`header__mobile-dropdown-arrow ${isExpanded ? "header__mobile-dropdown-arrow--open" : ""
+                        }`}
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"

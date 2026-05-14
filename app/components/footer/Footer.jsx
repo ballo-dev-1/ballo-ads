@@ -1,72 +1,54 @@
 import "./footer.css";
-import logo from "@/public/Assets/1.png" 
-import Image from "next/image";
 import Link from "next/link";
+import {
+  Facebook,
+  Instagram,
+  Linkedin,
+  Phone,
+  Mail,
+  Circle
+} from "lucide-react";
+import Image from "next/image";
+import logo from "@/public/BalloAds Logo New/BalloAds-logo.png";
 
-const index = () => {
+// Custom WhatsApp icon as Lucide doesn't have it by default
+const WhatsAppIcon = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    fill="currentColor"
+    stroke="none"
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .018 5.394 0 12.03c0 2.119.554 4.188 1.606 6.01L0 24l6.117-1.605a11.803 11.803 0 005.925 1.597h.005c6.632 0 12.028-5.395 12.033-12.03a11.799 11.799 0 00-3.489-8.487" />
+  </svg>
+);
+
+const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer__container">
         <div className="footer__grid">
-          {/* Logo on Left */}
+          {/* Logo Section */}
           <div className="footer__logo-section">
-            <div className="footer__logo-wrapper">
-              {/* Stylized 'b' or 'is' logo with glowing cyan line */}
+            <Link href="/" className="footer__logo-link h-full flex justify-center align-center">
               <Image
-                    src={logo}
-                    alt="BalloAds App"
-                    width={300}
-                    height={600}
-                    className="w-full h-auto absolute right-0 bottom-0 scale-[2.5]"
-                  />
-            </div>
+                src={logo}
+                alt="BalloAds Logo"
+                className="footer__logo-img h-full w-auto object-contain"
+              />
+            </Link>
           </div>
 
           {/* Information Column */}
           <div className="footer__column">
             <h3 className="footer__column-title">Information</h3>
             <ul className="footer__link-list">
-              <li>
-                <Link
-                  href="/features"
-                  className="footer__link"
-                >
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/how-it-works"
-                  className="footer__link"
-                >
-                  How it works
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/pricing"
-                  className="footer__link"
-                >
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/blog"
-                  className="footer__link"
-                >
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/faq"
-                  className="footer__link"
-                >
-                  FAQ
-                </Link>
-              </li>
-              
+              <li><Link href="/features">Features</Link></li>
+              <li><Link href="/how-it-works">How it works</Link></li>
+              <li><Link href="/pricing">Pricing</Link></li>
+              <li><Link href="/blog">Blog</Link></li>
+              <li><Link href="/faq">FAQ</Link></li>
+              <li><Link href="/careers">Careers</Link></li>
             </ul>
           </div>
 
@@ -74,131 +56,42 @@ const index = () => {
           <div className="footer__column">
             <h3 className="footer__column-title">Help & Support</h3>
             <ul className="footer__link-list">
-              <li>
-                <Link
-                  href="/knowledge-base"
-                  className="footer__link"
-                >
-                  Knowledge Base
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/live-chat"
-                  className="footer__link"
-                >
-                  Live Chat
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy-policy"
-                  className="footer__link"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/resources"
-                  className="footer__link"
-                >
-                  Resources
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/whats-new"
-                  className="footer__link"
-                >
-                  What&apos;s New
-                </Link>
-              </li>
+              <li><Link href="/knowledge-base">Knowledge Base</Link></li>
+              <li><Link href="/live-chat">Live Chat</Link></li>
+              <li><Link href="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link href="/resources">Resources</Link></li>
+              <li><Link href="/whats-new">What&apos;s New</Link></li>
             </ul>
           </div>
 
           {/* Our Socials Column */}
           <div className="footer__column">
             <h3 className="footer__column-title">Our Socials</h3>
-            <div className="footer__socials">
-              <Link
-                href="https://www.facebook.com/profile.php?id=100087875482090&mibextid=LQQJ4d"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer__social-link"
-                aria-label="Facebook"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-                </svg>
-              </Link>
-              <Link
-                href="https://instagram.com/ballo_zm?igshid=YmMyMTA2M2Y="
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer__social-link"
-                aria-label="Instagram"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-              </Link>
-              <Link
-                href="https://www.linkedin.com/company/ballo-innovations/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer__social-link"
-                aria-label="LinkedIn"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                  <rect x="2" y="9" width="4" height="12" />
-                  <circle cx="4" cy="4" r="2" />
-                </svg>
-              </Link>
+            <div className="footer__socials-grid">
+              <Link href="#" className="footer__social-icon"><Facebook size={24} fill="white" stroke="none" /></Link>
+              <Link href="#" className="footer__social-icon"><WhatsAppIcon className="w-6 h-6 text-white" /></Link>
+              <Link href="#" className="footer__social-icon"><Linkedin size={24} fill="white" stroke="none" /></Link>
+              <Link href="#" className="footer__social-icon"><Instagram size={24} stroke="white" strokeWidth={2} /></Link>
             </div>
           </div>
-        </div>
 
-        <div className="footer__bottom">
-          <p className="footer__copyright">
-            &copy; {new Date().getFullYear()} Ballo Ads. All rights reserved.
-          </p>
-          <div className="footer__bottom-links">
-            <Link href="/terms" className="footer__bottom-link">Terms</Link>
-            <Link href="/privacy" className="footer__bottom-link">Privacy</Link>
+          {/* Contact Us Column */}
+          <div className="footer__column">
+            <h3 className="footer__column-title">Contact us</h3>
+            <div className="footer__contact-info">
+              <div className="footer__contact-item">
+                <div className="footer__contact-icon-wrapper">
+                  <Phone size={14} className="footer__contact-icon-inner" />
+                </div>
+                <span>+260979611334</span>
+              </div>
+              <div className="footer__contact-item">
+                <div className="footer__contact-icon-wrapper">
+                  <Mail size={14} className="footer__contact-icon-inner" />
+                </div>
+                <span>hello@balloads.com</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -206,4 +99,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Footer;
