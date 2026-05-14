@@ -216,25 +216,6 @@ export default function Home() {
   const { scrollY } = useScroll();
   const rawScrollVelocity = useVelocity(scrollY);
 
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = cardRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.transform = `perspective(1400px) rotateY(${-12 + x * 10}deg) rotateX(${2.5 + y * -8}deg)`;
-  };
-  const handleCardMouseEnter = () => {
-    if (cardRef.current) cardRef.current.style.transition = "transform 0.1s ease-out";
-  };
-  const handleCardMouseLeave = () => {
-    const el = cardRef.current;
-    if (!el) return;
-    el.style.transition = "transform 0.7s ease-out";
-    el.style.transform = "perspective(1400px) rotateY(-12deg) rotateX(2.5deg)";
-  };
   const smoothScrollVelocity = useSpring(rawScrollVelocity, {
     damping: 50,
     stiffness: 400,
@@ -721,36 +702,39 @@ export default function Home() {
           </div>
 
           {/* Right Side - Content Card */}
-          <div
-            ref={cardRef}
-            className="relative rounded-3xl p-8 md:p-12 overflow-hidden"
-            onMouseEnter={handleCardMouseEnter}
-            onMouseMove={handleCardMouseMove}
-            onMouseLeave={handleCardMouseLeave}
-            style={{
-              background: "#010218",
-              transform: "perspective(1400px) rotateY(-12deg) rotateX(2.5deg)",
-              transformOrigin: "center center",
-              boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
-            }}
-          >
-            <TwistingRibbon />
+          <div className="tilt-card-container">
+            {/* Invisible 5×3 hover grid — drives CSS tilt via :has() */}
+            <div className="tilt-card-hover">
+              {[...Array(15)].map((_, i) => (
+                <div key={i} className={`tilt-card-part tilt-part-${i + 1}`} />
+              ))}
+            </div>
 
-            {/* Content — sits above the orb */}
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                What We&apos;re About
-              </h2>
-              <p className="text-lg md:text-xl leading-relaxed text-white/90">
-                BalloAds is an AI-powered digital advertising platform
-                designed to help businesses and organisations
-                connect with the right audience through bulk SMS,
-                targeted message ads, and data-driven campaign
-                management. Whether you&apos;re a startup, an
-                enterprise, or a service provider, BalloAds gives you
-                the tools to launch impactful marketing campaigns
-                with ease
-              </p>
+            <div
+              className="tilt-card relative rounded-3xl p-8 md:p-12 overflow-hidden"
+              style={{
+                background: "#010218",
+                boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
+              }}
+            >
+              <TwistingRibbon />
+
+              {/* Content — sits above the ribbon */}
+              <div className="relative z-10">
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                  What We&apos;re About
+                </h2>
+                <p className="text-lg md:text-xl leading-relaxed text-white/90">
+                  BalloAds is an AI-powered digital advertising platform
+                  designed to help businesses and organisations
+                  connect with the right audience through bulk SMS,
+                  targeted message ads, and data-driven campaign
+                  management. Whether you&apos;re a startup, an
+                  enterprise, or a service provider, BalloAds gives you
+                  the tools to launch impactful marketing campaigns
+                  with ease
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1005,7 +989,7 @@ export default function Home() {
                   onMouseEnter={() => setActiveCaseId(item.id)}
                 >
                   <div className={`shrink-0 mt-1 transition-colors duration-300 ${activeCaseId === item.id ? 'text-white' : 'text-gray-600'}`}>
-                    {React.cloneElement(item.icon as React.ReactElement, { className: "w-7 h-7", strokeWidth: 1.5 })}
+                    {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-7 h-7", strokeWidth: 1.5 })}
                   </div>
 
                   <div className="flex flex-col">

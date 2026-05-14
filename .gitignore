@@ -42,3 +42,4 @@ yarn-error.log*
 next-env.d.ts
 public/BalloAds Assets 2.zip
 public/*.zip
+.env*.local
