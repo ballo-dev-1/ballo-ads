@@ -15,6 +15,7 @@ import {
   useVelocity,
 } from "framer-motion";
 import { TwistingRibbon } from "./components/ui/TwistingRibbon";
+import { Phone3D } from "./components/ui/Phone3D";
 import playStore from "@/public/elements small/19.png";
 import appleStore from "@/public/elements small/18.png";
 
@@ -44,8 +45,6 @@ import woman3 from "@/public/Assets/10.png";
 import man from "@/public/Assets/14.png";
 import ring from "@/public/Assets/8.png";
 import bank from "@/public/Assets/19.png";
-import phone1 from "@/public/Assets/phone-frame.png";
-import phone from "@/public/Assets/38.png";
 import glowBg from "@/public/Assets/glow-bg.png";
 
 import logoMakhulu from "@/public/Client Logos/Makhulu High Res Logo white.png";
@@ -224,6 +223,7 @@ export default function Home() {
   const glareRef2 = useRef<HTMLDivElement>(null);
   const tiltRafRef2 = useRef<number | null>(null);
   const tiltTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const signupBtnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -241,6 +241,11 @@ export default function Home() {
     if (!el) return;
     el.style.willChange = "transform";
     el.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg) scale3d(1,1,1)";
+    const btn = signupBtnRef.current;
+    if (btn) {
+      btn.style.willChange = "transform";
+      btn.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg)";
+    }
     return () => {
       if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
       if (tiltTimeoutRef2.current) clearTimeout(tiltTimeoutRef2.current);
@@ -261,7 +266,14 @@ export default function Home() {
   };
 
   const handleCardMouseEnter = () => setTiltTransition(cardRef, glareRef, tiltTimeoutRef);
-  const handleCardMouseEnter2 = () => setTiltTransition(cardRef2, glareRef2, tiltTimeoutRef2);
+  const handleCardMouseEnter2 = () => {
+    setTiltTransition(cardRef2, glareRef2, tiltTimeoutRef2);
+    const btn = signupBtnRef.current;
+    if (btn) {
+      btn.style.transition = "1200ms cubic-bezier(.03,.98,.52,.99)";
+      setTimeout(() => { btn.style.transition = ""; }, 1200);
+    }
+  };
 
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
@@ -298,6 +310,8 @@ export default function Home() {
         glare.style.transform = `rotate(${Math.atan2(y, x) * (180 / Math.PI) + 90}deg)`;
         glare.style.opacity = `${Math.min(Math.sqrt(x * x + y * y) * 0.5, 0.2)}`;
       }
+      const btn = signupBtnRef.current;
+      if (btn) btn.style.transform = `perspective(1400px) rotateX(${y * -15}deg) rotateY(${x * 15}deg)`;
     });
   };
 
@@ -317,6 +331,12 @@ export default function Home() {
     if (el) el.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg) scale3d(1,1,1)";
     const glare = glareRef2.current;
     if (glare) glare.style.opacity = "0";
+    const btn = signupBtnRef.current;
+    if (btn) {
+      btn.style.transition = "1200ms cubic-bezier(.03,.98,.52,.99)";
+      btn.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg)";
+      setTimeout(() => { btn.style.transition = ""; }, 1200);
+    }
   };
 
   const smoothScrollVelocity = useSpring(rawScrollVelocity, {
@@ -405,16 +425,22 @@ export default function Home() {
   // Initialize state with the first item's ID
   const [activeCaseId, setActiveCaseId] = useState<string>(useCases[0].id);
 
+  // Use Case auto-play state
+  const [isUseCasesAutoPlaying, setIsUseCasesAutoPlaying] = useState(true);
+
   // Auto-advance logic for Use Cases carousel
   useEffect(() => {
+    if (!isUseCasesAutoPlaying || shouldReduceMotion) return;
+
     const interval = setInterval(() => {
-      const currentIndex = useCases.findIndex((item) => item.id === activeCaseId);
-      const nextIndex = (currentIndex + 1) % useCases.length;
-      setActiveCaseId(useCases[nextIndex].id);
+      setActiveCaseId((current) => {
+        const currentIndex = useCases.findIndex((item) => item.id === current);
+        return useCases[(currentIndex + 1) % useCases.length].id;
+      });
     }, 5000); // Rotate every 5 seconds
 
     return () => clearInterval(interval);
-  }, [activeCaseId]);
+  }, [isUseCasesAutoPlaying, shouldReduceMotion]);
 
   useAnimationFrame((_, delta) => {
     if (shouldReduceMotion) return;
@@ -647,32 +673,29 @@ export default function Home() {
       {/* Powerful and Versatile Banner */}
       <section className="relative z-40 pb-16 px-4">
         <div className="container mx-auto flex justify-center relative z-40">
-          <div className="relative w-[92%] rounded-[3rem] text-center overflow-hidden bg-none">
-            <div className="absolute p-0 inset-0  pointer-events-none" />
-            <h2
-              className="relative w-[130%] left-[-15%] rounded-[2.25rem] shadow-[28px_32px_80px_rgba(0,0,0,0.65),-6px_0_35px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.05)] py-20 px-4 z-10 text-center whitespace-nowrap text-[clamp(2.4rem,6.15vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)] overflow-hidden"
-              style={{
-                fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
-                letterSpacing: "0.005em",
-                // backgroundImage: "radial-gradient(circle at center, rgba(63,219,255,0.15) 0%, rgba(34,115,175,0.08) 40%, rgba(6,6,72,0) 75%)",
-                backgroundImage: "radial-gradient(circle at center, #6b6f9b 0%, #040739ff 50%)",
-                // backgroundImage: "linear-gradient(90deg, #0a0c28 0%, #191d59 50%, #6b6f9b 100%)",
-                backgroundColor: "#060648", // Base color for blend safety
-                color: "#fff",
-                margin: "0 auto",
-                display: "block"
-              }}
-            >
-              POWERFUL AND VERSATILE
+          <div className="ring ring-[#446dd321] relative w-[92%] rounded-[3rem] text-center overflow-hidden bg-none">
+            <div className="pv-border-wrapper">
+              <div className="pv-blob1" />
+              <h2
+                className="pv-inner relative py-20 px-4 z-10 text-center whitespace-nowrap text-[clamp(2.4rem,6.15vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)] overflow-hidden"
+                style={{
+                  fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+                  letterSpacing: "0.005em",
+                  color: "#fff",
+                  display: "block",
+                }}
+              >
+                POWERFUL AND VERSATILE
 
-              {/* Aurora Effect Layer */}
-              <div className="home-banner__aurora-container">
-                <div className="home-banner__aurora-item"></div>
-                <div className="home-banner__aurora-item"></div>
-                <div className="home-banner__aurora-item"></div>
-                <div className="home-banner__aurora-item"></div>
-              </div>
-            </h2>
+                {/* Aurora Effect Layer */}
+                <div className="home-banner__aurora-container">
+                  <div className="home-banner__aurora-item"></div>
+                  <div className="home-banner__aurora-item"></div>
+                  <div className="home-banner__aurora-item"></div>
+                  <div className="home-banner__aurora-item"></div>
+                </div>
+              </h2>
+            </div>
           </div>
         </div>
       </section>
@@ -680,34 +703,19 @@ export default function Home() {
       {/* What We're About Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
-          {/* Left Side - iPhone Mockup */}
+          {/* Left Side - 3D Phone Mockup */}
           <div className="relative flex justify-center scale-[0.9]">
-            {/* Background glow — centered behind the phone */}
+            {/* Background glow */}
             <Image
               src={glowBg}
               alt=""
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
-              style={{ width: "550px", height: "550px", objectFit: "contain" }}
+              style={{ width: "540px", height: "540px", objectFit: "contain" }}
               aria-hidden="true"
             />
 
-            {/* Container with explicit dimensions — eliminates h-auto percentage resolution issues.
-                Natural image: 2160×2700 → rendered 280×570 (intentionally stretched).
-                Screen glass area: left 21px, right 21px, top 61px, bottom 19px. */}
-            <div className="relative w-[280px] h-[580px] overflow-visible">
-
-              {/* Screen content — pixel-precise insets to the phone glass area */}
-              <div
-                className="absolute bg-white overflow-hidden"
-                style={{
-                  top: "5px",
-                  left: "14px",
-                  right: "14px",
-                  bottom: "14px",
-                  borderRadius: "2.5rem",
-                  zIndex: 1,
-                }}
-              >
+            <div className="relative">
+              <Phone3D>
                 {/* Dark blue arc — top-left corner decoration */}
                 <div
                   className="absolute rounded-full"
@@ -717,60 +725,42 @@ export default function Home() {
                     top: "-48px",
                     left: "-48px",
                     background: "var(--dark-blue-2)",
+                    zIndex: 1,
                   }}
                 />
-
-                {/* Screen UI — justify-evenly distributes the 490px screen height across 3 sections */}
-                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full pt-16">
-
-                  {/* Section 1: logo + heading */}
+                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full pt-14">
                   <div className="flex flex-col items-center gap-3">
                     <Image
                       src={logoIcon}
                       alt="BalloAds Logo"
-                      width={64}
-                      height={64}
+                      width={56}
+                      height={56}
                       className="object-contain"
                     />
-                    <h3 className="text-[var(--dark-blue-2)] font-black text-center text-[10px] tracking-[0.2em] uppercase leading-tight">
+                    <h3 className="text-[var(--dark-blue-2)] font-black text-center text-[9px] tracking-[0.2em] uppercase leading-tight">
                       Your Digital Marketing
                       <br />
                       Assistant
                     </h3>
                   </div>
-
-                  {/* Section 2: upload card */}
-                  <div className="w-44 h-44 rounded-[2rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <CloudUpload className="w-16 h-16 text-white mb-2" strokeWidth={1.5} />
-                    <span className="text-white font-bold text-[12px] text-center leading-tight">
+                  <div className="w-36 h-36 rounded-[1.75rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                    <CloudUpload className="w-12 h-12 text-white mb-1.5" strokeWidth={1.5} />
+                    <span className="text-white font-bold text-[11px] text-center leading-tight">
                       Upload your
                       <br />
                       artwork here
                     </span>
                   </div>
-
-                  {/* Section 3: next button */}
-                  <button className="w-fit bg-[#020055] text-white px-16 py-2 rounded-full font-bold text-lg shadow-lg hover:bg-[#060648] transition-colors">
+                  <button className="w-fit bg-[#020055] text-white px-12 py-1.5 rounded-full font-bold text-base shadow-lg">
                     Next
                   </button>
-
                 </div>
-              </div>
-
-              {/* Phone frame — fills the exact container, overlays the screen content */}
-              <Image
-                src={phone1}
-                alt="iPhone 15 frame"
-                fill
-                className="object-fill pointer-events-none"
-                style={{ zIndex: 2 }}
-              />
+              </Phone3D>
 
               {/* Floating App Store buttons */}
               <div
                 className="absolute z-40 flex flex-col gap-2.5"
-                style={{ left: "-30px", top: "56%" }}
+                style={{ left: "-60px", top: "56%" }}
               >
                 <button
                   type="button"
@@ -904,7 +894,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="w-full flex justify-center">
+            <div ref={signupBtnRef} className="w-full flex justify-center" style={{ transformOrigin: "center center", transform: "perspective(1400px) rotateY(12deg) rotateX(-2.5deg)" }}>
               <Link
                 href="#signup"
                 className="mt-10 inline-flex items-center gap-4 bg-white text-[#020055] px-8 py-2 rounded-full font-black text-lg hover:bg-white/90 transition-all group"
@@ -929,30 +919,19 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Side - iPhone Mockup */}
+          {/* Right Side - 3D Phone Mockup */}
           <div className="relative flex justify-center scale-[0.9]">
-            {/* Background glow — centered behind the phone */}
+            {/* Background glow */}
             <Image
               src={glowBg}
               alt=""
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
-              style={{ width: "550px", height: "550px", objectFit: "contain" }}
+              style={{ width: "540px", height: "540px", objectFit: "contain" }}
               aria-hidden="true"
             />
 
-            <div className="relative w-[280px] h-[580px] overflow-visible">
-              {/* Screen content */}
-              <div
-                className="absolute bg-white overflow-hidden"
-                style={{
-                  top: "5px",
-                  left: "14px",
-                  right: "14px",
-                  bottom: "14px",
-                  borderRadius: "2.5rem",
-                  zIndex: 1,
-                }}
-              >
+            <div className="relative">
+              <Phone3D>
                 <div
                   className="absolute rounded-full"
                   style={{
@@ -961,51 +940,42 @@ export default function Home() {
                     top: "-48px",
                     left: "-48px",
                     background: "var(--dark-blue-2)",
+                    zIndex: 1,
                   }}
                 />
-                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full pt-16">
+                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full pt-14">
                   <div className="flex flex-col items-center gap-3">
                     <Image
                       src={logoIcon}
                       alt="BalloAds Logo"
-                      width={64}
-                      height={64}
+                      width={56}
+                      height={56}
                       className="object-contain"
                     />
-                    <h3 className="text-[var(--dark-blue-2)] font-black text-center text-[10px] tracking-[0.2em] uppercase leading-tight">
+                    <h3 className="text-[var(--dark-blue-2)] font-black text-center text-[9px] tracking-[0.2em] uppercase leading-tight">
                       Your Digital Marketing
                       <br />
                       Assistant
                     </h3>
                   </div>
-                  <div className="w-44 h-44 rounded-[2rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <CloudUpload className="w-16 h-16 text-white mb-2" strokeWidth={1.5} />
-                    <span className="text-white font-bold text-[12px] text-center leading-tight">
+                  <div className="w-36 h-36 rounded-[1.75rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                    <CloudUpload className="w-12 h-12 text-white mb-1.5" strokeWidth={1.5} />
+                    <span className="text-white font-bold text-[11px] text-center leading-tight">
                       Upload your
                       <br />
                       artwork here
                     </span>
                   </div>
-                  <button className="w-fit bg-[#020055] text-white px-16 py-2 rounded-full font-bold text-lg shadow-lg hover:bg-[#060648] transition-colors">
+                  <button className="w-fit bg-[#020055] text-white px-12 py-1.5 rounded-full font-bold text-base shadow-lg">
                     Next
                   </button>
                 </div>
-              </div>
-
-              {/* Phone frame */}
-              <Image
-                src={phone1}
-                alt="iPhone 15 frame"
-                fill
-                className="object-fill pointer-events-none"
-                style={{ zIndex: 2 }}
-              />
+              </Phone3D>
 
               {/* Floating App Store buttons */}
               <div
                 className="absolute z-40 flex flex-col gap-2.5"
-                style={{ left: "-30px", top: "56%" }}
+                style={{ left: "-60px", top: "56%" }}
               >
                 <button
                   type="button"
@@ -1044,7 +1014,7 @@ export default function Home() {
       {/* Trusted By Section */}
       <section className="py-16">
         <div className="text-center mb-10">
-          <p className="text-xl text-shimmer">Trusted by the very best</p>
+          <p className="text-3xl text-shimmer">Trusted by the very best</p>
         </div>
         <div className="logo-marquee">
           <div className="logo-marquee-track">
@@ -1107,17 +1077,25 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
             {/* Left Side - Clickable Navigation List */}
-            <div className="space-y-2">
+            <div className="space-y-2 relative z-20">
               {useCases.map((item) => (
-                <div
+                <button
                   key={item.id}
-                  className={`flex items-start gap-6 cursor-pointer p-1 rounded-2xl transition-all duration-300 ${activeCaseId === item.id
+                  className={`w-full text-left flex items-start gap-6 cursor-pointer p-1 rounded-2xl transition-all duration-300 border-none bg-transparent outline-none relative z-30 ${activeCaseId === item.id
                     ? 'text-white'
                     : 'text-gray-500 hover:text-gray-300'
                     }`}
-                  // Make the entire div clickable and hoverable to update the state
-                  onClick={() => setActiveCaseId(item.id)}
-                  onMouseEnter={() => setActiveCaseId(item.id)}
+                  style={{ cursor: 'pointer' }}
+                  // Make the entire button clickable and hoverable to update the state
+                  onClick={() => {
+                    setActiveCaseId(item.id);
+                    setIsUseCasesAutoPlaying(false);
+                  }}
+                  onMouseEnter={() => {
+                    setActiveCaseId(item.id);
+                    setIsUseCasesAutoPlaying(false);
+                  }}
+                  onMouseLeave={() => setIsUseCasesAutoPlaying(true)}
                 >
                   <div className={`shrink-0 mt-1 transition-colors duration-300 ${activeCaseId === item.id ? 'text-white' : 'text-gray-600'}`}>
                     {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-7 h-7", strokeWidth: 1.5 })}
@@ -1131,12 +1109,12 @@ export default function Home() {
                       {item.subtext}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
 
             {/* Right Side - Dynamic Image Slider */}
-            <div className="relative h-[600px] flex items-center justify-center">
+            <div className="relative h-[600px] flex items-center justify-center z-10">
 
               {/* STATIC BACKGROUND IMAGE / GLOW */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -1225,6 +1203,43 @@ export default function Home() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-center mt-12">
+            <Link
+              href="#signup"
+              className="glow-button group"
+            >
+              {/* God-ray layers — blurred & stretched text duplicates behind the real text */}
+              <span className="glow-button__ray-layer glow-button__ray-layer--wide" aria-hidden="true">Join waitlist</span>
+              <span className="glow-button__ray-layer glow-button__ray-layer--h" aria-hidden="true">Join waitlist</span>
+              <span className="glow-button__ray-layer glow-button__ray-layer--v" aria-hidden="true">Join waitlist</span>
+              <span className="glow-button__ray-layer glow-button__ray-layer--d1" aria-hidden="true">Join waitlist</span>
+              <span className="glow-button__ray-layer glow-button__ray-layer--d2" aria-hidden="true">Join waitlist</span>
+              <span className="glow-button__ray-layer glow-button__ray-layer--core" aria-hidden="true">Join waitlist</span>
+
+              {/* Visible text */}
+              <span className="glow-button__text">Join waitlist</span>
+              {/* Arrow icon */}
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-white/20 transition-all relative z-10">
+                <svg
+                  className="w-5 h-5 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+
+              {/* Ambient glow behind everything */}
+              <div className="glow-button__glow-core" />
+            </Link>
           </div>
         </div>
       </section>

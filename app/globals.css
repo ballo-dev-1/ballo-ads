@@ -71,6 +71,16 @@ a[aria-disabled="true"] {
     1px 0 #00a3ff;
 }
 
+.text-glow-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.text-glow-hover:hover {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
 /* ——— Liquid / carved backoffice design system ——— */
 
 /* Hook for carved/selected UI (sidebar uses .admin-sidebar-nav-item-active; tables use tr.admin-row-carved) */
