@@ -29,50 +29,6 @@
   /* Add hero title styles here */
 }
 
-/* ── What We're About — CSS tilt card ── */
-.tilt-card-container {
-  position: relative;
-  --X: 0deg;
-  --Y: 0deg;
-  --aX: 12deg;
-  --aY: 16deg;
-}
-
-.tilt-card {
-  transform: perspective(1400px) rotateX(var(--X)) rotateY(var(--Y));
-  transition: transform 0.3s ease-in-out;
-  transform-origin: center;
-}
-
-.tilt-card-hover {
-  position: absolute;
-  z-index: 10;
-  inset: 0;
-  display: flex;
-  flex-wrap: wrap;
-  border-radius: 1.5rem;
-}
-
-.tilt-card-part {
-  width: 20%;
-  height: calc(100% / 3);
-}
-
-.tilt-card-container:has(.tilt-part-1:hover)  { --X: var(--aX);                    --Y: calc(var(--aY) * -1);   }
-.tilt-card-container:has(.tilt-part-2:hover)  { --X: var(--aX);                    --Y: calc(var(--aY) * -0.5); }
-.tilt-card-container:has(.tilt-part-3:hover)  { --X: var(--aX);                                                 }
-.tilt-card-container:has(.tilt-part-4:hover)  { --X: var(--aX);                    --Y: calc(var(--aY) * 0.5);  }
-.tilt-card-container:has(.tilt-part-5:hover)  { --X: var(--aX);                    --Y: var(--aY);              }
-.tilt-card-container:has(.tilt-part-6:hover)  {                                     --Y: calc(var(--aY) * -1);  }
-.tilt-card-container:has(.tilt-part-7:hover)  {                                     --Y: calc(var(--aY) * -0.5);}
-.tilt-card-container:has(.tilt-part-9:hover)  {                                     --Y: calc(var(--aY) * 0.5); }
-.tilt-card-container:has(.tilt-part-10:hover) {                                     --Y: var(--aY);             }
-.tilt-card-container:has(.tilt-part-11:hover) { --X: calc(var(--aX) * -1);         --Y: calc(var(--aY) * -1);  }
-.tilt-card-container:has(.tilt-part-12:hover) { --X: calc(var(--aX) * -1);         --Y: calc(var(--aY) * -0.5);}
-.tilt-card-container:has(.tilt-part-13:hover) { --X: calc(var(--aX) * -1);                                     }
-.tilt-card-container:has(.tilt-part-14:hover) { --X: calc(var(--aX) * -1);         --Y: calc(var(--aY) * 0.5); }
-.tilt-card-container:has(.tilt-part-15:hover) { --X: calc(var(--aX) * -1);         --Y: var(--aY);             }
-
 /* Hero CTA Button */
 .home-hero__cta {
   /* Add CTA button styles here */

@@ -215,6 +215,109 @@ export default function Home() {
   const marqueeX = useMotionValue(0);
   const { scrollY } = useScroll();
   const rawScrollVelocity = useVelocity(scrollY);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const glareRef = useRef<HTMLDivElement>(null);
+  const tiltRafRef = useRef<number | null>(null);
+  const tiltTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cardRef2 = useRef<HTMLDivElement>(null);
+  const glareRef2 = useRef<HTMLDivElement>(null);
+  const tiltRafRef2 = useRef<number | null>(null);
+  const tiltTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.willChange = "transform";
+    el.style.transform = "perspective(1400px) rotateY(-12deg) rotateX(2.5deg) scale3d(1,1,1)";
+    return () => {
+      if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
+      if (tiltTimeoutRef.current) clearTimeout(tiltTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const el = cardRef2.current;
+    if (!el) return;
+    el.style.willChange = "transform";
+    el.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg) scale3d(1,1,1)";
+    return () => {
+      if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
+      if (tiltTimeoutRef2.current) clearTimeout(tiltTimeoutRef2.current);
+    };
+  }, []);
+
+  const setTiltTransition = (ref: React.RefObject<HTMLDivElement | null>, glareRef: React.RefObject<HTMLDivElement | null>, timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) => {
+    const el = ref.current;
+    const glare = glareRef.current;
+    if (!el) return;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    el.style.transition = `1200ms cubic-bezier(.03,.98,.52,.99)`;
+    if (glare) glare.style.transition = `opacity 1200ms cubic-bezier(.03,.98,.52,.99)`;
+    timeoutRef.current = setTimeout(() => {
+      el.style.transition = "";
+      if (glare) glare.style.transition = "";
+    }, 1200);
+  };
+
+  const handleCardMouseEnter = () => setTiltTransition(cardRef, glareRef, tiltTimeoutRef);
+  const handleCardMouseEnter2 = () => setTiltTransition(cardRef2, glareRef2, tiltTimeoutRef2);
+
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    tiltRafRef.current = requestAnimationFrame(() => {
+      const el = cardRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = (clientX - rect.left) / rect.width - 0.5;
+      const y = (clientY - rect.top) / rect.height - 0.5;
+      el.style.transform = `perspective(1400px) rotateX(${y * -15}deg) rotateY(${x * 15}deg) scale3d(1.04,1.04,1.04)`;
+      const glare = glareRef.current;
+      if (glare) {
+        glare.style.transform = `rotate(${Math.atan2(y, x) * (180 / Math.PI) + 90}deg)`;
+        glare.style.opacity = `${Math.min(Math.sqrt(x * x + y * y) * 0.5, 0.2)}`;
+      }
+    });
+  };
+
+  const handleCardMouseMove2 = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    tiltRafRef2.current = requestAnimationFrame(() => {
+      const el = cardRef2.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const x = (clientX - rect.left) / rect.width - 0.5;
+      const y = (clientY - rect.top) / rect.height - 0.5;
+      el.style.transform = `perspective(1400px) rotateX(${y * -15}deg) rotateY(${x * 15}deg) scale3d(1.04,1.04,1.04)`;
+      const glare = glareRef2.current;
+      if (glare) {
+        glare.style.transform = `rotate(${Math.atan2(y, x) * (180 / Math.PI) + 90}deg)`;
+        glare.style.opacity = `${Math.min(Math.sqrt(x * x + y * y) * 0.5, 0.2)}`;
+      }
+    });
+  };
+
+  const handleCardMouseLeave = () => {
+    if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
+    setTiltTransition(cardRef, glareRef, tiltTimeoutRef);
+    const el = cardRef.current;
+    if (el) el.style.transform = "perspective(1400px) rotateY(-12deg) rotateX(2.5deg) scale3d(1,1,1)";
+    const glare = glareRef.current;
+    if (glare) glare.style.opacity = "0";
+  };
+
+  const handleCardMouseLeave2 = () => {
+    if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
+    setTiltTransition(cardRef2, glareRef2, tiltTimeoutRef2);
+    const el = cardRef2.current;
+    if (el) el.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg) scale3d(1,1,1)";
+    const glare = glareRef2.current;
+    if (glare) glare.style.opacity = "0";
+  };
 
   const smoothScrollVelocity = useSpring(rawScrollVelocity, {
     damping: 50,
@@ -702,39 +805,35 @@ export default function Home() {
           </div>
 
           {/* Right Side - Content Card */}
-          <div className="tilt-card-container">
-            {/* Invisible 5×3 hover grid — drives CSS tilt via :has() */}
-            <div className="tilt-card-hover">
-              {[...Array(15)].map((_, i) => (
-                <div key={i} className={`tilt-card-part tilt-part-${i + 1}`} />
-              ))}
-            </div>
+          <div
+            ref={cardRef}
+            className="relative rounded-3xl p-8 md:p-12 overflow-hidden"
+            onMouseEnter={handleCardMouseEnter}
+            onMouseMove={handleCardMouseMove}
+            onMouseLeave={handleCardMouseLeave}
+            style={{
+              background: "#010218",
+              transformOrigin: "center center",
+              boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
+            }}
+          >
+            <TwistingRibbon />
 
-            <div
-              className="tilt-card relative rounded-3xl p-8 md:p-12 overflow-hidden"
-              style={{
-                background: "#010218",
-                boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
-              }}
-            >
-              <TwistingRibbon />
-
-              {/* Content — sits above the ribbon */}
-              <div className="relative z-10">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                  What We&apos;re About
-                </h2>
-                <p className="text-lg md:text-xl leading-relaxed text-white/90">
-                  BalloAds is an AI-powered digital advertising platform
-                  designed to help businesses and organisations
-                  connect with the right audience through bulk SMS,
-                  targeted message ads, and data-driven campaign
-                  management. Whether you&apos;re a startup, an
-                  enterprise, or a service provider, BalloAds gives you
-                  the tools to launch impactful marketing campaigns
-                  with ease
-                </p>
-              </div>
+            {/* Content — sits above the orb */}
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                What We&apos;re About
+              </h2>
+              <p className="text-lg md:text-xl leading-relaxed text-white/90">
+                BalloAds is an AI-powered digital advertising platform
+                designed to help businesses and organisations
+                connect with the right audience through bulk SMS,
+                targeted message ads, and data-driven campaign
+                management. Whether you&apos;re a startup, an
+                enterprise, or a service provider, BalloAds gives you
+                the tools to launch impactful marketing campaigns
+                with ease
+              </p>
             </div>
           </div>
         </div>
@@ -745,30 +844,62 @@ export default function Home() {
         <div className="container mx-auto grid md:grid-cols-2 gap-20 items-center">
           {/* Left Side - Content Card */}
           <div className="">
-            <div className="gradient-blue-grey rounded-[3rem] px-10 py-10 shadow-2xl">
-              <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-                Why Choose BalloAds?
-              </h2>
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-xl font-black text-white mb-1">AI-Powered Targeting</h3>
-                  <p className="text-base leading-relaxed">Get your message in front of the right audience at the right time.</p>
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white mb-1">Bulk & Personalised Messaging</h3>
-                  <p className="text-base leading-relaxed">Scale up your outreach while keeping it personal.</p>
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white mb-1">Real-Time Analytics</h3>
-                  <p className="text-base leading-relaxed">Track campaign performance and optimise results.</p>
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white mb-1">User-Friendly Dashboard</h3>
-                  <p className="text-base leading-relaxed">Manage all your campaigns in one place.</p>
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white mb-1">Affordable & Scalable</h3>
-                  <p className="text-base leading-relaxed">Flexible pricing that grows with your business.</p>
+            <div
+              ref={cardRef2}
+              className="relative rounded-[3rem] p-8 md:p-12 overflow-hidden"
+              onMouseEnter={handleCardMouseEnter2}
+              onMouseMove={handleCardMouseMove2}
+              onMouseLeave={handleCardMouseLeave2}
+              style={{
+                background: "#010218",
+                transformOrigin: "center center",
+                boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
+              }}
+            >
+              {/* Glare layer */}
+              <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none" style={{ zIndex: 3 }}>
+                <div
+                  ref={glareRef2}
+                  style={{
+                    position: "absolute",
+                    top: "50%", left: "50%",
+                    width: "200%", height: "200%",
+                    marginLeft: "-100%", marginTop: "-100%",
+                    background: "linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 100%)",
+                    opacity: 0,
+                    transform: "rotate(0deg)",
+                    transformOrigin: "center",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+              <TwistingRibbon />
+
+              <div className="relative z-10">
+                <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-8">
+                  Why Choose BalloAds?
+                </h2>
+                <div className="space-y-5">
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">AI-Powered Targeting</h3>
+                    <p className="text-base leading-relaxed text-white/80">Get your message in front of the right audience at the right time.</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Bulk & Personalised Messaging</h3>
+                    <p className="text-base leading-relaxed text-white/80">Scale up your outreach while keeping it personal.</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Real-Time Analytics</h3>
+                    <p className="text-base leading-relaxed text-white/80">Track campaign performance and optimise results.</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">User-Friendly Dashboard</h3>
+                    <p className="text-base leading-relaxed text-white/80">Manage all your campaigns in one place.</p>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1">Affordable & Scalable</h3>
+                    <p className="text-base leading-relaxed text-white/80">Flexible pricing that grows with your business.</p>
+                  </div>
                 </div>
               </div>
             </div>
