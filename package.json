@@ -2,6 +2,12 @@
   "name": "ballo-ads",
   "version": "0.1.0",
   "private": true,
+  "config": {
+    "supportedArchitectures": {
+      "os": ["linux", "darwin"],
+      "cpu": ["x64", "arm64"]
+    }
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
