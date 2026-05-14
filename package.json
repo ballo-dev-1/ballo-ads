@@ -44,7 +44,6 @@
     "jose": "^6.2.2",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
-    "lightningcss": "^1.32.0",
     "lucide-react": "^0.562.0",
     "next": "15.4.10",
     "pg": "^8.20.0",
@@ -55,7 +54,7 @@
     "react-intersection-observer": "^9.16.0",
     "reactflow": "^11.11.4",
     "recharts": "^3.8.0",
-    "sharp": "^0.34.5",
+    "sharp": "0.33.5",
     "swiper": "^12.0.3",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
@@ -71,5 +70,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "overrides": {
+    "sharp": "0.33.5"
   }
 }
