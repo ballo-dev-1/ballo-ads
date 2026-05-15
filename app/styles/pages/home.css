@@ -217,7 +217,7 @@
 }
 
 .why-scroll-item-num {
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: oklch(var(--why-lightness) var(--why-chroma) calc(var(--why-start) + (var(--step) * var(--i, 0))));
   letter-spacing: 0.1em;
@@ -270,6 +270,111 @@
 
   .why-scroll-item {
     padding: 1.5rem 1.25rem;
+  }
+}
+
+/* =============================================
+   Who Can Use — scroll-pinned section
+   ============================================= */
+
+.who-scroll-sticky {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 0 4rem;
+}
+
+.who-scroll-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.who-scroll-heading-text {
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  font-weight: 700;
+  text-align: center;
+  color: white;
+  letter-spacing: -0.02em;
+  margin-bottom: 3rem;
+}
+
+.who-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.who-left-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Items dim by default; GSAP sets active to opacity 1 */
+.who-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  opacity: 0.25;
+}
+
+.who-list-icon {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+  color: white;
+}
+
+.who-list-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.who-list-title {
+  font-size: clamp(1rem, 2.2vw, 1.75rem);
+  font-weight: 700;
+  color: white;
+  line-height: 1.2;
+}
+
+.who-list-subtext {
+  font-size: clamp(0.75rem, 1.3vw, 1.1rem);
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.25rem;
+}
+
+/* Right — stacked images, GSAP crossfades */
+.who-right-images {
+  position: relative;
+  height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.who-image-item {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .who-scroll-sticky {
+    height: auto;
+    padding: 3rem 1.5rem;
+  }
+
+  .who-content-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .who-right-images {
+    height: 280px;
   }
 }
 

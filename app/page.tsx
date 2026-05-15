@@ -19,6 +19,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { TwistingRibbon } from "./components/ui/TwistingRibbon";
 import { Phone3D } from "./components/ui/Phone3D";
+import { SilkBackground } from "./components/ui/SilkBackground";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 import phoneFrame from "@/public/Assets/phone-frame.png";
@@ -217,6 +218,10 @@ export default function Home() {
   const shouldReduceMotion = useReducedMotion();
   const resumeAutoPlayTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const marqueeTrackRef = useRef<HTMLDivElement | null>(null);
+  const marqueeSectionRef = useRef<HTMLElement>(null);
+  const testimonialsSectionRef = useRef<HTMLElement>(null);
+  const isMarqueeVisibleRef = useRef(false);
+  const isTestimonialsVisibleRef = useRef(false);
   const marqueeLoopWidthRef = useRef(0);
   const marqueeX = useMotionValue(0);
   const { scrollY } = useScroll();
@@ -227,6 +232,7 @@ export default function Home() {
   const tiltTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const whyContainerRef = useRef<HTMLElement>(null);
+  const whoContainerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -269,6 +275,41 @@ export default function Home() {
         "<"
       );
     }
+    ScrollTrigger.create({
+      trigger: stickyEl,
+      start: "top top",
+      end: `+=${numItems * 100}vh`,
+      pin: true,
+      pinSpacing: true,
+      animation: tl,
+      scrub: 0.8,
+    });
+  });
+
+  useGSAP(() => {
+    const outer = whoContainerRef.current;
+    if (!outer) return;
+
+    const stickyEl = outer.querySelector<HTMLElement>(".who-scroll-sticky");
+    const listItems = Array.from(outer.querySelectorAll<HTMLElement>(".who-list-item"));
+    const imageItems = Array.from(outer.querySelectorAll<HTMLElement>(".who-image-item"));
+    if (!stickyEl || listItems.length === 0) return;
+
+    const numItems = listItems.length;
+
+    gsap.set(listItems, { opacity: 0.25 });
+    gsap.set(listItems[0], { opacity: 1 });
+    gsap.set(imageItems, { opacity: 0 });
+    gsap.set(imageItems[0], { opacity: 1 });
+
+    const tl = gsap.timeline();
+    for (let i = 1; i < numItems; i++) {
+      tl.to(listItems[i - 1], { opacity: 0.25, duration: 0.5 });
+      tl.to(listItems[i], { opacity: 1, duration: 0.5 }, "<");
+      tl.to(imageItems[i - 1], { opacity: 0, duration: 0.5 }, "<");
+      tl.to(imageItems[i], { opacity: 1, duration: 0.5 }, "<");
+    }
+
     ScrollTrigger.create({
       trigger: stickyEl,
       start: "top top",
@@ -382,6 +423,30 @@ export default function Home() {
     return () => window.removeEventListener("resize", updateMarqueeWidth);
   }, []);
 
+  // Pause marquee RAF when the section is off-screen
+  useEffect(() => {
+    const el = marqueeSectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { isMarqueeVisibleRef.current = entry.isIntersecting; },
+      { rootMargin: "200px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // Pause testimonials interval when section is off-screen
+  useEffect(() => {
+    const el = testimonialsSectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { isTestimonialsVisibleRef.current = entry.isIntersecting; },
+      { rootMargin: "100px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   const goToSlide = (index: number) => {
     if (resumeAutoPlayTimeoutRef.current) {
       clearTimeout(resumeAutoPlayTimeoutRef.current);
@@ -403,33 +468,15 @@ export default function Home() {
 
   useEffect(() => {
     const t = setInterval(() => {
+      if (!isTestimonialsVisibleRef.current) return;
       setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
     }, 6000);
     return () => clearInterval(t);
   }, []);
 
-  // Initialize state with the first item's ID
-  const [activeCaseId, setActiveCaseId] = useState<string>(useCases[0].id);
-
-  // Use Case auto-play state
-  const [isUseCasesAutoPlaying, setIsUseCasesAutoPlaying] = useState(true);
-
-  // Auto-advance logic for Use Cases carousel
-  useEffect(() => {
-    if (!isUseCasesAutoPlaying || shouldReduceMotion) return;
-
-    const interval = setInterval(() => {
-      setActiveCaseId((current) => {
-        const currentIndex = useCases.findIndex((item) => item.id === current);
-        return useCases[(currentIndex + 1) % useCases.length].id;
-      });
-    }, 5000); // Rotate every 5 seconds
-
-    return () => clearInterval(interval);
-  }, [isUseCasesAutoPlaying, shouldReduceMotion]);
 
   useAnimationFrame((_, delta) => {
-    if (shouldReduceMotion) return;
+    if (shouldReduceMotion || !isMarqueeVisibleRef.current) return;
 
     // Base motion is right-to-left.
     // Scroll down => faster leftward motion. Scroll up => temporary rightward reversal.
@@ -457,19 +504,10 @@ export default function Home() {
     marqueeX.set(nextX);
   });
 
-  // Find the currently active case object to get its image
-  const activeCase = useCases.find(c => c.id === activeCaseId) || useCases[0];
-
   return (
     <main className="relative min-h-screen text-white pt-3 overflow-x-hidden"
-      style={{
-        background: "linear-gradient(180deg, #070757 0%, #000000 100%)"
-      }} >
-      {/* Page Background */}
-      {/* <div 
-        className="fixed inset-0 pointer-events-none" 
-       
-      /> */}
+      style={{ background: "linear-gradient(180deg, #070757 0%, #000000 100%)" }}>
+      <SilkBackground />
 
       {/* Hero Section */}
       <section
@@ -694,6 +732,7 @@ export default function Home() {
             <Image
               src={glowBg}
               alt=""
+              loading="lazy"
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
               style={{ width: "500px", height: "500px", objectFit: "contain" }}
               aria-hidden="true"
@@ -820,7 +859,7 @@ export default function Home() {
                 Choose<br />
                 BalloAds?
               </h2>
-              <p className="mt-4 text-white/80 text-base leading-relaxed" style={{ maxWidth: "22rem" }}>
+              <p className="mt-4 text-white text-base leading-relaxed" style={{ maxWidth: "22rem" }}>
                 The digital marketing platform built for your growth.
               </p>
               <Link
@@ -845,7 +884,8 @@ export default function Home() {
                   alt=""
                   aria-hidden="true"
                   fill
-                  // sizes="50vw"
+                  sizes="50vw"
+                  loading="lazy"
                   className="why-bg-img"
                   style={{ objectFit: "cover", objectPosition: "center top" }}
                 />
@@ -881,7 +921,7 @@ export default function Home() {
       </section>
 
       {/* Trusted By Section */}
-      <section className="py-16">
+      <section ref={marqueeSectionRef} className="py-16">
         <div className="text-center mb-10">
           <p className="text-3xl text-shimmer">Trusted by the very best</p>
         </div>
@@ -928,6 +968,8 @@ export default function Home() {
                   src={logo.src}
                   alt={logo.alt}
                   height={112}
+                  loading="lazy"
+                  sizes="112px"
                   className="h-28 w-auto object-contain opacity-100 transition-opacity"
                   style={{
                     filter: logo.src === logoBayport ? 'brightness(0) invert(1)' : 'none'
@@ -939,89 +981,48 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Who can use BalloAds Section */}
-      <section className="py-20 px-4 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(63,219,255,0.05)_0%,rgba(0,0,0,0)_50%)] pointer-events-none" />
-        <div className="container mx-auto">
-          <h2 className="text-3xl md:text-6xl font-bold text-center mb-8 md:mb-20 tracking-tight text-white">
-            Who can use BalloAds?
-          </h2>
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-
-            {/* Left Side - Clickable Navigation List */}
-            <div className="space-y-4 relative z-20">
-              {useCases.map((item) => (
-                <button
-                  key={item.id}
-                  className={`w-full text-left flex items-start gap-3 md:gap-6 cursor-pointer p-1 rounded-2xl transition-all duration-300 border-none bg-transparent outline-none relative z-30 ${activeCaseId === item.id
-                    ? 'text-white'
-                    : 'text-gray-500 hover:text-gray-300'
-                    }`}
-                  style={{ cursor: 'pointer' }}
-                  // Make the entire button clickable and hoverable to update the state
-                  onClick={() => {
-                    setActiveCaseId(item.id);
-                    setIsUseCasesAutoPlaying(false);
-                  }}
-                  onMouseEnter={() => {
-                    setActiveCaseId(item.id);
-                    setIsUseCasesAutoPlaying(false);
-                  }}
-                  onMouseLeave={() => setIsUseCasesAutoPlaying(true)}
-                >
-                  <div className={`shrink-0 mt-1 transition-colors duration-300 ${activeCaseId === item.id ? 'text-white' : 'text-gray-600'}`}>
-                    {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-5 h-5 md:w-7 md:h-7", strokeWidth: 1.5 })}
+      {/* Who can use BalloAds Section — scroll-pinned */}
+      <section ref={whoContainerRef} className="who-scroll-outer">
+        <div className="who-scroll-sticky">
+          <div className="who-scroll-inner">
+            <h2 className="who-scroll-heading-text">
+              Who can use BalloAds?
+            </h2>
+            <div className="who-content-grid">
+              {/* Left — list, GSAP drives opacity per item */}
+              <div className="who-left-list">
+                {useCases.map((item, i) => (
+                  <div key={item.id} className="who-list-item">
+                    <div className="who-list-icon">
+                      {React.cloneElement(item.icon as React.ReactElement<{ className?: string; strokeWidth?: number }>, {
+                        className: "w-5 h-5 md:w-7 md:h-7",
+                        strokeWidth: 1.5,
+                      })}
+                    </div>
+                    <div className="who-list-text">
+                      <span className="who-list-title">{item.text}</span>
+                      <span className="who-list-subtext">{item.subtext}</span>
+                    </div>
                   </div>
-
-                  <div className="flex flex-col">
-                    <span className={`text-base md:text-3xl font-bold leading-tight transition-colors ${activeCaseId === item.id ? 'text-white' : 'text-gray-500'}`}>
-                      {item.text}
-                    </span>
-                    <span className={`text-xs md:text-xl mt-1 transition-colors ${activeCaseId === item.id ? 'text-white/80' : 'text-gray-600'}`}>
-                      {item.subtext}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Right Side - Dynamic Image Slider */}
-            <div className="relative h-[280px] md:h-[600px] flex items-center justify-center z-10">
-
-              {/* STATIC BACKGROUND IMAGE / GLOW */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[600px] h-[600px] bg-white/5 rounded-full blur-[100px] pointer-events-none" />
+                ))}
               </div>
 
-              {/* DYNAMIC BUILDING IMAGE (The Sliding Element) */}
-              <div className="relative w-full h-full flex items-center justify-center transition-all duration-500 overflow-hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeCase.id}
-                    initial={{ opacity: 0, x: 20, scale: 1.2 }}
-                    animate={{ opacity: 1, x: 0, scale: 1.4 }}
-                    exit={{ opacity: 0, x: -20, scale: 1.5 }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                    className="absolute w-full h-full flex items-center justify-center"
-                  >
+              {/* Right — stacked images, GSAP crossfades */}
+              <div className="who-right-images">
+                <div className="w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] absolute pointer-events-none" />
+                {useCases.map((item) => (
+                  <div key={item.id} className="who-image-item">
                     <Image
-                      src={activeCase.image}
-                      alt={`${activeCase.text} Building`}
+                      src={item.image}
+                      alt={item.text}
                       width={450}
                       height={900}
+                      loading="lazy"
+                      sizes="(max-width: 768px) 80vw, 40vw"
                       className="object-contain w-auto h-full drop-shadow-[0_0_30px_rgba(63,219,255,0.2)]"
-                      priority
                     />
-                  </motion.div>
-                  <motion.div
-                    key={`${activeCaseId}-line`}
-                    initial={{ width: 0 }}
-                    animate={{ width: "60%" }}
-                    exit={{ width: 0 }}
-                    transition={{ duration: 0.5, ease: "easeInOut" }}
-                    className="bg-zinc-600 h-[4px] absolute bottom-[3%] rounded-full"
-                  />
-                </AnimatePresence>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -1029,7 +1030,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 px-4">
+      <section ref={testimonialsSectionRef} className="py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold text-center mb-12">
             <span className="text-gradient-cyan block">

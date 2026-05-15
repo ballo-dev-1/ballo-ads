@@ -26,6 +26,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@gsap/react": "^2.1.2",
     "@prisma/client": "^6.2.1",
+    "@react-three/fiber": "^9.6.1",
     "@tanstack/react-query": "^5.100.1",
     "@tanstack/react-virtual": "^3.13.23",
     "@types/pg": "^8.20.0",
@@ -50,13 +51,14 @@
     "recharts": "^3.8.0",
     "sharp": "0.34.5",
     "swiper": "^12.0.3",
+    "three": "^0.184.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
   "optionalDependencies": {
     "@img/sharp-linux-x64": "0.34.5",
-    "lightningcss-linux-x64-gnu": "1.30.1",
-    "@tailwindcss/oxide-linux-x64-gnu": "4.1.11"
+    "@tailwindcss/oxide-linux-x64-gnu": "4.1.11",
+    "lightningcss-linux-x64-gnu": "1.30.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
