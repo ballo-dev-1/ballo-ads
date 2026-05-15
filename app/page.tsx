@@ -304,8 +304,7 @@ export default function Home() {
 
     const tl = gsap.timeline();
     for (let i = 1; i < numItems; i++) {
-      tl.to(listItems[i - 1], { opacity: 0.25, duration: 0.5 });
-      tl.to(listItems[i], { opacity: 1, duration: 0.5 }, "<");
+      tl.to(listItems[i], { opacity: 1, duration: 0.5 });
       tl.to(imageItems[i - 1], { opacity: 0, duration: 0.5 }, "<");
       tl.to(imageItems[i], { opacity: 1, duration: 0.5 }, "<");
     }
@@ -1015,7 +1014,7 @@ export default function Home() {
                     <Image
                       src={item.image}
                       alt={item.text}
-                      width={450}
+                      width={650}
                       height={900}
                       loading="lazy"
                       sizes="(max-width: 768px) 80vw, 40vw"

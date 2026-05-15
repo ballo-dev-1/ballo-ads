@@ -347,7 +347,7 @@
 /* Right — stacked images, GSAP crossfades */
 .who-right-images {
   position: relative;
-  height: 520px;
+  height: 70vh;
   display: flex;
   align-items: center;
   justify-content: center;
