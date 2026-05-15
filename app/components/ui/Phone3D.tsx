@@ -8,8 +8,8 @@ interface Props {
 }
 
 export function Phone3D({ children, floating }: Props) {
-  const tiltRef = useRef<HTMLDivElement>(null);  // receives the rotateX/Y transform
-  const phoneRef = useRef<HTMLDivElement>(null); // used only for center-of-phone bounding rect
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const phoneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const tiltEl = tiltRef.current;
@@ -23,7 +23,8 @@ export function Phone3D({ children, floating }: Props) {
     let rx = 0, ry = 0;
     let isTracking = false;
     let lastMoveTime = 0;
-    let rafId: number;
+    let rafId: number | null = null;
+    let isVisible = false;
 
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -34,14 +35,32 @@ export function Phone3D({ children, floating }: Props) {
         targetRy = 0;
       }
 
-      // Tracking uses a snappier lerp; returning to center uses a slower one
       const lerpFactor = isTracking ? 0.08 : 0.015;
       rx = lerp(rx, targetRx, lerpFactor);
       ry = lerp(ry, targetRy, lerpFactor);
       tiltEl.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-      rafId = requestAnimationFrame(tick);
+
+      if (isVisible) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        rafId = null;
+      }
     };
-    tick();
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+        if (isVisible && rafId === null) {
+          rafId = requestAnimationFrame(tick);
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(phoneEl);
+
+    // Start immediately (optimistic — likely visible on load)
+    isVisible = true;
+    rafId = requestAnimationFrame(tick);
 
     const handleMouseMove = (e: MouseEvent) => {
       isTracking = true;
@@ -66,7 +85,8 @@ export function Phone3D({ children, floating }: Props) {
     document.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      observer.disconnect();
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseleave", handleMouseLeave);
     };
@@ -74,7 +94,6 @@ export function Phone3D({ children, floating }: Props) {
 
   return (
     <div className="phone3d-scene scale-110">
-      {/* tiltRef wraps both the phone and any floating elements so they tilt together */}
       <div
         ref={tiltRef}
         style={{ position: "relative", transformStyle: "preserve-3d" }}

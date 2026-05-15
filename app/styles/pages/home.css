@@ -3,6 +3,21 @@
    File: app/page.tsx
    ============================================ */
 
+/* Hero marquee — CSS-driven, zero JS */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee-scroll 24s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+}
+
 /* Hero Section */
 .home-hero {
   /* Add hero section styles here */
@@ -300,10 +315,8 @@
 }
 
 .who-content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+  position: relative;
+  width: 100%;
 }
 
 .who-left-list {
@@ -344,22 +357,19 @@
   margin-top: 0.25rem;
 }
 
-/* Right — stacked images, GSAP crossfades */
-.who-right-images {
+/* Right — spiral WebGL gallery */
+.who-spiral-container {
   position: relative;
+  width: 100%;
   height: 70vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
+  margin-left: 15rem;
 }
 
-.who-image-item {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
+.who-spiral-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 768px) {
@@ -373,7 +383,7 @@
     gap: 2rem;
   }
 
-  .who-right-images {
+  .who-spiral-container {
     height: 280px;
   }
 }
