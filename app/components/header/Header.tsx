@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { motion, useScroll, useMotionValueEvent } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import logo_1 from "@/public/BalloAds Logo New/BalloAds-logo.png"
 import logo_2 from "@/public/BalloAds Logo New/BalloAds-logo-full.png"
 
@@ -92,6 +92,11 @@ const Header = () => {
     }
     lastScrollY.current = latest;
   });
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [isMenuOpen]);
 
   const isActive = (path: string) => pathname === path;
 
@@ -477,93 +482,146 @@ const Header = () => {
         </button>
       </motion.nav>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="header__mobile-menu">
-          <div className="header__mobile-menu-content">
-            {navItems.map((item) => {
-              const hasDropdown = item.links && item.links.length > 0;
-              const isExpanded = activeDropdown === item.label;
+      {/* Mobile Menu — Slide-in Drawer */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="mobile-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              style={{ zIndex: 150 }}
+              onClick={() => setIsMenuOpen(false)}
+              aria-hidden="true"
+            />
 
-              if (!hasDropdown) {
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href ?? "#"}
-                    className={`header__mobile-nav-link ${item.href && isActive(item.href)
-                      ? "header__mobile-nav-link--active"
-                      : ""
-                      }`}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
+            {/* Drawer Panel */}
+            <motion.div
+              key="mobile-drawer"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.9 }}
+              className="fixed top-0 right-0 h-full flex flex-col bg-[#010128]"
+              style={{ zIndex: 200, width: "min(82vw, 340px)" }}
+            >
+              {/* Panel header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+                <Link href="/" onClick={() => setIsMenuOpen(false)}>
+                  <Image
+                    src={logo_2}
+                    alt="BalloAds"
+                    width={150}
+                    height={40}
+                    className="header__logo-image h-8 w-auto"
+                    priority
+                  />
+                </Link>
+                <button
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+                  aria-label="Close menu"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-              return (
-                <div key={item.label} className="header__mobile-dropdown">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveDropdown((prev) => (prev === item.label ? null : item.label))
-                    }
-                    className={`header__mobile-dropdown-toggle ${item.href && isActive(item.href)
-                      ? "header__mobile-dropdown-toggle--active"
-                      : ""
-                      }`}
-                  >
-                    {item.label}
-                    <svg
-                      className={`header__mobile-dropdown-arrow ${isExpanded ? "header__mobile-dropdown-arrow--open" : ""
-                        }`}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                  {isExpanded && (
-                    <div className="header__mobile-dropdown-content">
-                      {item.links?.map((link) => (
+              {/* Nav items */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="header__mobile-menu-content px-4 py-4">
+                  {navItems.map((item) => {
+                    const hasDropdown = item.links && item.links.length > 0;
+                    const isExpanded = activeDropdown === item.label;
+
+                    if (!hasDropdown) {
+                      return (
                         <Link
-                          key={link.href}
-                          href={link.href}
-                          className="header__mobile-dropdown-link"
+                          key={item.label}
+                          href={item.href ?? "#"}
+                          className={`header__mobile-nav-link ${item.href && isActive(item.href)
+                            ? "header__mobile-nav-link--active"
+                            : ""
+                            }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
-                          {link.label}
+                          {item.label}
                         </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                      );
+                    }
 
-            <div className="header__mobile-actions">
-              <Link
-                href="#signin"
-                className="header__mobile-action-link header__mobile-action-link--signin"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="#signup"
-                className="header__mobile-action-link header__mobile-action-link--signup"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sign Up
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+                    return (
+                      <div key={item.label} className="header__mobile-dropdown">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveDropdown((prev) => (prev === item.label ? null : item.label))
+                          }
+                          className={`header__mobile-dropdown-toggle ${item.href && isActive(item.href)
+                            ? "header__mobile-dropdown-toggle--active"
+                            : ""
+                            }`}
+                        >
+                          {item.label}
+                          <svg
+                            className={`header__mobile-dropdown-arrow ${isExpanded ? "header__mobile-dropdown-arrow--open" : ""
+                              }`}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M6 9l6 6 6-6" />
+                          </svg>
+                        </button>
+                        {isExpanded && (
+                          <div className="header__mobile-dropdown-content">
+                            {item.links?.map((link) => (
+                              <Link
+                                key={link.href}
+                                href={link.href}
+                                className="header__mobile-dropdown-link"
+                                onClick={() => setIsMenuOpen(false)}
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* CTA buttons */}
+              <div className="header__mobile-actions px-5 py-6 border-t border-white/10 shrink-0">
+                <Link
+                  href="#signin"
+                  className="header__mobile-action-link header__mobile-action-link--signin"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="#signup"
+                  className="header__mobile-action-link header__mobile-action-link--signup"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
