@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import logo_1 from "@/public/BalloAds Logo New/BalloAds-logo.png"
@@ -81,14 +81,16 @@ const Header = () => {
   const pathname = usePathname();
   const { scrollY } = useScroll();
   const [isHidden, setIsHidden] = useState(false);
+  const lastScrollY = useRef(0);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = scrollY.getPrevious() ?? 0;
-    if (latest > previous && latest > 150) {
+    const previous = lastScrollY.current;
+    if (latest > previous && latest > 80) {
       setIsHidden(true);
-    } else {
+    } else if (latest < previous) {
       setIsHidden(false);
     }
+    lastScrollY.current = latest;
   });
 
   const isActive = (path: string) => pathname === path;
@@ -103,14 +105,13 @@ const Header = () => {
       <motion.nav
         variants={{
           visible: { y: 0, x: "-50%" },
-          hidden: { y: -100, x: "-50%" },
+          hidden: { y: "-130%", x: "-50%" },
         }}
         animate={isHidden ? "hidden" : "visible"}
+        initial="visible"
         transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          mass: 1
+          duration: 0.3,
+          ease: [0.4, 0, 0.2, 1],
         }}
         className="header__nav bg-[#010128] fixed w-[95vw] min-w-[380px] max-w-[1440px] h-16 md:flex mx-0 ring ring-[#446dd334] mt-2 top-4 left-1/2 data-text-bright:**:text-white shadow rounded-full p-4 overflow-hidden"
         style={{ zIndex: 100 }}

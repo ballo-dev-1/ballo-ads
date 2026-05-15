@@ -1,6 +1,6 @@
 /* Gradient utilities */
 .gradient-blue-grey {
-  background: linear-gradient(180deg, #191d59 0%, #6b6f9b 50%);
+  background: linear-gradient(180deg, #030739 0%, #191d59 50%, #6b6f9b 100%);
 }
 
 .gradient-purple-pink {
@@ -69,16 +69,14 @@
 }
 
 .text-shimmer {
-  background: linear-gradient(
-    110deg,
-    #ffffff 0%,
-    #6b6f9b 25%,
-    #191d59 45%,
-    #ffffff 50%,
-    #191d59 55%,
-    #6b6f9b 75%,
-    #ffffff 100%
-  );
+  background: linear-gradient(110deg,
+      #ffffff 0%,
+      #6b6f9b 25%,
+      #191d59 45%,
+      #ffffff 50%,
+      #191d59 55%,
+      #6b6f9b 75%,
+      #ffffff 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

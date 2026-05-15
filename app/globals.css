@@ -66,7 +66,7 @@ a[aria-disabled="true"] {
 .glitch-text {
   position: relative;
   display: inline-block;
-  text-shadow: 
+  text-shadow:
     -1px 0 #ff3b30,
     1px 0 #00a3ff;
 }
@@ -428,11 +428,9 @@ a[aria-disabled="true"] {
   bottom: 0;
   height: var(--admin-tab-indicator-h);
   border-radius: 3px 3px 0 0;
-  background: linear-gradient(
-    90deg,
-    var(--brand-color-3),
-    var(--brand-color-4)
-  );
+  background: linear-gradient(90deg,
+      var(--brand-color-3),
+      var(--brand-color-4));
   pointer-events: none;
 }
 
@@ -454,15 +452,13 @@ a[aria-disabled="true"] {
  * cyan highlight (4+2) → ocean blue (2) → primary blue (3+1) → deep navy (1), shallow 5-tint on text/hover only.
  */
 .admin-sidebar-surface {
-  --admin-sidebar-bg: linear-gradient(
-    168deg,
-    color-mix(in srgb, var(--brand-color-4) 25%, var(--brand-color-2) 75%) 0%,
-    var(--brand-color-2) 20%,
-    color-mix(in srgb, var(--brand-color-3) 35%, var(--brand-color-2) 65%) 44%,
-    color-mix(in srgb, var(--brand-color-3) 18%, var(--brand-color-1) 82%) 70%,
-    var(--brand-color-1) 88%,
-    color-mix(in srgb, var(--brand-color-1) 88%, var(--brand-color-2) 12%) 100%
-  );
+  --admin-sidebar-bg: linear-gradient(168deg,
+      color-mix(in srgb, var(--brand-color-4) 25%, var(--brand-color-2) 75%) 0%,
+      var(--brand-color-2) 20%,
+      color-mix(in srgb, var(--brand-color-3) 35%, var(--brand-color-2) 65%) 44%,
+      color-mix(in srgb, var(--brand-color-3) 18%, var(--brand-color-1) 82%) 70%,
+      var(--brand-color-1) 88%,
+      color-mix(in srgb, var(--brand-color-1) 88%, var(--brand-color-2) 12%) 100%);
   --admin-sidebar-tab-pill-radius: calc(var(--radius-liquid) * 0.45);
   --admin-sidebar-inverse-size: var(--admin-sidebar-tab-pill-radius);
   /* Typography & chrome on gradient (brand-tinted, not generic gray/white-only) */
@@ -518,6 +514,7 @@ a[aria-disabled="true"] {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -559,8 +556,8 @@ a[aria-disabled="true"] {
 }
 
 /* Keep label/icon above the inverse-fillet pseudos (rail bridge is absolute, z-index 0) */
-.admin-sidebar-nav-item-active > span:not(.admin-sidebar-active-rail-bridge),
-.admin-sidebar-nav-item-inactive > span {
+.admin-sidebar-nav-item-active>span:not(.admin-sidebar-active-rail-bridge),
+.admin-sidebar-nav-item-inactive>span {
   position: relative;
   z-index: 1;
 }
@@ -625,15 +622,13 @@ a[aria-disabled="true"] {
 .admin-sidebar-nav-item-active::before {
   border-bottom-right-radius: var(--admin-sidebar-inverse-size);
   box-shadow:
-    calc(var(--admin-sidebar-inverse-size) / 2) calc(var(--admin-sidebar-inverse-size) / 2) 0
-    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
+    calc(var(--admin-sidebar-inverse-size) / 2) calc(var(--admin-sidebar-inverse-size) / 2) 0 calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
 }
 
 .admin-sidebar-nav-item-active::after {
   border-top-right-radius: var(--admin-sidebar-inverse-size);
   box-shadow:
-    calc(var(--admin-sidebar-inverse-size) / 2) calc(-1 * var(--admin-sidebar-inverse-size) / 2) 0
-    calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
+    calc(var(--admin-sidebar-inverse-size) / 2) calc(-1 * var(--admin-sidebar-inverse-size) / 2) 0 calc(var(--admin-sidebar-inverse-size) / 2) var(--admin-sidebar-tab-fill);
 }
 
 /* Default tables — light separators */

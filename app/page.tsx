@@ -229,7 +229,7 @@ export default function Home() {
     const el = cardRef.current;
     if (!el) return;
     el.style.willChange = "transform";
-    el.style.transform = "perspective(1400px) rotateY(-12deg) rotateX(2.5deg) scale3d(1,1,1)";
+    el.style.transform = "none";
     return () => {
       if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
       if (tiltTimeoutRef.current) clearTimeout(tiltTimeoutRef.current);
@@ -240,11 +240,11 @@ export default function Home() {
     const el = cardRef2.current;
     if (!el) return;
     el.style.willChange = "transform";
-    el.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg) scale3d(1,1,1)";
+    el.style.transform = "none";
     const btn = signupBtnRef.current;
     if (btn) {
       btn.style.willChange = "transform";
-      btn.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg)";
+      btn.style.transform = "none";
     }
     return () => {
       if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
@@ -475,9 +475,8 @@ export default function Home() {
   const activeCase = useCases.find(c => c.id === activeCaseId) || useCases[0];
 
   return (
-    <main className="relative min-h-screen text-white pt-3"
+    <main className="relative min-h-screen text-white pt-3 overflow-x-hidden"
       style={{
-        zIndex: -1,
         background: "linear-gradient(180deg, #070757 0%, #000000 100%)"
       }} >
       {/* Page Background */}
@@ -609,7 +608,7 @@ export default function Home() {
 
             {/* Right Side - Image */}
             <div className="relative flex justify-center items-center">
-              <div className="relative w-full max-w-md h-[420px] md:h-[560px]">
+              <div className="relative w-full max-w-md h-[260px] sm:h-[380px] md:h-[560px]">
                 <div className="relative w-full h-full">
                   <Image
                     src={ring}
@@ -677,7 +676,7 @@ export default function Home() {
             <div className="pv-border-wrapper">
               <div className="pv-blob1" />
               <h2
-                className="pv-inner relative py-20 px-4 z-10 text-center whitespace-nowrap text-[clamp(2.4rem,6.15vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)] overflow-hidden"
+                className="pv-inner relative py-20 px-4 z-10 text-center whitespace-nowrap text-[clamp(1rem,5.5vw,5.8rem)] font-black leading-none [transform:scaleY(1.24)_scaleX(0.9)] overflow-hidden"
                 style={{
                   fontFamily: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
                   letterSpacing: "0.005em",
@@ -704,18 +703,52 @@ export default function Home() {
       <section className="py-20 px-4">
         <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Left Side - 3D Phone Mockup */}
-          <div className="relative flex justify-center scale-[0.9]">
+          <div className="relative flex justify-center scale-[0.9] order-last md:order-first">
             {/* Background glow */}
             <Image
               src={glowBg}
               alt=""
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
-              style={{ width: "540px", height: "540px", objectFit: "contain" }}
+              style={{ width: "500px", height: "500px", objectFit: "contain" }}
               aria-hidden="true"
             />
 
             <div className="relative">
-              <Phone3D>
+              <Phone3D floating={
+                <div
+                  className="absolute hidden md:flex flex-col gap-2.5"
+                  style={{ left: "-60px", top: "56%", transform: "translateZ(40px)" }}
+                >
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
+                      <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
+                    </svg>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-[9px] text-zinc-600">Get it on the</span>
+                      <span className="text-[11px] font-bold text-zinc-900">App Store</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
+                  >
+                    <Image
+                      src={googlePlayIcon}
+                      alt="Google Play"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 shrink-0"
+                    />
+                    <div className="flex flex-col items-start leading-tight px-0.5">
+                      <span className="text-[9px] text-zinc-600">Get it on</span>
+                      <span className="text-[11px] font-bold text-zinc-900">Google Play</span>
+                    </div>
+                  </button>
+                </div>
+              }>
                 {/* Dark blue arc — top-left corner decoration */}
                 <div
                   className="absolute rounded-full"
@@ -756,58 +789,19 @@ export default function Home() {
                   </button>
                 </div>
               </Phone3D>
-
-              {/* Floating App Store buttons */}
-              <div
-                className="absolute z-40 flex flex-col gap-2.5"
-                style={{ left: "-60px", top: "56%" }}
-              >
-                <button
-                  type="button"
-                  className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
-                >
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
-                    <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
-                  </svg>
-                  <div className="flex flex-col items-start leading-tight">
-                    <span className="text-[9px] text-zinc-600">Get it on the</span>
-                    <span className="text-[11px] font-bold text-zinc-900">App Store</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
-                >
-                  <Image
-                    src={googlePlayIcon}
-                    alt="Google Play"
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 shrink-0"
-                  />
-                  <div className="flex flex-col items-start leading-tight px-0.5">
-                    <span className="text-[9px] text-zinc-600">Get it on</span>
-                    <span className="text-[11px] font-bold text-zinc-900">Google Play</span>
-                  </div>
-                </button>
-              </div>
             </div>
           </div>
 
           {/* Right Side - Content Card */}
           <div
             ref={cardRef}
-            className="relative rounded-3xl p-8 md:p-12 overflow-hidden"
-            onMouseEnter={handleCardMouseEnter}
-            onMouseMove={handleCardMouseMove}
-            onMouseLeave={handleCardMouseLeave}
+            className="relative rounded-3xl p-8 md:p-12 overflow-hidden gradient-blue-grey"
             style={{
-              background: "#010218",
               transformOrigin: "center center",
               boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
             }}
           >
-            <TwistingRibbon />
+            {/* <TwistingRibbon /> */}
 
             {/* Content — sits above the orb */}
             <div className="relative z-10">
@@ -831,39 +825,18 @@ export default function Home() {
 
       {/* Why Choose BalloAds Section */}
       <section className="py-20 px-4">
-        <div className="container mx-auto grid md:grid-cols-2 gap-20 items-center">
+        <div className="container mx-auto grid md:grid-cols-2 gap-8 md:gap-20 items-center">
           {/* Left Side - Content Card */}
           <div className="">
             <div
               ref={cardRef2}
-              className="relative rounded-[3rem] p-8 md:p-12 overflow-hidden"
-              onMouseEnter={handleCardMouseEnter2}
-              onMouseMove={handleCardMouseMove2}
-              onMouseLeave={handleCardMouseLeave2}
+              className="relative rounded-[3rem] p-8 md:p-12 overflow-hidden gradient-blue-grey"
               style={{
-                background: "#010218",
                 transformOrigin: "center center",
                 boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
               }}
             >
-              {/* Glare layer */}
-              <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none" style={{ zIndex: 3 }}>
-                <div
-                  ref={glareRef2}
-                  style={{
-                    position: "absolute",
-                    top: "50%", left: "50%",
-                    width: "200%", height: "200%",
-                    marginLeft: "-100%", marginTop: "-100%",
-                    background: "linear-gradient(0deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 100%)",
-                    opacity: 0,
-                    transform: "rotate(0deg)",
-                    transformOrigin: "center",
-                    pointerEvents: "none",
-                  }}
-                />
-              </div>
-              <TwistingRibbon />
+              {/* <TwistingRibbon /> */}
 
               <div className="relative z-10">
                 <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-8">
@@ -894,7 +867,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div ref={signupBtnRef} className="w-full flex justify-center" style={{ transformOrigin: "center center", transform: "perspective(1400px) rotateY(12deg) rotateX(-2.5deg)" }}>
+            <div ref={signupBtnRef} className="w-full flex justify-center" style={{ transformOrigin: "center center", transform: "none" }}>
               <Link
                 href="#signup"
                 className="mt-10 inline-flex items-center gap-4 bg-white text-[#020055] px-8 py-2 rounded-full font-black text-lg hover:bg-white/90 transition-all group"
@@ -926,12 +899,46 @@ export default function Home() {
               src={glowBg}
               alt=""
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
-              style={{ width: "540px", height: "540px", objectFit: "contain" }}
+              style={{ width: "500px", height: "500px", objectFit: "contain" }}
               aria-hidden="true"
             />
 
             <div className="relative">
-              <Phone3D>
+              <Phone3D floating={
+                <div
+                  className="absolute hidden md:flex flex-col gap-2.5"
+                  style={{ left: "-60px", top: "56%", transform: "translateZ(40px)" }}
+                >
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
+                      <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
+                    </svg>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-[9px] text-zinc-600">Get it on the</span>
+                      <span className="text-[11px] font-bold text-zinc-900">App Store</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
+                  >
+                    <Image
+                      src={googlePlayIcon}
+                      alt="Google Play"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 shrink-0"
+                    />
+                    <div className="flex flex-col items-start leading-tight px-0.5">
+                      <span className="text-[9px] text-zinc-600">Get it on</span>
+                      <span className="text-[11px] font-bold text-zinc-900">Google Play</span>
+                    </div>
+                  </button>
+                </div>
+              }>
                 <div
                   className="absolute rounded-full"
                   style={{
@@ -971,41 +978,6 @@ export default function Home() {
                   </button>
                 </div>
               </Phone3D>
-
-              {/* Floating App Store buttons */}
-              <div
-                className="absolute z-40 flex flex-col gap-2.5"
-                style={{ left: "-60px", top: "56%" }}
-              >
-                <button
-                  type="button"
-                  className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
-                >
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
-                    <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
-                  </svg>
-                  <div className="flex flex-col items-start leading-tight">
-                    <span className="text-[9px] text-zinc-600">Get it on the</span>
-                    <span className="text-[11px] font-bold text-zinc-900">App Store</span>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
-                >
-                  <Image
-                    src={googlePlayIcon}
-                    alt="Google Play"
-                    width={20}
-                    height={20}
-                    className="w-5 h-5 shrink-0"
-                  />
-                  <div className="flex flex-col items-start leading-tight px-0.5">
-                    <span className="text-[9px] text-zinc-600">Get it on</span>
-                    <span className="text-[11px] font-bold text-zinc-900">Google Play</span>
-                  </div>
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -1054,12 +1026,15 @@ export default function Home() {
                 { src: logo9, alt: "Client" },
               ]
             ).map((logo, i) => (
-              <div key={i} className="flex items-center justify-center px-10 shrink-0">
+              <div key={i} className="flex items-center justify-center px-5 shrink-0">
                 <Image
                   src={logo.src}
                   alt={logo.alt}
-                  height={64}
-                  className="h-16 w-auto object-contain opacity-100 transition-opacity"
+                  height={112}
+                  className="h-28 w-auto object-contain opacity-100 transition-opacity"
+                  style={{
+                    filter: logo.src === logoBayport ? 'brightness(0) invert(1)' : 'none'
+                  }}
                 />
               </div>
             ))}
@@ -1071,7 +1046,7 @@ export default function Home() {
       <section className="py-20 px-4 text-white overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_50%,rgba(63,219,255,0.05)_0%,rgba(0,0,0,0)_50%)] pointer-events-none" />
         <div className="container mx-auto">
-          <h2 className="text-5xl md:text-6xl font-bold text-center mb-20 tracking-tight text-white">
+          <h2 className="text-3xl md:text-6xl font-bold text-center mb-8 md:mb-20 tracking-tight text-white">
             Who can use BalloAds?
           </h2>
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -1081,7 +1056,7 @@ export default function Home() {
               {useCases.map((item) => (
                 <button
                   key={item.id}
-                  className={`w-full text-left flex items-start gap-6 cursor-pointer p-1 rounded-2xl transition-all duration-300 border-none bg-transparent outline-none relative z-30 ${activeCaseId === item.id
+                  className={`w-full text-left flex items-start gap-3 md:gap-6 cursor-pointer p-1 rounded-2xl transition-all duration-300 border-none bg-transparent outline-none relative z-30 ${activeCaseId === item.id
                     ? 'text-white'
                     : 'text-gray-500 hover:text-gray-300'
                     }`}
@@ -1098,14 +1073,14 @@ export default function Home() {
                   onMouseLeave={() => setIsUseCasesAutoPlaying(true)}
                 >
                   <div className={`shrink-0 mt-1 transition-colors duration-300 ${activeCaseId === item.id ? 'text-white' : 'text-gray-600'}`}>
-                    {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-7 h-7", strokeWidth: 1.5 })}
+                    {React.cloneElement(item.icon as React.ReactElement<any>, { className: "w-5 h-5 md:w-7 md:h-7", strokeWidth: 1.5 })}
                   </div>
 
                   <div className="flex flex-col">
-                    <span className={`text-3xl font-bold leading-tight transition-colors ${activeCaseId === item.id ? 'text-white' : 'text-gray-500'}`}>
+                    <span className={`text-base md:text-3xl font-bold leading-tight transition-colors ${activeCaseId === item.id ? 'text-white' : 'text-gray-500'}`}>
                       {item.text}
                     </span>
-                    <span className={`text-xl mt-1 transition-colors ${activeCaseId === item.id ? 'text-white/80' : 'text-gray-600'}`}>
+                    <span className={`text-xs md:text-xl mt-1 transition-colors ${activeCaseId === item.id ? 'text-white/80' : 'text-gray-600'}`}>
                       {item.subtext}
                     </span>
                   </div>
@@ -1114,7 +1089,7 @@ export default function Home() {
             </div>
 
             {/* Right Side - Dynamic Image Slider */}
-            <div className="relative h-[600px] flex items-center justify-center z-10">
+            <div className="relative h-[280px] md:h-[600px] flex items-center justify-center z-10">
 
               {/* STATIC BACKGROUND IMAGE / GLOW */}
               <div className="absolute inset-0 flex items-center justify-center">
@@ -1122,7 +1097,7 @@ export default function Home() {
               </div>
 
               {/* DYNAMIC BUILDING IMAGE (The Sliding Element) */}
-              <div className="relative w-full h-full flex items-center justify-center transition-all duration-500">
+              <div className="relative w-full h-full flex items-center justify-center transition-all duration-500 overflow-hidden">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeCase.id}
@@ -1178,7 +1153,7 @@ export default function Home() {
                     transition={{ duration: 0.5, ease: "easeInOut" }}
                     className="flex flex-col items-center text-center"
                   >
-                    <p className="text-xl md:text-2xl leading-relaxed mb-8 italic line-clamp-4 overflow-hidden h-[6.8rem]">
+                    <p className="text-xl md:text-2xl leading-relaxed mb-8 italic line-clamp-4 overflow-hidden h-[8.5rem] md:h-[10rem]">
                       &quot;{testimonials[testimonialIndex].quote}&quot;
                     </p>
                     <p className="text-xl font-bold mb-1 line-clamp-1 overflow-hidden w-full min-h-[1rem]">{testimonials[testimonialIndex].name}</p>
@@ -1210,14 +1185,6 @@ export default function Home() {
               href="#signup"
               className="glow-button group"
             >
-              {/* God-ray layers — blurred & stretched text duplicates behind the real text */}
-              <span className="glow-button__ray-layer glow-button__ray-layer--wide" aria-hidden="true">Join waitlist</span>
-              <span className="glow-button__ray-layer glow-button__ray-layer--h" aria-hidden="true">Join waitlist</span>
-              <span className="glow-button__ray-layer glow-button__ray-layer--v" aria-hidden="true">Join waitlist</span>
-              <span className="glow-button__ray-layer glow-button__ray-layer--d1" aria-hidden="true">Join waitlist</span>
-              <span className="glow-button__ray-layer glow-button__ray-layer--d2" aria-hidden="true">Join waitlist</span>
-              <span className="glow-button__ray-layer glow-button__ray-layer--core" aria-hidden="true">Join waitlist</span>
-
               {/* Visible text */}
               <span className="glow-button__text">Join waitlist</span>
               {/* Arrow icon */}
