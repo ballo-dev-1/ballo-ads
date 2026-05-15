@@ -73,7 +73,7 @@ export function Phone3D({ children, floating }: Props) {
   }, []);
 
   return (
-    <div className="phone3d-scene scale-105">
+    <div className="phone3d-scene scale-110">
       {/* tiltRef wraps both the phone and any floating elements so they tilt together */}
       <div
         ref={tiltRef}

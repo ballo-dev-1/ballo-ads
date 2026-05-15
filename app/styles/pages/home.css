@@ -88,33 +88,189 @@
   /* Add about description styles here */
 }
 
-/* Why Choose BalloAds Section */
-.home-why {
-  /* Add why section styles here */
+/* Why Choose — color system (mirrors CodePen approach) */
+@property --bg-hue {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 190;
 }
 
-.home-why__container {
-  /* Add why container styles here */
+@property --bg-alpha {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
 }
 
-.home-why__content-card {
-  /* Add why content card styles here */
+:root {
+  --why-start: 190;
+  --why-end: 340;
+  --why-lightness: 74%;
+  --why-chroma: 0.24;
 }
 
-.home-why__title {
-  /* Add why title styles here */
+.why-scroll-sticky {
+  --bg-hue: 190;
+  --bg-alpha: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  background: oklch(11% 0.18 var(--bg-hue) / var(--bg-alpha));
 }
 
-.home-why__list {
-  /* Add why list styles here */
+.why-scroll-inner {
+  display: flex;
+  align-items: center;
+  gap: 5rem;
+  padding-left: 4rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.home-why__list-item {
-  /* Add why list item styles here */
+/* Left column — gradient heading like CodePen's h2 */
+.why-scroll-heading {
+  width: fit-content;
+  flex-shrink: 0;
 }
 
-.home-why__cta {
-  /* Add why CTA button styles here */
+.why-scroll-heading h2 {
+  line-height: 1.1;
+}
+
+/* Right column — fills remaining space, contains bg images + phone */
+.why-right-area {
+  position: relative;
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Dashboard screenshot crossfade layer */
+.why-bg-images {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+
+/* Static bg image behind the phone */
+.why-bg-img {
+  object-fit: cover;
+  object-position: center top;
+  z-index: 1;
+}
+
+/* Phone frame wrapper — sits above bg images */
+.why-phone-wrapper {
+  position: relative;
+  z-index: 10;
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.why-phone-frame-img {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+/* Feature list — absolutely fills the phone screen area */
+.why-scroll-items {
+  --step: calc((var(--why-end) - var(--why-start)) / (var(--count, 5) - 1));
+  position: absolute;
+  top: 8%;
+  left: 5.5%;
+  right: 5.5%;
+  bottom: 3.5%;
+  z-index: 5;
+  border-radius: 36px;
+  overflow: hidden;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  /* Phone screen bg tracks the same animated hue as the section */
+  background: oklch(11% 0.18 var(--bg-hue));
+  margin-top: -2.5rem;
+  height: 96%;
+}
+
+/* Each item fills the full screen — stacked, GSAP crossfades between them */
+.why-scroll-item {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1.75rem;
+  opacity: 0;
+}
+
+.why-scroll-item:last-child {
+  background: #050829;
+}
+
+.why-scroll-item-num {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: oklch(var(--why-lightness) var(--why-chroma) calc(var(--why-start) + (var(--step) * var(--i, 0))));
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+
+.why-scroll-item-title {
+  font-size: clamp(1.5rem, 4.5cqw, 1.35rem);
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 0.6rem;
+  color: oklch(var(--why-lightness) var(--why-chroma) calc(var(--why-start) + (var(--step) * var(--i, 0))));
+}
+
+.why-scroll-item-desc {
+  font-size: 1rem;
+  color: rgba(255, 255, 255);
+  margin: 0;
+  line-height: 1.55;
+}
+
+@media (max-width: 768px) {
+  .why-scroll-sticky {
+    height: auto;
+    padding: 3rem 0;
+  }
+
+  .why-scroll-inner {
+    flex-direction: column;
+    padding: 0 1.5rem;
+    gap: 2.5rem;
+  }
+
+  .why-scroll-heading {
+    width: 100%;
+  }
+
+  .why-right-area {
+    height: auto;
+    min-height: 320px;
+    width: 100%;
+  }
+
+  .why-phone-wrapper {
+    width: 220px;
+    margin: 0 auto;
+  }
+
+  .why-scroll-item {
+    padding: 1.5rem 1.25rem;
+  }
 }
 
 /* Trusted By Section */

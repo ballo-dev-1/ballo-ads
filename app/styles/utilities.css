@@ -25,6 +25,20 @@
   background-clip: text;
 }
 
+.text-gradient-silver {
+  background: linear-gradient(180deg, white 55%, color-mix(in oklch, #020055, white 28%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-silver-2 {
+  background: linear-gradient(180deg, color-mix(in oklch, white 72%, #020055) 0%, white 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Glow effects */
 .glow-blue {
   box-shadow: 0 0 20px rgba(63, 219, 255, 0.3);

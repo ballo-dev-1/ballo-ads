@@ -21,6 +21,8 @@ import { TwistingRibbon } from "./components/ui/TwistingRibbon";
 import { Phone3D } from "./components/ui/Phone3D";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
+import phoneFrame from "@/public/Assets/phone-frame.png";
+import analyticsDashImg from "@/public/Assets/analytics-D8Ni1S4n.png";
 import playStore from "@/public/elements small/19.png";
 import appleStore from "@/public/elements small/18.png";
 
@@ -224,11 +226,7 @@ export default function Home() {
   const tiltRafRef = useRef<number | null>(null);
   const tiltTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const cardRef2 = useRef<HTMLDivElement>(null);
-  const glareRef2 = useRef<HTMLDivElement>(null);
-  const tiltRafRef2 = useRef<number | null>(null);
-  const tiltTimeoutRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const signupBtnRef = useRef<HTMLDivElement>(null);
+  const whyContainerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -241,21 +239,46 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    const el = cardRef2.current;
-    if (!el) return;
-    el.style.willChange = "transform";
-    el.style.transform = "none";
-    const btn = signupBtnRef.current;
-    if (btn) {
-      btn.style.willChange = "transform";
-      btn.style.transform = "none";
+  useGSAP(() => {
+    const outer = whyContainerRef.current;
+    if (!outer) return;
+
+    const stickyEl = outer.querySelector<HTMLElement>(".why-scroll-sticky");
+    const items = Array.from(outer.querySelectorAll<HTMLElement>(".why-scroll-item"));
+    if (!stickyEl || items.length === 0) return;
+
+    const numItems = items.length;
+    const WHY_START = 190;
+    const WHY_END = 340;
+    const hues = items.map((_, i) =>
+      WHY_START + ((WHY_END - WHY_START) / (numItems - 1)) * i
+    );
+    const alphas = items.map((_, i) => (i === 0 || i === numItems - 1 ? 0 : 1));
+
+    gsap.set(stickyEl, { "--bg-hue": hues[0], "--bg-alpha": alphas[0] });
+    gsap.set(items, { opacity: 0 });
+    gsap.set(items[0], { opacity: 1 });
+
+    const tl = gsap.timeline();
+    for (let i = 1; i < numItems; i++) {
+      tl.to(items[i - 1], { opacity: 0, duration: 0.7 });
+      tl.to(items[i], { opacity: 1, duration: 0.7 }, "<");
+      tl.to(
+        stickyEl,
+        { "--bg-hue": hues[i], "--bg-alpha": alphas[i], ease: "none", duration: 1 },
+        "<"
+      );
     }
-    return () => {
-      if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
-      if (tiltTimeoutRef2.current) clearTimeout(tiltTimeoutRef2.current);
-    };
-  }, []);
+    ScrollTrigger.create({
+      trigger: stickyEl,
+      start: "top top",
+      end: `+=${numItems * 100}vh`,
+      pin: true,
+      pinSpacing: true,
+      animation: tl,
+      scrub: 0.8,
+    });
+  });
 
   const setTiltTransition = (ref: React.RefObject<HTMLDivElement | null>, glareRef: React.RefObject<HTMLDivElement | null>, timeoutRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) => {
     const el = ref.current;
@@ -271,14 +294,6 @@ export default function Home() {
   };
 
   const handleCardMouseEnter = () => setTiltTransition(cardRef, glareRef, tiltTimeoutRef);
-  const handleCardMouseEnter2 = () => {
-    setTiltTransition(cardRef2, glareRef2, tiltTimeoutRef2);
-    const btn = signupBtnRef.current;
-    if (btn) {
-      btn.style.transition = "1200ms cubic-bezier(.03,.98,.52,.99)";
-      setTimeout(() => { btn.style.transition = ""; }, 1200);
-    }
-  };
 
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
@@ -299,26 +314,6 @@ export default function Home() {
     });
   };
 
-  const handleCardMouseMove2 = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-    tiltRafRef2.current = requestAnimationFrame(() => {
-      const el = cardRef2.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const x = (clientX - rect.left) / rect.width - 0.5;
-      const y = (clientY - rect.top) / rect.height - 0.5;
-      el.style.transform = `perspective(1400px) rotateX(${y * -15}deg) rotateY(${x * 15}deg) scale3d(1.04,1.04,1.04)`;
-      const glare = glareRef2.current;
-      if (glare) {
-        glare.style.transform = `rotate(${Math.atan2(y, x) * (180 / Math.PI) + 90}deg)`;
-        glare.style.opacity = `${Math.min(Math.sqrt(x * x + y * y) * 0.5, 0.2)}`;
-      }
-      const btn = signupBtnRef.current;
-      if (btn) btn.style.transform = `perspective(1400px) rotateX(${y * -15}deg) rotateY(${x * 15}deg)`;
-    });
-  };
 
   const handleCardMouseLeave = () => {
     if (tiltRafRef.current) cancelAnimationFrame(tiltRafRef.current);
@@ -329,20 +324,6 @@ export default function Home() {
     if (glare) glare.style.opacity = "0";
   };
 
-  const handleCardMouseLeave2 = () => {
-    if (tiltRafRef2.current) cancelAnimationFrame(tiltRafRef2.current);
-    setTiltTransition(cardRef2, glareRef2, tiltTimeoutRef2);
-    const el = cardRef2.current;
-    if (el) el.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg) scale3d(1,1,1)";
-    const glare = glareRef2.current;
-    if (glare) glare.style.opacity = "0";
-    const btn = signupBtnRef.current;
-    if (btn) {
-      btn.style.transition = "1200ms cubic-bezier(.03,.98,.52,.99)";
-      btn.style.transform = "perspective(1400px) rotateY(12deg) rotateX(-2.5deg)";
-      setTimeout(() => { btn.style.transition = ""; }, 1200);
-    }
-  };
 
   const smoothScrollVelocity = useSpring(rawScrollVelocity, {
     damping: 50,
@@ -800,19 +781,20 @@ export default function Home() {
           {/* Right Side - Content Card */}
           <div
             ref={cardRef}
-            className="relative rounded-3xl p-8 md:p-12 overflow-hidden gradient-blue-grey"
+            className="relative rounded-3xl p-8 md:p-12 overflow-hidden"
             style={{
               transformOrigin: "center center",
-              boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
+              // boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
             }}
           >
             {/* <TwistingRibbon /> */}
 
             {/* Content — sits above the orb */}
             <div className="relative z-10">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="text-4xl md:text-7xl font-bold mb-6 text-gradient-silver-2">
                 What We&apos;re About
               </h2>
+
               <p className="text-lg md:text-xl leading-relaxed text-white/90">
                 BalloAds is an AI-powered digital advertising platform
                 designed to help businesses and organisations
@@ -828,161 +810,71 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose BalloAds Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto grid md:grid-cols-2 gap-8 md:gap-20 items-center">
-          {/* Left Side - Content Card */}
-          <div className="">
-            <div
-              ref={cardRef2}
-              className="relative rounded-[3rem] p-8 md:p-12 overflow-hidden gradient-blue-grey"
-              style={{
-                transformOrigin: "center center",
-                boxShadow: "28px 32px 80px rgba(0,0,0,0.65), -6px 0 35px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
-              }}
-            >
-              {/* <TwistingRibbon /> */}
-
-              <div className="relative z-10">
-                <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-8">
-                  Why Choose BalloAds?
-                </h2>
-                <div className="space-y-5">
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">AI-Powered Targeting</h3>
-                    <p className="text-base leading-relaxed text-white/80">Get your message in front of the right audience at the right time.</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">Bulk & Personalised Messaging</h3>
-                    <p className="text-base leading-relaxed text-white/80">Scale up your outreach while keeping it personal.</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">Real-Time Analytics</h3>
-                    <p className="text-base leading-relaxed text-white/80">Track campaign performance and optimise results.</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">User-Friendly Dashboard</h3>
-                    <p className="text-base leading-relaxed text-white/80">Manage all your campaigns in one place.</p>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-1">Affordable & Scalable</h3>
-                    <p className="text-base leading-relaxed text-white/80">Flexible pricing that grows with your business.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div ref={signupBtnRef} className="w-full flex justify-center" style={{ transformOrigin: "center center", transform: "none" }}>
+      {/* Why Choose BalloAds Section - Sticky Scroll */}
+      <section ref={whyContainerRef} className="why-scroll-outer">
+        <div className="why-scroll-sticky">
+          <div className="why-scroll-inner">
+            <div className="why-scroll-heading">
+              <h2 className="text-4xl md:text-8xl font-black text-gradient-silver leading-tight tracking-tight">
+                Why<br />
+                Choose<br />
+                BalloAds?
+              </h2>
+              <p className="mt-4 text-white/80 text-base leading-relaxed" style={{ maxWidth: "22rem" }}>
+                The digital marketing platform built for your growth.
+              </p>
               <Link
                 href="#signup"
-                className="mt-10 inline-flex items-center gap-4 bg-white text-[#020055] px-8 py-2 rounded-full font-black text-lg hover:bg-white/90 transition-all group"
+                className="mt-8 inline-flex items-center gap-4 bg-white text-[#020055] px-8 py-2 rounded-full font-black text-lg hover:bg-white/90 transition-all group"
               >
                 Sign up for free today
                 <div className="w-8 h-8 rounded-full bg-[#020055] flex items-center justify-center text-white group-hover:scale-110 transition-transform">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M9 5l7 7-7 7"
-                    />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               </Link>
             </div>
-          </div>
 
-          {/* Right Side - 3D Phone Mockup */}
-          <div className="relative flex justify-center scale-[0.9]">
-            {/* Background glow */}
-            <Image
-              src={glowBg}
-              alt=""
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none"
-              style={{ width: "500px", height: "500px", objectFit: "contain" }}
-              aria-hidden="true"
-            />
-
-            <div className="relative">
-              <Phone3D floating={
-                <div
-                  className="absolute hidden md:flex flex-col gap-2.5"
-                  style={{ left: "-60px", top: "56%", transform: "translateZ(40px)" }}
-                >
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-black shrink-0" aria-hidden="true">
-                      <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.39 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.43zm4.565 15.71c-.03.07-.463 1.58-1.518 3.12-.945 1.34-1.94 2.71-3.43 2.71-1.517 0-1.9-.88-3.63-.88-1.698 0-2.302.91-3.67.91-1.49 0-2.534-1.31-3.529-2.65-1.305-1.74-2.337-4.44-2.337-6.99 0-4.16 2.685-6.36 5.27-6.36 1.4 0 2.566.93 3.45.93.84 0 2.145-.98 3.81-.98.62 0 2.795.06 4.265 2.13-.13.08-2.508 1.46-2.483 4.37.03 3.4 2.965 4.53 3.002 4.55z" />
-                    </svg>
-                    <div className="flex flex-col items-start leading-tight">
-                      <span className="text-[9px] text-zinc-600">Get it on the</span>
-                      <span className="text-[11px] font-bold text-zinc-900">App Store</span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.28)] rounded-2xl px-3 py-2"
-                  >
-                    <Image
-                      src={googlePlayIcon}
-                      alt="Google Play"
-                      width={20}
-                      height={20}
-                      className="w-5 h-5 shrink-0"
-                    />
-                    <div className="flex flex-col items-start leading-tight px-0.5">
-                      <span className="text-[9px] text-zinc-600">Get it on</span>
-                      <span className="text-[11px] font-bold text-zinc-900">Google Play</span>
-                    </div>
-                  </button>
-                </div>
-              }>
-                <div
-                  className="absolute rounded-full"
-                  style={{
-                    width: "150px",
-                    height: "150px",
-                    top: "-48px",
-                    left: "-48px",
-                    background: "var(--dark-blue-2)",
-                    zIndex: 1,
-                  }}
+            {/* Right area: background images + phone frame */}
+            <div className="why-right-area">
+              {/* Static dashboard screenshot behind the phone */}
+              <div className="why-bg-images h-[60vh] mt-32 rounded-3xl overflow-hidden">
+                <Image
+                  src={analyticsDashImg}
+                  alt=""
+                  aria-hidden="true"
+                  fill
+                  // sizes="50vw"
+                  className="why-bg-img"
+                  style={{ objectFit: "cover", objectPosition: "center top" }}
                 />
-                <div className="relative z-10 flex flex-col items-center justify-between px-4 py-8 h-full w-full pt-14">
-                  <div className="flex flex-col items-center gap-3">
-                    <Image
-                      src={logoIcon}
-                      alt="BalloAds Logo"
-                      width={56}
-                      height={56}
-                      className="object-contain"
-                    />
-                    <h3 className="text-[var(--dark-blue-2)] font-black text-center text-[9px] tracking-[0.2em] uppercase leading-tight">
-                      Your Digital Marketing
-                      <br />
-                      Assistant
-                    </h3>
-                  </div>
-                  <div className="w-36 h-36 rounded-[1.75rem] bg-[#2273af] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
-                    <CloudUpload className="w-12 h-12 text-white mb-1.5" strokeWidth={1.5} />
-                    <span className="text-white font-bold text-[11px] text-center leading-tight">
-                      Upload your
-                      <br />
-                      artwork here
-                    </span>
-                  </div>
-                  <button className="w-fit bg-[#020055] text-white px-12 py-1.5 rounded-full font-bold text-base shadow-lg">
-                    Next
-                  </button>
-                </div>
-              </Phone3D>
+              </div>
+              {/* Phone frame with features inside */}
+              <div className="why-phone-wrapper">
+                <ul className="why-scroll-items" style={{ "--count": 5 } as React.CSSProperties}>
+                  {[
+                    { title: "AI-Powered Targeting", desc: "Get your message in front of the right audience at the right time." },
+                    { title: "Bulk & Personalised Messaging", desc: "Scale up your outreach while keeping it personal." },
+                    { title: "Real-Time Analytics", desc: "Track campaign performance and optimise results." },
+                    { title: "User-Friendly Dashboard", desc: "Manage all your campaigns in one place." },
+                    { title: "Affordable & Scalable", desc: "Flexible pricing that grows with your business." },
+                  ].map((feature, i) => (
+                    <li key={i} className="why-scroll-item" style={{ "--i": i } as React.CSSProperties}>
+                      <span className="why-scroll-item-num">0{i + 1}</span>
+                      <h3 className="why-scroll-item-title">{feature.title}</h3>
+                      <p className="why-scroll-item-desc">{feature.desc}</p>
+                    </li>
+                  ))}
+                </ul>
+                {/* Phone frame overlaid on top */}
+                <Image
+                  src={phoneFrame}
+                  alt=""
+                  aria-hidden="true"
+                  className="why-phone-frame-img"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -1057,7 +949,7 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
             {/* Left Side - Clickable Navigation List */}
-            <div className="space-y-2 relative z-20">
+            <div className="space-y-4 relative z-20">
               {useCases.map((item) => (
                 <button
                   key={item.id}
