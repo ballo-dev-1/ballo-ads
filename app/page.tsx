@@ -14,8 +14,13 @@ import {
   useTransform,
   useVelocity,
 } from "framer-motion";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 import { TwistingRibbon } from "./components/ui/TwistingRibbon";
 import { Phone3D } from "./components/ui/Phone3D";
+
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 import playStore from "@/public/elements small/19.png";
 import appleStore from "@/public/elements small/18.png";
 
