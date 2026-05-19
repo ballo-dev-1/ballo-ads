@@ -1,5 +1,5 @@
 /* =============================================
-   Silk Background — static CSS backdrop, no animation
+   Silk Background — static diagonal sheen only
    ============================================= */
 
 .silk-bg {
@@ -8,30 +8,6 @@
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-}
-
-.silk-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-}
-
-/* Top-left primary mass */
-.silk-blob--a {
-  width: min(90vw, 860px);
-  height: min(90vw, 860px);
-  background: radial-gradient(circle at 40% 40%, #0d1563 0%, transparent 65%);
-  top: -25%;
-  left: -15%;
-}
-
-/* Bottom-right counter-mass */
-.silk-blob--b {
-  width: min(80vw, 780px);
-  height: min(80vw, 780px);
-  background: radial-gradient(circle at 55% 55%, #09207e 0%, transparent 65%);
-  bottom: -20%;
-  right: -10%;
 }
 
 /* Diagonal light sheen — static */

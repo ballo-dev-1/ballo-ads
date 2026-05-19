@@ -5,8 +5,13 @@
 
 /* Hero marquee — CSS-driven, zero JS */
 @keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .marquee-track {
@@ -15,7 +20,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track { animation: none; }
+  .marquee-track {
+    animation: none;
+  }
 }
 
 /* Hero Section */
@@ -363,7 +370,7 @@
   width: 100%;
   height: 70vh;
   overflow: hidden;
-  margin-left: 15rem;
+  margin-left: 20rem;
 }
 
 .who-spiral-container canvas {
